@@ -3,140 +3,22 @@
 # ~~~~
 
 # Home page
-GET     /                           controllers.Application.index
+GET         /                                controllers.ApplicationController.index
+GET         /signIn                          controllers.ApplicationController.signIn
+GET         /signUp                          controllers.ApplicationController.signUp
+GET         /signOut                         controllers.ApplicationController.signOut
+GET         /authenticate/:provider          controllers.SocialAuthController.authenticate(provider)
+POST        /authenticate/credentials        controllers.CredentialsAuthController.authenticate
+POST        /signUp                          controllers.SignUpController.signUp
 
 # Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET         /assets/*file                    controllers.Assets.at(path="/public", file)
+GET         /webjars/*file                   controllers.WebJarAssets.at(file)
 
 
-
-
-
-
-
-
-
-
-# WHAT IS THAT FOR?
-# Apps
-GET      /apps/authorize/        controllers.Apps.authorize
-POST     /apps/send_auth/        controllers.Apps.send_auth
-
-# Clients management
-GET      /clients/               controllers.Clients.list
-GET      /client/new             controllers.Clients.create
-POST     /client/add             controllers.Clients.add
-POST     /client/update          controllers.Clients.update
-GET      /client/edit/:id        controllers.Clients.edit(id: String)
-PUT      /client/                controllers.Clients.update
-GET      /client/:id             controllers.Clients.get(id: String)
-DELETE   /client/:id             controllers.Clients.delete(id: String)
-
-# DO NOT USE. WILL BE REPLACED BY SYLHOUETTE OR SECURESOCIAL
-# Authentication
-GET      /login                  controllers.Auth.login
-POST     /authenticate           controllers.Auth.authenticate
-GET      /logout                 controllers.Auth.logout
-
-
-# OAuth2 Routes
-POST     /oauth2/access_token    controllers.OAuth2Controller.accessToken
-
-
-
-GET            /oauth2/authorize                    @com.yetu.oauth2provider.controllers.OAuth2Auth.authorizeUser
-POST           /oauth2/access_token                 @com.yetu.oauth2provider.controllers.OAuth2Auth.accessToken
-GET            /oauth2/info                         @com.yetu.oauth2provider.controllers.OAuth2ResourceServer.info
-GET            /oauth2/validate                     @com.yetu.oauth2provider.controllers.OAuth2Validation.validate
-GET            /oauth2/access_token_implicit        @com.yetu.oauth2provider.controllers.OAuth2Auth.accessTokenImplicit
-GET            /oauth2/certs                        com.yetu.oauth2provider.controllers.Certificates.certificates
-
-
-## Cors Access-Control-Allow-Headers
-OPTIONS        /*all                                com.yetu.oauth2resource.controllers.CrossOrigin.preflight(all: String)
-
-
-
-
-
-POST           /profile                             @com.yetu.oauth2provider.controllers.OAuth2ResourceServer.updateUserProfile
-
-POST           /keys                                @com.yetu.oauth2provider.controllers.OAuth2ResourceServer.updateKey
-GET            /keys                                @com.yetu.oauth2provider.controllers.OAuth2ResourceServer.viewKeys
-
-#### permissions ####
-POST           /permissions                         @com.yetu.oauth2provider.controllers.OAuth2Auth.permissionsPost
-####
-
-
-
-# Home page
-GET            /                                    @com.yetu.oauth2provider.controllers.OAuth2ResourceServer.index
-
-# Map static resources from the /public folder to the /assets URL path
-GET           /assets/*file                         controllers.Assets.versioned(path="/public", file: Asset)
-
-
-# Health Check
-GET            /health                              com.yetu.oauth2provider.controllers.HealthCheck.check
-
-
-GET            /trustedEntity/profile               @com.yetu.oauth2provider.controllers.OAuth2TrustedServer.getUserProfile
-
-
-
-#####################
-## secure social ####
-#####################
-
-
-# Login page
-GET            /login                               @com.yetu.oauth2provider.controllers.authentication.LoginPage.login
-GET            /logout                              @com.yetu.oauth2provider.controllers.authentication.LoginPage.logout
-
-# Registration routes
-
-# IMPORTANT: re-enable the RegistrationBrowserSpec test upon re-enabling these routes
-#GET            /signup                              @com.yetu.oauth2provider.controllers.authentication.Registration.startSignUp
-#POST           /signup                              @com.yetu.oauth2provider.controllers.authentication.Registration.handleStartSignUp
-#GET            /signup/:mailToken                   @com.yetu.oauth2provider.controllers.authentication.Registration.handleSignUp(mailToken)
-#GET            /confirmedSignup                     @com.yetu.oauth2provider.controllers.authentication.Registration.confirmedSignUp
-
-# Reset password
-GET            /reset                               @com.yetu.oauth2provider.controllers.authentication.PasswordReset.startResetPassword
-POST           /reset                               @com.yetu.oauth2provider.controllers.authentication.PasswordReset.handleStartResetPassword
-GET            /reset/:mailToken                    @com.yetu.oauth2provider.controllers.authentication.PasswordReset.resetPassword(mailToken)
-POST           /reset/:mailToken                    @com.yetu.oauth2provider.controllers.authentication.PasswordReset.handleResetPassword(mailToken)
-
-# Change Password
-GET            /password                            @com.yetu.oauth2provider.controllers.authentication.PasswordChange.page
-POST           /password                            @com.yetu.oauth2provider.controllers.authentication.PasswordChange.handlePasswordChange
-
-
-# Authentication entry points for all providers
-GET            /authenticate/:provider              @com.yetu.oauth2provider.controllers.authentication.ProviderController.authenticate(provider, redirectTo: Option[String])
-POST           /authenticate/:provider              @com.yetu.oauth2provider.controllers.authentication.ProviderController.authenticateByPost(provider, redirectTo: Option[String])
-
-
-POST           /api/authenticate/:provider          @com.yetu.oauth2provider.controllers.authentication.LoginApi.authenticate(provider, builder = "token")
-
-#####################
-##    setup      ####
-#####################
-
-# New registration page
-GET            /setup/registration                  @com.yetu.oauth2provider.controllers.setup.SetupController.startSignUp
-POST           /setup/registration                  @com.yetu.oauth2provider.controllers.setup.SetupController.handleStartSignUp
-POST           /setup/checkPassword                 @com.yetu.oauth2provider.controllers.setup.SetupController.checkPassword
-
-# New confirm mail page
-GET            /setup/confirmmail                   @com.yetu.oauth2provider.controllers.setup.SetupController.confirmmail
-
-# New confirm mail page
-GET            /setup/confirmedmail                 @com.yetu.oauth2provider.controllers.setup.SetupController.confirmedmail
-GET            /setup/confirmedmailerror            @com.yetu.oauth2provider.controllers.setup.SetupController.confirmedmailerror
-GET            /setup/confirmedmail/:mailToken      @com.yetu.oauth2provider.controllers.setup.SetupController.handleSignUp(mailToken)
-
-# Download setup app
-GET            /setup/download                      @com.yetu.oauth2provider.controllers.setup.SetupController.download
-
+GET         /test                            controllers.TestController.index
+GET         /secure                          controllers.TestController.secure
+GET         /secureAdmin                     controllers.TestController.secureAdmin
+GET         /auth                            controllers.TestController.auth
+GET         /testSignUp                      controllers.TestController.signUp
+GET         /testSignOut                     controllers.TestController.signOut
