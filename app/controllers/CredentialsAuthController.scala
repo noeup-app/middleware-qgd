@@ -10,7 +10,6 @@ import com.mohiva.play.silhouette.api.util.{Clock, Credentials}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers._
-import controllers.routes
 import net.ceedubs.ficus.Ficus._
 import play.api.Configuration
 import play.api.i18n.{Messages, MessagesApi}
