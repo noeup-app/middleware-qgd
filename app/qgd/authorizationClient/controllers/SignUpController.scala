@@ -15,6 +15,7 @@ import models.services.UserService
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.Action
+import qgd.authorizationClient.results.AuthorizationResult
 
 import scala.concurrent.Future
 
@@ -32,6 +33,7 @@ class SignUpController @Inject() (
   val env: Environment[User, CookieAuthenticator],
   userService: UserService,
   authInfoRepository: AuthInfoRepository,
+  authorizationResult: AuthorizationResult,
   passwordHasher: PasswordHasher)
   extends Silhouette[User, CookieAuthenticator] {
 
@@ -42,12 +44,12 @@ class SignUpController @Inject() (
    */
   def signUp = Action.async { implicit request =>
     SignUpForm.form.bindFromRequest.fold(
-      form => Future.successful(BadRequest(qgd.authorizationClient.views.html.signUp(form))),
+      form => Future.successful(authorizationResult.badRequestSignUp(form)),
       data => {
         val loginInfo = LoginInfo(CredentialsProvider.ID, data.email)
         userService.retrieve(loginInfo).flatMap {
           case Some(user) =>
-            Future.successful(Redirect(routes.ApplicationController.signUp()).flashing("error" -> Messages("user.exists")))
+            Future.successful(authorizationResult.userAlreadyExists())
           case None =>
             val authInfo = passwordHasher.hash(data.password)
             val user = User(
@@ -67,7 +69,7 @@ class SignUpController @Inject() (
               authInfo <- authInfoRepository.add(loginInfo, authInfo)
               authenticator <- env.authenticatorService.create(loginInfo)
               value <- env.authenticatorService.init(authenticator)
-              result <- env.authenticatorService.embed(value, Redirect(routes.ApplicationController.index()))
+              result <- env.authenticatorService.embed(value, authorizationResult.userSuccessfullyCreated())
             } yield {
               env.eventBus.publish(SignUpEvent(user, request, request2Messages))
               env.eventBus.publish(LoginEvent(user, request, request2Messages))

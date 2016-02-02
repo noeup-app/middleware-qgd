@@ -29,6 +29,7 @@ import play.api.libs.openid.OpenIdClient
 import play.api.libs.ws.WSClient
 import models.daos._
 import models.services.{UserServiceImpl, UserService}
+import qgd.authorizationClient.results.HtmlScalaViewAuthorizationResult
 
 /**
  * The Guice module which wires all Silhouette dependencies.

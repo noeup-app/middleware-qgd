@@ -18,6 +18,7 @@ import play.api.mvc.Action
 import qgd.authorizationClient.forms.SignInForm
 import models.User
 import models.services.UserService
+import qgd.authorizationClient.results.AuthorizationResult
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -42,6 +43,7 @@ class CredentialsAuthController @Inject() (
                                             authInfoRepository: AuthInfoRepository,
                                             credentialsProvider: CredentialsProvider,
                                             socialProviderRegistry: SocialProviderRegistry,
+                                            authorizationResult: AuthorizationResult,
                                             configuration: Configuration,
                                             clock: Clock)
   extends Silhouette[User, CookieAuthenticator] {
@@ -53,11 +55,11 @@ class CredentialsAuthController @Inject() (
     */
   def authenticate = Action.async { implicit request =>
     SignInForm.form.bindFromRequest.fold(
-      form => Future.successful(BadRequest(qgd.authorizationClient.views.html.signIn(form, socialProviderRegistry))),
+      form => Future.successful(authorizationResult.badRequestSignIn(form)),
       data => {
         val credentials = Credentials(data.email, data.password)
         credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
-          val result = Redirect(routes.ApplicationController.index())
+          val result = authorizationResult.userIsAuthenticated()
           userService.retrieve(loginInfo).flatMap {
             case Some(user) =>
               val c = configuration.underlying
@@ -79,7 +81,7 @@ class CredentialsAuthController @Inject() (
           }
         }.recover {
           case e: ProviderException =>
-            Redirect(routes.ApplicationController.signIn()).flashing("error" -> Messages("invalid.credentials"))
+            authorizationResult.invalidCredentials()
         }
       }
     )

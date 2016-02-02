@@ -5,9 +5,11 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{Environment, LogoutEvent, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import play.api.mvc.{Result, AnyContent}
 import qgd.authorizationClient.forms._
 import models.User
 import play.api.i18n.MessagesApi
+import qgd.authorizationClient.results.AuthorizationResult
 
 import scala.concurrent.Future
 
@@ -21,7 +23,8 @@ import scala.concurrent.Future
 class ApplicationController @Inject() (
   val messagesApi: MessagesApi,
   val env: Environment[User, CookieAuthenticator],
-  socialProviderRegistry: SocialProviderRegistry)
+  socialProviderRegistry: SocialProviderRegistry,
+  authorizationResult: AuthorizationResult)
   extends Silhouette[User, CookieAuthenticator] {
 
   /**
@@ -30,7 +33,8 @@ class ApplicationController @Inject() (
    * @return The result to display.
    */
   def index = SecuredAction.async { implicit request =>
-    Future.successful(Ok(qgd.authorizationClient.views.html.home(request.identity)))
+    val req = request.asInstanceOf[ApplicationController.this.authorizationResult.SecuredRequest[AnyContent]]
+    Future.successful(authorizationResult.getResource(req))
   }
 
   /**
@@ -39,9 +43,10 @@ class ApplicationController @Inject() (
    * @return The result to display.
    */
   def signIn = UserAwareAction.async { implicit request =>
+    val req = request.asInstanceOf[ApplicationController.this.authorizationResult.UserAwareRequest[AnyContent]]
     request.identity match {
-      case Some(user) => Future.successful(Redirect(routes.ApplicationController.index()))
-      case None => Future.successful(Ok(qgd.authorizationClient.views.html.signIn(SignInForm.form, socialProviderRegistry)))
+      case Some(user) => Future.successful(authorizationResult.userIsConnected())
+      case None => Future.successful(authorizationResult.userIsNotConnected(req))
     }
   }
 
@@ -51,9 +56,10 @@ class ApplicationController @Inject() (
    * @return The result to display.
    */
   def signUp = UserAwareAction.async { implicit request =>
+    val req = request.asInstanceOf[ApplicationController.this.authorizationResult.UserAwareRequest[AnyContent]]
     request.identity match {
-      case Some(user) => Future.successful(Redirect(routes.ApplicationController.index()))
-      case None => Future.successful(Ok(qgd.authorizationClient.views.html.signUp(SignUpForm.form)))
+      case Some(user) => Future.successful(authorizationResult.userIsConnected())
+      case None => Future.successful(authorizationResult.userIsNotRegistered(req))
     }
   }
 
@@ -63,9 +69,10 @@ class ApplicationController @Inject() (
    * @return The result to display.
    */
   def signOut = SecuredAction.async { implicit request =>
-    val result = Redirect(routes.ApplicationController.index())
+    val result = authorizationResult.userSignOut()
     env.eventBus.publish(LogoutEvent(request.identity, request, request2Messages))
 
     env.authenticatorService.discard(request.authenticator, result)
   }
+
 }
