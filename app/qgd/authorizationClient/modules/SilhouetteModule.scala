@@ -133,14 +133,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     new DelegableAuthInfoRepository(passwordInfoDAO, oauth1InfoDAO, oauth2InfoDAO, openIDInfoDAO)
   }
 
-  /**
-   * Provides the avatar service.
-   *
-   * @param httpLayer The HTTP layer implementation.
-   * @return The avatar service implementation.
-   */
-  @Provides
-  def provideAvatarService(httpLayer: HTTPLayer): AvatarService = new GravatarService(httpLayer)
+//  /**
+//   * Provides the avatar service.
+//   *
+//   * @param httpLayer The HTTP layer implementation.
+//   * @return The avatar service implementation.
+//   */
+//  @Provides
+//  def provideAvatarService(httpLayer: HTTPLayer): AvatarService = new GravatarService(httpLayer)
 
   /**
    * Provides the OAuth1 token secret provider.
@@ -184,123 +184,123 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     new CredentialsProvider(authInfoRepository, passwordHasher, Seq(passwordHasher))
   }
 
-  /**
-   * Provides the Facebook provider.
-   *
-   * @param httpLayer The HTTP layer implementation.
-   * @param stateProvider The OAuth2 state provider implementation.
-   * @param configuration The Play configuration.
-   * @return The Facebook provider.
-   */
-  @Provides
-  def provideFacebookProvider(
-    httpLayer: HTTPLayer,
-    stateProvider: OAuth2StateProvider,
-    configuration: Configuration): FacebookProvider = {
-
-    new FacebookProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.facebook"))
-  }
-
-  /**
-   * Provides the Google provider.
-   *
-   * @param httpLayer The HTTP layer implementation.
-   * @param stateProvider The OAuth2 state provider implementation.
-   * @param configuration The Play configuration.
-   * @return The Google provider.
-   */
-  @Provides
-  def provideGoogleProvider(
-    httpLayer: HTTPLayer,
-    stateProvider: OAuth2StateProvider,
-    configuration: Configuration): GoogleProvider = {
-
-    new GoogleProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.google"))
-  }
-
-  /**
-   * Provides the VK provider.
-   *
-   * @param httpLayer The HTTP layer implementation.
-   * @param stateProvider The OAuth2 state provider implementation.
-   * @param configuration The Play configuration.
-   * @return The VK provider.
-   */
-  @Provides
-  def provideVKProvider(
-    httpLayer: HTTPLayer,
-    stateProvider: OAuth2StateProvider,
-    configuration: Configuration): VKProvider = {
-
-    new VKProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.vk"))
-  }
-
-  /**
-   * Provides the Clef provider.
-   *
-   * @param httpLayer The HTTP layer implementation.
-   * @param configuration The Play configuration.
-   * @return The Clef provider.
-   */
-  @Provides
-  def provideClefProvider(httpLayer: HTTPLayer, configuration: Configuration): ClefProvider = {
-
-    new ClefProvider(httpLayer, new DummyStateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.clef"))
-  }
-
-  /**
-   * Provides the Twitter provider.
-   *
-   * @param httpLayer The HTTP layer implementation.
-   * @param tokenSecretProvider The token secret provider implementation.
-   * @param configuration The Play configuration.
-   * @return The Twitter provider.
-   */
-  @Provides
-  def provideTwitterProvider(
-    httpLayer: HTTPLayer,
-    tokenSecretProvider: OAuth1TokenSecretProvider,
-    configuration: Configuration): TwitterProvider = {
-
-    val settings = configuration.underlying.as[OAuth1Settings]("silhouette.twitter")
-    new TwitterProvider(httpLayer, new PlayOAuth1Service(settings), tokenSecretProvider, settings)
-  }
-
-  /**
-   * Provides the Xing provider.
-   *
-   * @param httpLayer The HTTP layer implementation.
-   * @param tokenSecretProvider The token secret provider implementation.
-   * @param configuration The Play configuration.
-   * @return The Xing provider.
-   */
-  @Provides
-  def provideXingProvider(
-    httpLayer: HTTPLayer,
-    tokenSecretProvider: OAuth1TokenSecretProvider,
-    configuration: Configuration): XingProvider = {
-
-    val settings = configuration.underlying.as[OAuth1Settings]("silhouette.xing")
-    new XingProvider(httpLayer, new PlayOAuth1Service(settings), tokenSecretProvider, settings)
-  }
-
-  /**
-   * Provides the Yahoo provider.
-   *
-   * @param cacheLayer The cache layer implementation.
-   * @param httpLayer The HTTP layer implementation.
-   * @param client The OpenID client implementation.
-   * @param configuration The Play configuration.
-   * @return The Yahoo provider.
-   */
-  @Provides
-  def provideYahooProvider(
-    cacheLayer: CacheLayer,
-    httpLayer: HTTPLayer,
-    client: OpenIdClient,
-    configuration: Configuration): YahooProvider = {
-
-    val settings = configuration.underlying.as[OpenIDSettings]("silhouette.yahoo")
-    new YahooProvider(httpLayer, new PlayOpenIDService(client, settings), settings)
-  }
+//  /**
+//   * Provides the Facebook provider.
+//   *
+//   * @param httpLayer The HTTP layer implementation.
+//   * @param stateProvider The OAuth2 state provider implementation.
+//   * @param configuration The Play configuration.
+//   * @return The Facebook provider.
+//   */
+//  @Provides
+//  def provideFacebookProvider(
+//    httpLayer: HTTPLayer,
+//    stateProvider: OAuth2StateProvider,
+//    configuration: Configuration): FacebookProvider = {
+//
+//    new FacebookProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.facebook"))
+//  }
+//
+//  /**
+//   * Provides the Google provider.
+//   *
+//   * @param httpLayer The HTTP layer implementation.
+//   * @param stateProvider The OAuth2 state provider implementation.
+//   * @param configuration The Play configuration.
+//   * @return The Google provider.
+//   */
+//  @Provides
+//  def provideGoogleProvider(
+//    httpLayer: HTTPLayer,
+//    stateProvider: OAuth2StateProvider,
+//    configuration: Configuration): GoogleProvider = {
+//
+//    new GoogleProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.google"))
+//  }
+//
+//  /**
+//   * Provides the VK provider.
+//   *
+//   * @param httpLayer The HTTP layer implementation.
+//   * @param stateProvider The OAuth2 state provider implementation.
+//   * @param configuration The Play configuration.
+//   * @return The VK provider.
+//   */
+//  @Provides
+//  def provideVKProvider(
+//    httpLayer: HTTPLayer,
+//    stateProvider: OAuth2StateProvider,
+//    configuration: Configuration): VKProvider = {
+//
+//    new VKProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.vk"))
+//  }
+//
+//  /**
+//   * Provides the Clef provider.
+//   *
+//   * @param httpLayer The HTTP layer implementation.
+//   * @param configuration The Play configuration.
+//   * @return The Clef provider.
+//   */
+//  @Provides
+//  def provideClefProvider(httpLayer: HTTPLayer, configuration: Configuration): ClefProvider = {
+//
+//    new ClefProvider(httpLayer, new DummyStateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.clef"))
+//  }
+//
+//  /**
+//   * Provides the Twitter provider.
+//   *
+//   * @param httpLayer The HTTP layer implementation.
+//   * @param tokenSecretProvider The token secret provider implementation.
+//   * @param configuration The Play configuration.
+//   * @return The Twitter provider.
+//   */
+//  @Provides
+//  def provideTwitterProvider(
+//    httpLayer: HTTPLayer,
+//    tokenSecretProvider: OAuth1TokenSecretProvider,
+//    configuration: Configuration): TwitterProvider = {
+//
+//    val settings = configuration.underlying.as[OAuth1Settings]("silhouette.twitter")
+//    new TwitterProvider(httpLayer, new PlayOAuth1Service(settings), tokenSecretProvider, settings)
+//  }
+//
+//  /**
+//   * Provides the Xing provider.
+//   *
+//   * @param httpLayer The HTTP layer implementation.
+//   * @param tokenSecretProvider The token secret provider implementation.
+//   * @param configuration The Play configuration.
+//   * @return The Xing provider.
+//   */
+//  @Provides
+//  def provideXingProvider(
+//    httpLayer: HTTPLayer,
+//    tokenSecretProvider: OAuth1TokenSecretProvider,
+//    configuration: Configuration): XingProvider = {
+//
+//    val settings = configuration.underlying.as[OAuth1Settings]("silhouette.xing")
+//    new XingProvider(httpLayer, new PlayOAuth1Service(settings), tokenSecretProvider, settings)
+//  }
+//
+//  /**
+//   * Provides the Yahoo provider.
+//   *
+//   * @param cacheLayer The cache layer implementation.
+//   * @param httpLayer The HTTP layer implementation.
+//   * @param client The OpenID client implementation.
+//   * @param configuration The Play configuration.
+//   * @return The Yahoo provider.
+//   */
+//  @Provides
+//  def provideYahooProvider(
+//    cacheLayer: CacheLayer,
+//    httpLayer: HTTPLayer,
+//    client: OpenIdClient,
+//    configuration: Configuration): YahooProvider = {
+//
+//    val settings = configuration.underlying.as[OpenIDSettings]("silhouette.yahoo")
+//    new YahooProvider(httpLayer, new PlayOpenIDService(client, settings), settings)
+//  }
 }

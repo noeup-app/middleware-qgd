@@ -9,7 +9,7 @@ import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
-import forms.SignUpForm
+import qgd.authorizationClient.forms.SignUpForm
 import models.User
 import models.services.UserService
 import play.api.i18n.{Messages, MessagesApi}
@@ -25,7 +25,6 @@ import scala.concurrent.Future
  * @param env The Silhouette environment.
  * @param userService The user service implementation.
  * @param authInfoRepository The auth info repository implementation.
- * @param avatarService The avatar service implementation.
  * @param passwordHasher The password hasher implementation.
  */
 class SignUpController @Inject() (
@@ -33,7 +32,6 @@ class SignUpController @Inject() (
   val env: Environment[User, CookieAuthenticator],
   userService: UserService,
   authInfoRepository: AuthInfoRepository,
-  avatarService: AvatarService,
   passwordHasher: PasswordHasher)
   extends Silhouette[User, CookieAuthenticator] {
 
@@ -44,7 +42,7 @@ class SignUpController @Inject() (
    */
   def signUp = Action.async { implicit request =>
     SignUpForm.form.bindFromRequest.fold(
-      form => Future.successful(BadRequest(views.html.signUp(form))),
+      form => Future.successful(BadRequest(qgd.authorizationClient.views.html.signUp(form))),
       data => {
         val loginInfo = LoginInfo(CredentialsProvider.ID, data.email)
         userService.retrieve(loginInfo).flatMap {
@@ -63,8 +61,9 @@ class SignUpController @Inject() (
               avatarURL = None
             )
             for {
-              avatar <- avatarService.retrieveURL(data.email)
-              user <- userService.save(user.copy(avatarURL = avatar))
+              //avatar <- avatarService.retrieveURL(data.email)
+              //user <- userService.save(user.copy(avatarURL = avatar))
+              user <- userService.save(user)
               authInfo <- authInfoRepository.add(loginInfo, authInfo)
               authenticator <- env.authenticatorService.create(loginInfo)
               value <- env.authenticatorService.init(authenticator)
