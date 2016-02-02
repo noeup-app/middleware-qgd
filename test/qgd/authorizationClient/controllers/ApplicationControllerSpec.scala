@@ -1,4 +1,4 @@
-package controllers
+package qgd.authorizationClient.controllers
 
 import java.util.UUID
 
@@ -15,7 +15,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.test.{ FakeRequest, PlaySpecification, WithApplication }
 
 /**
- * Test case for the [[controllers.ApplicationController]] class.
+ * Test case for the [[ApplicationController]] class.
  */
 class ApplicationControllerSpec extends PlaySpecification with Mockito {
   sequential

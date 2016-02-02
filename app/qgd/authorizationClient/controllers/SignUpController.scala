@@ -1,4 +1,4 @@
-package controllers
+package qgd.authorizationClient.controllers
 
 import java.util.UUID
 import javax.inject.Inject
@@ -9,12 +9,12 @@ import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
-import play.api.i18n.{Messages, MessagesApi}
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.Action
 import forms.SignUpForm
 import models.User
 import models.services.UserService
+import play.api.i18n.{Messages, MessagesApi}
+import play.api.libs.concurrent.Execution.Implicits._
+import play.api.mvc.Action
 
 import scala.concurrent.Future
 

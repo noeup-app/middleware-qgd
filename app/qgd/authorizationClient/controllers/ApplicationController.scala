@@ -1,14 +1,13 @@
-package controllers
-
+package qgd.authorizationClient.controllers
 
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, LogoutEvent, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import play.api.i18n.MessagesApi
-import forms._
+import qgd.authorizationClient.forms._
 import models.User
+import play.api.i18n.MessagesApi
 
 import scala.concurrent.Future
 
@@ -31,7 +30,7 @@ class ApplicationController @Inject() (
    * @return The result to display.
    */
   def index = SecuredAction.async { implicit request =>
-    Future.successful(Ok(views.html.home(request.identity)))
+    Future.successful(Ok(qgd.authorizationClient.views.html.home(request.identity)))
   }
 
   /**
@@ -42,7 +41,7 @@ class ApplicationController @Inject() (
   def signIn = UserAwareAction.async { implicit request =>
     request.identity match {
       case Some(user) => Future.successful(Redirect(routes.ApplicationController.index()))
-      case None => Future.successful(Ok(views.html.signIn(SignInForm.form, socialProviderRegistry)))
+      case None => Future.successful(Ok(qgd.authorizationClient.views.html.signIn(SignInForm.form, socialProviderRegistry)))
     }
   }
 
@@ -54,7 +53,7 @@ class ApplicationController @Inject() (
   def signUp = UserAwareAction.async { implicit request =>
     request.identity match {
       case Some(user) => Future.successful(Redirect(routes.ApplicationController.index()))
-      case None => Future.successful(Ok(views.html.signUp(SignUpForm.form)))
+      case None => Future.successful(Ok(qgd.authorizationClient.views.html.signUp(SignUpForm.form)))
     }
   }
 
