@@ -32,7 +32,7 @@ class HtmlScalaViewAuthorizationResult @Inject() (
   /**
     * BadRequest sign in when sent data are incorrect or incomplete
     */
-  override def badRequestSignIn(form: Form[SignInForm.Data])(implicit request: Request[AnyContent]): Result =
+  override def badRequestSignIn(form: Form[SignInForm.Data])(implicit request: Request[Any]): Result =
     BadRequest(qgd.authorizationClient.views.html.signIn(form, socialProviderRegistry))
 
   /**

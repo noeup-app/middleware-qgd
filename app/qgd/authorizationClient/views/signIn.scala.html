@@ -12,7 +12,7 @@
     }
     <fieldset class="col-md-6 col-md-offset-3">
         <legend>@Messages("sign.in.credentials")</legend>
-        @helper.form(action = qgd.authorizationClient.controllers.routes.CredentialsAuthController.authenticate()) {
+        @helper.form(action = qgd.authorizationClient.controllers.routes.CredentialsAuthController.authenticateAction()) {
             @helper.CSRF.formField
             @b3.email(signInForm("email"), '_hiddenLabel -> Messages("email"), 'placeholder -> Messages("email"), 'class -> "form-control input-lg")
             @b3.password(signInForm("password"), '_hiddenLabel -> Messages("password"), 'placeholder -> Messages("password"), 'class -> "form-control input-lg")

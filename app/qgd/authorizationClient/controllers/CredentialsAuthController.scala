@@ -14,11 +14,15 @@ import net.ceedubs.ficus.Ficus._
 import play.api.Configuration
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.Action
+import play.api.mvc.{Result, AnyContent, Request, Action}
 import qgd.authorizationClient.forms.SignInForm
 import models.User
 import models.services.UserService
-import qgd.authorizationClient.results.AuthorizationResult
+import qgd.authorizationClient.models.Authenticate
+import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
+import qgd.authorizationClient.utils.BodyParserHelper._
+import qgd.authorizationClient.utils.RequestHelper
+import qgd.authorizationClient.models.Authenticate.authenticateFormat
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -43,47 +47,60 @@ class CredentialsAuthController @Inject() (
                                             authInfoRepository: AuthInfoRepository,
                                             credentialsProvider: CredentialsProvider,
                                             socialProviderRegistry: SocialProviderRegistry,
-                                            authorizationResult: AuthorizationResult,
+                                            htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
+                                            ajaxAuthorizationResult: AjaxAuthorizationResult,
                                             configuration: Configuration,
                                             clock: Clock)
   extends Silhouette[User, CookieAuthenticator] {
+
 
   /**
     * Authenticates a user against the credentials provider.
     *
     * @return The result to display.
     */
-  def authenticate = Action.async { implicit request =>
-    SignInForm.form.bindFromRequest.fold(
-      form => Future.successful(authorizationResult.badRequestSignIn(form)),
-      data => {
-        val credentials = Credentials(data.email, data.password)
-        credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
-          val result = authorizationResult.userIsAuthenticated()
-          userService.retrieve(loginInfo).flatMap {
-            case Some(user) =>
-              val c = configuration.underlying
-              env.authenticatorService.create(loginInfo).map {
-                case authenticator if data.rememberMe =>
-                  authenticator.copy(
-                    expirationDateTime = clock.now + c.as[FiniteDuration]("silhouette.authenticator.rememberMe.authenticatorExpiry"),
-                    idleTimeout = c.getAs[FiniteDuration]("silhouette.authenticator.rememberMe.authenticatorIdleTimeout"),
-                    cookieMaxAge = c.getAs[FiniteDuration]("silhouette.authenticator.rememberMe.cookieMaxAge")
-                  )
-                case authenticator => authenticator
-              }.flatMap { authenticator =>
-                env.eventBus.publish(LoginEvent(user, request, request2Messages))
-                env.authenticatorService.init(authenticator).flatMap { v =>
-                  env.authenticatorService.embed(v, result)
-                }
-              }
-            case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
+  def authenticateAction = Action.async(jsonOrAnyContent[Authenticate]) { implicit request =>
+    RequestHelper.isJson(request) match {
+      case true  =>
+        val authenticateData: Authenticate = request.body.asInstanceOf[Authenticate] // TODO Ugly
+        authenticate(authenticateData, ajaxAuthorizationResult)
+      case false =>
+        SignInForm.form.bindFromRequest.fold(
+          form => Future.successful(htmlScalaViewAuthorizationResult.badRequestSignIn(form)),
+          data => {
+            val authenticateData = Authenticate(data.email, data.password, data.rememberMe)
+            authenticate(authenticateData, htmlScalaViewAuthorizationResult)
           }
-        }.recover {
-          case e: ProviderException =>
-            authorizationResult.invalidCredentials()
-        }
+        )
+    }
+
+  }
+  def authenticate(authenticate: Authenticate, authorizationResult: AuthorizationResult)(implicit request: Request[Any]): Future[Result] = {
+    val credentials = authenticate.getCredentials
+    credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
+      val result = authorizationResult.userIsAuthenticated()
+      userService.retrieve(loginInfo).flatMap {
+        case Some(user) =>
+          val c = configuration.underlying
+          env.authenticatorService.create(loginInfo).map {
+            case authenticator if authenticate.rememberMe =>
+              authenticator.copy(
+                expirationDateTime = clock.now + c.as[FiniteDuration]("silhouette.authenticator.rememberMe.authenticatorExpiry"),
+                idleTimeout = c.getAs[FiniteDuration]("silhouette.authenticator.rememberMe.authenticatorIdleTimeout"),
+                cookieMaxAge = c.getAs[FiniteDuration]("silhouette.authenticator.rememberMe.cookieMaxAge")
+              )
+            case authenticator => authenticator
+          }.flatMap { authenticator =>
+            env.eventBus.publish(LoginEvent(user, request, request2Messages))
+            env.authenticatorService.init(authenticator).flatMap { v =>
+              env.authenticatorService.embed(v, result)
+            }
+          }
+        case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
       }
-    )
+    }.recover {
+      case e: ProviderException =>
+        authorizationResult.invalidCredentials()
+    }
   }
 }
