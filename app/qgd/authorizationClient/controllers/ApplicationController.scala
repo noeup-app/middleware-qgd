@@ -9,7 +9,7 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import play.api.libs.json.{Reads, Json}
 import play.api.mvc.{Action, Result, AnyContent}
 import qgd.authorizationClient.forms._
-import models.User
+import qgd.authorizationClient.models.User
 import play.api.i18n.MessagesApi
 import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
 import qgd.authorizationClient.utils.BodyParserHelper._

@@ -1,9 +1,9 @@
-package models.daos
+package qgd.authorizationClient.models.daos
 
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.LoginInfo
-import models.User
+import qgd.authorizationClient.models.User
 
 import scala.concurrent.Future
 

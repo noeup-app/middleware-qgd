@@ -1,14 +1,14 @@
-package models.services
+package qgd.authorizationClient.models.services
 
 import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import models.User
+import qgd.authorizationClient.models.User
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
-import models.daos.UserDAO
+import qgd.authorizationClient.models.daos.UserDAO
 
 import scala.concurrent.Future
 

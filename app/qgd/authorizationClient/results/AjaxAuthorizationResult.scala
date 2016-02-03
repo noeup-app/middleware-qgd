@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import models.User
+import qgd.authorizationClient.models.User
 import play.api.data.Form
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Request, AnyContent, Result}

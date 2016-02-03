@@ -16,8 +16,8 @@ import play.api.i18n.{Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Result, AnyContent, Request, Action}
 import qgd.authorizationClient.forms.SignInForm
-import models.User
-import models.services.UserService
+import qgd.authorizationClient.models.User
+import qgd.authorizationClient.models.services.UserService
 import qgd.authorizationClient.models.Authenticate
 import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
 import qgd.authorizationClient.utils.BodyParserHelper._

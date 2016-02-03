@@ -3,7 +3,7 @@ package qgd.authorizationClient.results
 import com.google.inject.ImplementedBy
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import models.User
+import qgd.authorizationClient.models.User
 import play.api.data.Form
 import play.api.mvc.{AnyContent, Results, Request, Result}
 import qgd.authorizationClient.forms.{SignUpForm, SignInForm}

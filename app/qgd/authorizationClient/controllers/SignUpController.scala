@@ -11,8 +11,8 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
 import play.api.data
 import qgd.authorizationClient.forms.SignUpForm
-import models.User
-import models.services.UserService
+import qgd.authorizationClient.models.User
+import qgd.authorizationClient.models.services.UserService
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Request, Result, Action}

@@ -1,4 +1,4 @@
-package models
+package qgd.authorizationClient.models
 
 import java.util.UUID
 
