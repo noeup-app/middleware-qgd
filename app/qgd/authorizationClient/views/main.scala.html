@@ -40,8 +40,8 @@
                             <li><a href="@qgd.authorizationClient.controllers.routes.ApplicationController.index">@u.fullName</a></li>
                             <li><a href="@qgd.authorizationClient.controllers.routes.ApplicationController.signOut">@Messages("sign.out")</a></li>
                         }.getOrElse {
-                            <li><a href="@qgd.authorizationClient.controllers.routes.ApplicationController.signIn">@Messages("sign.in")</a></li>
-                            <li><a href="@qgd.authorizationClient.controllers.routes.ApplicationController.signUp">@Messages("sign.up")</a></li>
+                            <li><a href="@qgd.authorizationClient.controllers.routes.ApplicationController.signInAction()">@Messages("sign.in")</a></li>
+                            <li><a href="@qgd.authorizationClient.controllers.routes.ApplicationController.signUpAction()">@Messages("sign.up")</a></li>
                         }
                     </ul>
                 </nav>

@@ -23,56 +23,59 @@ class AjaxAuthorizationResult  @Inject() (
   /**
     * Action to do if user is connected
     */
-  override def userIsConnected(): Result = ???
+  override def userIsConnected(): Result = Ok("User is connected")
 
   /**
     * Action to do if user is not registered
     */
-  override def userIsNotRegistered(implicit request: UserAwareRequest[AnyContent]): Result = ???
+  override def userIsNotRegistered(implicit request: UserAwareRequest[AnyContent]): Result = Ok("User is not registered")
 
   /**
     * Action to do after signOut
     */
-  override def userSignOut(): Result = ???
+  override def userSignOut(): Result = Ok("User successfully signed out")
 
   /**
     * Called when user is successfully logged
     */
-  override def userIsAuthenticated(): Result = ???
+  override def userIsAuthenticated(): Result = Ok("User is authenticated")
 
   /**
     * Called when user is successfully created
     */
-  override def userSuccessfullyCreated(): Result = ???
+  override def userSuccessfullyCreated(): Result = Ok("User successfully created")
 
   /**
     * Called when sent credentials are invalid
     */
-  override def invalidCredentials(): Result = ???
+  override def invalidCredentials(): Result = Ok("Your credentials are invalid")
 
   /**
     * Action to do if user is not connected
     */
-  override def userIsNotConnected(implicit request: UserAwareRequest[AnyContent]): Result = ???
+  override def userIsNotConnected(implicit request: UserAwareRequest[AnyContent]): Result =
+    Forbidden("User is not connected")
 
   /**
     * Called when user already exist
     */
-  override def userAlreadyExists(): Result = ???
+  override def userAlreadyExists(): Result = BadRequest("User already exists")
 
   /**
     * Used to get protected resource
     * WARNING : probably temporary
     */
-  override def getResource(implicit request: SecuredRequest[AnyContent]): Result = ???
+  override def getResource(implicit request: SecuredRequest[AnyContent]): Result = Ok("Resources")
 
   /**
     * BadRequest sign in when sent data are incorrect or incomplete
     */
-  override def badRequestSignIn(form: Form[SignInForm.Data])(implicit request: Request[AnyContent]): Result = ???
+  override def badRequestSignIn(form: Form[SignInForm.Data])(implicit request: Request[Any]): Result =
+    BadRequest("Incorrect or incomplete sign in information provided")
 
   /**
     * BadRequest sign up when sent data are incorrect or incomplete
     */
-  override def badRequestSignUp(form: Form[Data])(implicit request: Request[AnyContent]): Result = ???
+  override def badRequestSignUp(form: Form[Data])(implicit request: Request[Any]): Result =
+    BadRequest("Incorrect or incomplete sign in information provided")
 }

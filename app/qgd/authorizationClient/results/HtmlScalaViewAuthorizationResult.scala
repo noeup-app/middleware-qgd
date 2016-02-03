@@ -45,7 +45,7 @@ class HtmlScalaViewAuthorizationResult @Inject() (
     * Called when user already exist
     */
   override def userAlreadyExists(): Result =
-    Redirect(routes.ApplicationController.signUp())
+    Redirect(routes.ApplicationController.signUpAction())
       .flashing("error" -> Messages("user.exists"))
 
   /**
@@ -62,7 +62,7 @@ class HtmlScalaViewAuthorizationResult @Inject() (
     * Called when sent credentials are invalid
     */
   override def invalidCredentials(): Result =
-    Redirect(routes.ApplicationController.signIn())
+    Redirect(routes.ApplicationController.signInAction())
       .flashing("error" -> Messages("invalid.credentials"))
 
   /**

@@ -4,8 +4,8 @@
 
 # Home page
 GET         /                                qgd.authorizationClient.controllers.ApplicationController.index
-GET         /signIn                          qgd.authorizationClient.controllers.ApplicationController.signIn
-GET         /signUp                          qgd.authorizationClient.controllers.ApplicationController.signUp
+GET         /signIn                          qgd.authorizationClient.controllers.ApplicationController.signInAction
+GET         /signUp                          qgd.authorizationClient.controllers.ApplicationController.signUpAction
 GET         /signOut                         qgd.authorizationClient.controllers.ApplicationController.signOut
 GET         /authenticate/:provider          qgd.authorizationClient.controllers.SocialAuthController.authenticate(provider)
 POST        /authenticate/credentials        qgd.authorizationClient.controllers.CredentialsAuthController.authenticateAction
@@ -14,8 +14,3 @@ POST        /signUp                          qgd.authorizationClient.controllers
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                    controllers.Assets.at(path="/public", file)
 GET         /webjars/*file                   controllers.WebJarAssets.at(file)
-
-
-
-
-POST        /test                           qgd.authorizationClient.controllers.ApplicationController.test

@@ -59,7 +59,7 @@ class SocialAuthController @Inject() (
     }).recover {
       case e: ProviderException =>
         logger.error("Unexpected provider error", e)
-        Redirect(routes.ApplicationController.signIn()).flashing("error" -> Messages("could.not.authenticate"))
+        Redirect(routes.ApplicationController.signInAction()).flashing("error" -> Messages("could.not.authenticate"))
     }
   }
 }

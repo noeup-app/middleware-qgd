@@ -1,15 +1,19 @@
 package qgd.authorizationClient.controllers
 
+import java.util.Locale
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, LogoutEvent, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import play.api.mvc.{Result, AnyContent}
+import play.api.libs.json.{Reads, Json}
+import play.api.mvc.{Action, Result, AnyContent}
 import qgd.authorizationClient.forms._
 import models.User
 import play.api.i18n.MessagesApi
-import qgd.authorizationClient.results.AuthorizationResult
+import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
+import qgd.authorizationClient.utils.BodyParserHelper._
+import qgd.authorizationClient.utils.RequestHelper
 
 import scala.concurrent.Future
 
@@ -24,7 +28,8 @@ class ApplicationController @Inject() (
   val messagesApi: MessagesApi,
   val env: Environment[User, CookieAuthenticator],
   socialProviderRegistry: SocialProviderRegistry,
-  authorizationResult: AuthorizationResult)
+  htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
+  ajaxAuthorizationResult: AjaxAuthorizationResult)
   extends Silhouette[User, CookieAuthenticator] {
 
   /**
@@ -33,8 +38,14 @@ class ApplicationController @Inject() (
    * @return The result to display.
    */
   def index = SecuredAction.async { implicit request =>
-    val req = request.asInstanceOf[ApplicationController.this.authorizationResult.SecuredRequest[AnyContent]]
-    Future.successful(authorizationResult.getResource(req))
+    RequestHelper.isJson(request) match {
+      case true =>
+        val req = request.asInstanceOf[ApplicationController.this.ajaxAuthorizationResult.SecuredRequest[AnyContent]]
+        Future.successful(ajaxAuthorizationResult.getResource(req))
+      case false =>
+        val req = request.asInstanceOf[ApplicationController.this.htmlScalaViewAuthorizationResult.SecuredRequest[AnyContent]]
+        Future.successful(htmlScalaViewAuthorizationResult.getResource(req))
+    }
   }
 
   /**
@@ -42,8 +53,17 @@ class ApplicationController @Inject() (
    *
    * @return The result to display.
    */
-  def signIn = UserAwareAction.async { implicit request =>
-    val req = request.asInstanceOf[ApplicationController.this.authorizationResult.UserAwareRequest[AnyContent]]
+  def signInAction = UserAwareAction.async { implicit request =>
+    RequestHelper.isJson(request) match {
+      case true  =>
+        signInUp(request, ajaxAuthorizationResult)
+      case false =>
+        signInUp(request, htmlScalaViewAuthorizationResult)
+    }
+  }
+
+  def signInUp(request: UserAwareRequest[AnyContent], authorizationResult: AuthorizationResult): Future[Result] = {
+    val req = request.asInstanceOf[authorizationResult.UserAwareRequest[AnyContent]]
     request.identity match {
       case Some(user) => Future.successful(authorizationResult.userIsConnected())
       case None => Future.successful(authorizationResult.userIsNotConnected(req))
@@ -55,11 +75,12 @@ class ApplicationController @Inject() (
    *
    * @return The result to display.
    */
-  def signUp = UserAwareAction.async { implicit request =>
-    val req = request.asInstanceOf[ApplicationController.this.authorizationResult.UserAwareRequest[AnyContent]]
-    request.identity match {
-      case Some(user) => Future.successful(authorizationResult.userIsConnected())
-      case None => Future.successful(authorizationResult.userIsNotRegistered(req))
+  def signUpAction = UserAwareAction.async { implicit request =>
+    RequestHelper.isJson(request) match {
+      case true  =>
+        signInUp(request, ajaxAuthorizationResult)
+      case false =>
+        signInUp(request, htmlScalaViewAuthorizationResult)
     }
   }
 
@@ -69,7 +90,12 @@ class ApplicationController @Inject() (
    * @return The result to display.
    */
   def signOut = SecuredAction.async { implicit request =>
-    val result = authorizationResult.userSignOut()
+    val result = RequestHelper.isJson(request) match {
+      case true =>
+        ajaxAuthorizationResult.userSignOut()
+      case false =>
+        htmlScalaViewAuthorizationResult.userSignOut()
+    }
     env.eventBus.publish(LogoutEvent(request.identity, request, request2Messages))
 
     env.authenticatorService.discard(request.authenticator, result)
