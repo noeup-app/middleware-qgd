@@ -2,6 +2,7 @@ package qgd.authorizationClient.forms
 
 import play.api.data.Form
 import play.api.data.Forms._
+import play.api.libs.json.Json
 
 /**
  * The form which handles the sign up process.
@@ -33,4 +34,6 @@ object SignUpForm {
     lastName: String,
     email: String,
     password: String)
+
+  implicit val signUpFormDataFormat = Json.format[Data]
 }

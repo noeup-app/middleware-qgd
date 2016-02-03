@@ -38,7 +38,7 @@ class HtmlScalaViewAuthorizationResult @Inject() (
   /**
     * BadRequest sign up when sent data are incorrect or incomplete
     */
-  override def badRequestSignUp(form: Form[SignUpForm.Data])(implicit request: Request[AnyContent]): Result =
+  override def badRequestSignUp(form: Form[SignUpForm.Data])(implicit request: Request[Any]): Result =
     BadRequest(qgd.authorizationClient.views.html.signUp(form))
 
   /**

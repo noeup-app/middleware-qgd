@@ -24,7 +24,7 @@ trait AuthorizationResult extends Results with Silhouette[User, CookieAuthentica
   /**
     * BadRequest sign up when sent data are incorrect or incomplete
     */
-  def badRequestSignUp(form: Form[SignUpForm.Data])(implicit request: Request[AnyContent]): Result
+  def badRequestSignUp(form: Form[SignUpForm.Data])(implicit request: Request[Any]): Result
 
   /**
     * Called when user already exist
