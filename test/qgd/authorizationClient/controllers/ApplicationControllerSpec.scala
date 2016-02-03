@@ -6,7 +6,7 @@ import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.test._
-import models.User
+import qgd.authorizationClient.models.User
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
@@ -30,7 +30,7 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
         status(redirectResult) must be equalTo SEE_OTHER
 
         val redirectURL = redirectLocation(redirectResult).getOrElse("")
-        redirectURL must contain(routes.ApplicationController.signIn().toString())
+        redirectURL must contain(routes.ApplicationController.signInAction().toString())
 
         val Some(unauthorizedResult) = route(FakeRequest(GET, redirectURL))
 
