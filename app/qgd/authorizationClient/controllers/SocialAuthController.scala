@@ -11,7 +11,9 @@ import models.User
 import models.services.UserService
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.Action
+import play.api.mvc.{AnyContent, Request, Result, Action}
+import qgd.authorizationClient.results.{AuthorizationResult, AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult}
+import qgd.authorizationClient.utils.RequestHelper
 
 import scala.concurrent.Future
 
@@ -29,6 +31,8 @@ class SocialAuthController @Inject() (
   val env: Environment[User, CookieAuthenticator],
   userService: UserService,
   authInfoRepository: AuthInfoRepository,
+  htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
+  ajaxAuthorizationResult: AjaxAuthorizationResult,
   socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[User, CookieAuthenticator] with Logger {
 
@@ -38,7 +42,16 @@ class SocialAuthController @Inject() (
    * @param provider The ID of the provider to authenticate against.
    * @return The result to display.
    */
-  def authenticate(provider: String) = Action.async { implicit request =>
+  def authenticateAction(provider: String) = Action.async { implicit request =>
+    RequestHelper.isJson(request) match {
+      case true  =>
+        authenticate(provider, ajaxAuthorizationResult)
+      case false =>
+        authenticate(provider, htmlScalaViewAuthorizationResult)
+    }
+  }
+
+  def authenticate(provider: String, authorizationResult: AuthorizationResult)(implicit request: Request[AnyContent]): Future[Result] = {
     (socialProviderRegistry.get[SocialProvider](provider) match {
       case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
         p.authenticate().flatMap {
@@ -49,7 +62,7 @@ class SocialAuthController @Inject() (
             authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
             authenticator <- env.authenticatorService.create(profile.loginInfo)
             value <- env.authenticatorService.init(authenticator)
-            result <- env.authenticatorService.embed(value, Redirect(routes.ApplicationController.index()))
+            result <- env.authenticatorService.embed(value, authorizationResult.userSuccessfullyAuthenticated())
           } yield {
             env.eventBus.publish(LoginEvent(user, request, request2Messages))
             result
@@ -59,7 +72,7 @@ class SocialAuthController @Inject() (
     }).recover {
       case e: ProviderException =>
         logger.error("Unexpected provider error", e)
-        Redirect(routes.ApplicationController.signInAction()).flashing("error" -> Messages("could.not.authenticate"))
+        authorizationResult.unexpectedProviderError();
     }
   }
 }

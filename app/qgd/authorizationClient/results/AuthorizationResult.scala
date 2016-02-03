@@ -72,4 +72,13 @@ trait AuthorizationResult extends Results with Silhouette[User, CookieAuthentica
     */
   def userSignOut(): Result
 
+  /**
+    * Called when user is authenticated
+    */
+  def userSuccessfullyAuthenticated(): Result
+
+  /**
+    * Called when an unexpected error occurred
+    */
+  def unexpectedProviderError(): Result
 }

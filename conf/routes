@@ -7,7 +7,7 @@ GET         /                                qgd.authorizationClient.controllers
 GET         /signIn                          qgd.authorizationClient.controllers.ApplicationController.signInAction
 GET         /signUp                          qgd.authorizationClient.controllers.ApplicationController.signUpAction
 GET         /signOut                         qgd.authorizationClient.controllers.ApplicationController.signOut
-GET         /authenticate/:provider          qgd.authorizationClient.controllers.SocialAuthController.authenticate(provider)
+GET         /authenticate/:provider          qgd.authorizationClient.controllers.SocialAuthController.authenticateAction(provider)
 POST        /authenticate/credentials        qgd.authorizationClient.controllers.CredentialsAuthController.authenticateAction
 POST        /signUp                          qgd.authorizationClient.controllers.SignUpController.signUpAction
 

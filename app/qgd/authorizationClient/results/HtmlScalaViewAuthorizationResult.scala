@@ -91,4 +91,17 @@ class HtmlScalaViewAuthorizationResult @Inject() (
     */
   override def userSignOut(): Result =
     Redirect(routes.ApplicationController.index())
+
+  /**
+    * Called when user is authenticated
+    */
+  override def userSuccessfullyAuthenticated(): Result =
+    Redirect(routes.ApplicationController.index())
+
+  /**
+    * Called when an unexpected error occurred
+    */
+  override def unexpectedProviderError(): Result =
+    Redirect(routes.ApplicationController.signInAction()).flashing("error" -> Messages("could.not.authenticate"))
+
 }

@@ -78,4 +78,14 @@ class AjaxAuthorizationResult  @Inject() (
     */
   override def badRequestSignUp(form: Form[Data])(implicit request: Request[Any]): Result =
     BadRequest("Incorrect or incomplete sign in information provided")
+
+  /**
+    * Called when user is authenticated
+    */
+  override def userSuccessfullyAuthenticated(): Result = Ok("User successfully authenticated")
+
+  /**
+    * Called when an unexpected error occurred
+    */
+  override def unexpectedProviderError(): Result = InternalServerError("Unexpected error occurred")
 }
