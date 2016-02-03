@@ -56,13 +56,20 @@ class ApplicationController @Inject() (
   def signInAction = UserAwareAction.async { implicit request =>
     RequestHelper.isJson(request) match {
       case true  =>
-        signInUp(request, ajaxAuthorizationResult)
+        signIn(request, ajaxAuthorizationResult)
       case false =>
-        signInUp(request, htmlScalaViewAuthorizationResult)
+        signIn(request, htmlScalaViewAuthorizationResult)
     }
   }
 
-  def signInUp(request: UserAwareRequest[AnyContent], authorizationResult: AuthorizationResult): Future[Result] = {
+  /**
+    * Sign in generic process
+    *
+    * @param request the request
+    * @param authorizationResult the implementation of authorizationResult
+    * @return The result to return
+    */
+  def signIn(request: UserAwareRequest[AnyContent], authorizationResult: AuthorizationResult): Future[Result] = {
     val req = request.asInstanceOf[authorizationResult.UserAwareRequest[AnyContent]]
     request.identity match {
       case Some(user) => Future.successful(authorizationResult.userIsConnected())
@@ -78,9 +85,24 @@ class ApplicationController @Inject() (
   def signUpAction = UserAwareAction.async { implicit request =>
     RequestHelper.isJson(request) match {
       case true  =>
-        signInUp(request, ajaxAuthorizationResult)
+        signUp(request, ajaxAuthorizationResult)
       case false =>
-        signInUp(request, htmlScalaViewAuthorizationResult)
+        signUp(request, htmlScalaViewAuthorizationResult)
+    }
+  }
+
+  /**
+    * Sign up generic process
+    *
+    * @param request the request
+    * @param authorizationResult the implementation of authorizationResult
+    * @return The result to return
+    */
+  def signUp(request: UserAwareRequest[AnyContent], authorizationResult: AuthorizationResult): Future[Result] = {
+    val req = request.asInstanceOf[authorizationResult.UserAwareRequest[AnyContent]]
+    request.identity match {
+      case Some(user) => Future.successful(authorizationResult.userIsConnected())
+      case None => Future.successful(authorizationResult.userIsNotRegistered(req))
     }
   }
 
