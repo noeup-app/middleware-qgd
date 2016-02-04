@@ -7,32 +7,48 @@ import play.api.mvc.Request
 import play.api.i18n.Messages
 import scala.concurrent.Future
 
+
+trait WithScopeAuthorization extends Authorization[User, CookieAuthenticator]
+
+
+trait WithScopeUtils {
+
+  /**
+    * For each requiredScope, we check if at least one requiredScope starts with userScope
+    *
+    * @param requiredScopes the actions required scopes
+    * @param userScopes scopes the user has
+    * @return a list of boolean of size requiredScopes
+    */
+  def allRequiredScopesThatStartWithUserScope(requiredScopes: Seq[String], userScopes: List[String]): Seq[Boolean] =
+    requiredScopes.map{ requiredScope =>
+      userScopes.map(userScope => requiredScope.startsWith(userScope)).reduce(_ || _)
+    }
+}
+
 /**
-  * Only allows those users that have at least a service of the selected.
-  * Master service is always allowed.
-  * Ex: WithService("serviceA", "serviceB") => only users with services "serviceA" OR "serviceB" (or "master") are allowed.
+  * Only allows those users that have AT LEAST ONE correct scopes out of required scopes
   */
-case class WithScope(anyOf: String*) extends Authorization[User, CookieAuthenticator] {
+case class WithScope(anyOf: String*) extends WithScopeAuthorization{
   def isAuthorized[A](user: User, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
     WithScope.isAuthorized(user, anyOf: _*)
   }
 }
-object WithScope {
+object WithScope extends WithScopeUtils {
   def isAuthorized(user: User, anyOf: String*): Boolean =
-    anyOf.intersect(user.scopes).nonEmpty || user.scopes.contains("master")
+    allRequiredScopesThatStartWithUserScope(anyOf, user.scopes).contains(true)
 }
 
 /**
-  * Only allows those users that have every of the selected services.
-  * Master service is always allowed.
-  * Ex: Restrict("serviceA", "serviceB") => only users with services "serviceA" AND "serviceB" (or "master") are allowed.
+  * Only allows those users that have ALL correct scopes out of required scopes
   */
-case class WithScopes(allOf: String*) extends Authorization[User, CookieAuthenticator] {
+case class WithScopes(allOf: String*) extends WithScopeAuthorization {
   def isAuthorized[A](user: User, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
     WithScopes.isAuthorized(user, allOf: _*)
   }
 }
-object WithScopes {
+object WithScopes extends WithScopeUtils {
   def isAuthorized(user: User, allOf: String*): Boolean =
-    allOf.intersect(user.scopes).size == allOf.size || user.scopes.contains("master")
+    allRequiredScopesThatStartWithUserScope(allOf, user.scopes).reduce(_ && _)
+
 }

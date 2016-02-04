@@ -23,4 +23,5 @@ case class User(
                  fullName: Option[String],
                  email: Option[String],
                  scopes: List[String],
+                 roles: List[String],
                  avatarURL: Option[String]) extends Identity
