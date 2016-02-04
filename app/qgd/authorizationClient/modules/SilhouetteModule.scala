@@ -91,8 +91,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * @return The Silhouette environment.
    */
   @Provides
-  def provideSocialProviderRegistry(): SocialProviderRegistry = {
-    SocialProviderRegistry(Seq())
+  def provideSocialProviderRegistry(googleProvider: GoogleProvider): SocialProviderRegistry = {
+    SocialProviderRegistry(Seq(googleProvider))
   }
 
   /**
@@ -134,14 +134,14 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     new DelegableAuthInfoRepository(passwordInfoDAO, oauth1InfoDAO, oauth2InfoDAO, openIDInfoDAO)
   }
 
-//  /**
-//   * Provides the avatar service.
-//   *
-//   * @param httpLayer The HTTP layer implementation.
-//   * @return The avatar service implementation.
-//   */
-//  @Provides
-//  def provideAvatarService(httpLayer: HTTPLayer): AvatarService = new GravatarService(httpLayer)
+  /**
+   * Provides the avatar service.
+   *
+   * @param httpLayer The HTTP layer implementation.
+   * @return The avatar service implementation.
+   */
+  @Provides
+  def provideAvatarService(httpLayer: HTTPLayer): AvatarService = new GravatarService(httpLayer)
 
   /**
    * Provides the OAuth1 token secret provider.
@@ -202,22 +202,22 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
 //    new FacebookProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.facebook"))
 //  }
 //
-//  /**
-//   * Provides the Google provider.
-//   *
-//   * @param httpLayer The HTTP layer implementation.
-//   * @param stateProvider The OAuth2 state provider implementation.
-//   * @param configuration The Play configuration.
-//   * @return The Google provider.
-//   */
-//  @Provides
-//  def provideGoogleProvider(
-//    httpLayer: HTTPLayer,
-//    stateProvider: OAuth2StateProvider,
-//    configuration: Configuration): GoogleProvider = {
-//
-//    new GoogleProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.google"))
-//  }
+  /**
+   * Provides the Google provider.
+   *
+   * @param httpLayer The HTTP layer implementation.
+   * @param stateProvider The OAuth2 state provider implementation.
+   * @param configuration The Play configuration.
+   * @return The Google provider.
+   */
+  @Provides
+  def provideGoogleProvider(
+    httpLayer: HTTPLayer,
+    stateProvider: OAuth2StateProvider,
+    configuration: Configuration): GoogleProvider = {
+
+    new GoogleProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.google"))
+  }
 //
 //  /**
 //   * Provides the VK provider.

@@ -40,6 +40,7 @@ class SignUpController @Inject() (
   authInfoRepository: AuthInfoRepository,
   htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
   ajaxAuthorizationResult: AjaxAuthorizationResult,
+  avatarService: AvatarService,
   passwordHasher: PasswordHasher)
   extends Silhouette[User, CookieAuthenticator] {
 
@@ -82,8 +83,8 @@ class SignUpController @Inject() (
           avatarURL = None
         )
         for {
-        //avatar <- avatarService.retrieveURL(data.email)
-        //user <- userService.save(user.copy(avatarURL = avatar))
+          avatar <- avatarService.retrieveURL(data.email)
+          user <- userService.save(user.copy(avatarURL = avatar))
           user <- userService.save(user)
           authInfo <- authInfoRepository.add(loginInfo, authInfo)
           authenticator <- env.authenticatorService.create(loginInfo)
