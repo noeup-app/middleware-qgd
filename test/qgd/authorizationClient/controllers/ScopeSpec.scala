@@ -1,5 +1,6 @@
 package qgd.authorizationClient.controllers
 
+import java.io.File
 import java.util.UUID
 import javax.inject.Inject
 
@@ -8,7 +9,10 @@ import com.mohiva.play.silhouette.api.{Silhouette, Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import com.mohiva.play.silhouette.test._
-import play.api.i18n.MessagesApi
+import org.joda.time.DateTime
+import play.api
+import play.api.{Mode, Configuration}
+import play.api.i18n.{I18nComponents, Lang, Messages, MessagesApi}
 import qgd.authorizationClient.models.User
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.mock.Mockito
@@ -18,134 +22,22 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.test.{ FakeRequest, PlaySpecification, WithApplication }
 import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult}
 import qgd.authorizationClient.utils.{WithScopes, WithScope}
+import play.api.Play.current
+import play.api.i18n.Messages.Implicits._
+
 
 class ScopeSpec extends PlaySpecification with Mockito {
   sequential
 
-  "Scope filter" should {
-    "allow when no scope is required and when user has no scope" in new ContextWithoutScope {
-      new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.TestScopeController.testNoScopeRequired())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
-
-        status(result) must beEqualTo(OK)
-      }
-    }
-    "allow when no scope is required and when user has scope" in new ContextWithoutScope {
-      new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.TestScopeController.testNoScopeRequired())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
-
-        status(result) must beEqualTo(OK)
-      }
-    }
-
-    "filter when one scope is required and when user has no scope" in new ContextWithoutScope {
-      new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.TestScopeController.testScopeAdminRequired())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
-
-        status(result) must be equalTo SEE_OTHER
-      }
-    }
-
-
-    "filter when one scope is required and when user has one but different scope" in new ContextWithScopeAdmin {
-      new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.TestScopeController.testScopeBuyRequired())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
-
-        status(result) must be equalTo SEE_OTHER
-      }
-    }
-
-    "allow when one scope is required and when user has several scopes including the right one" in new ContextWithScopeAdminAndBuy  {
-      new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.TestScopeController.testScopeBuyRequired())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
-
-        status(result) must beEqualTo(OK)
-      }
-    }
-
-    "allow when one scope is required and when user has the right one" in new ContextWithScopeAdmin {
-      new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.TestScopeController.testScopeAdminRequired())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
-
-        status(result) must beEqualTo(OK)
-      }
-    }
-
-    "allow when one of two scopes is required and when user has the right one" in new ContextWithScopeAdmin {
-      new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.TestScopeController.testScopeAdminRequired())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
-
-        status(result) must beEqualTo(OK)
-      }
-    }
-
-    "allow when one of two scopes is required and when user has both" in new ContextWithScopeAdminAndBuy  {
-      new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.TestScopeController.testScopeAdminOrBuyRequired())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
-
-        status(result) must beEqualTo(OK)
-      }
-    }
-
-    "filter when two scopes are required and when user has only one" in new ContextWithScopeAdmin {
-      new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.TestScopeController.testScopeAdminAndBuyRequired())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
-
-        status(result) must be equalTo SEE_OTHER
-      }
-    }
-
-    "filter when two scopes are required and when user has both" in new ContextWithScopeAdminAndBuy  {
-      new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.TestScopeController.testScopeAdminAndBuyRequired())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
-
-        status(result) must beEqualTo(OK)
-      }
-    }
-
-  }
-
-
-
-
   /**
     * The contexts.
     */
-  trait ContextWithoutScope extends Scope {
-
-    /**
-      * A fake Guice module.
-      */
-    class FakeModule extends AbstractModule with ScalaModule {
-      def configure() = {
-        bind[Environment[User, CookieAuthenticator]].toInstance(env)
-      }
-    }
+  trait Context extends Scope {
 
     /**
       * An identity.
       */
-    def identity = User(
+    val identity = User(
       userID = UUID.randomUUID(),
       loginInfo = LoginInfo("facebook", "user@facebook.com"),
       firstName = None,
@@ -157,25 +49,176 @@ class ScopeSpec extends PlaySpecification with Mockito {
       avatarURL = None
     )
 
-    /**
-      * A Silhouette fake environment.
-      */
-    implicit val env: Environment[User, CookieAuthenticator] = new FakeEnvironment[User, CookieAuthenticator](Seq(identity.loginInfo -> identity))
 
-    /**
-      * The application.
-      */
-    lazy val application = new GuiceApplicationBuilder()
-      .overrides(new FakeModule)
-      .build()
+    def getInformations(scopes: List[String]): (User, CookieAuthenticator) = {
+      val u = identity.copy(scopes = scopes)
+      val cookieAuthenticator = new CookieAuthenticator("id", identity.loginInfo, new DateTime(), new DateTime(), None, None, None)
+      (u, cookieAuthenticator)
+    }
+
+    def checkAND(ok: Boolean, required_scopes: List[String], user_scopes: List[String]): Unit ={
+      val res = WithScopes.isAuthorized(identity.copy(scopes = user_scopes),required_scopes: _*)
+      res must beEqualTo(ok)
+    }
+    def checkOR(ok: Boolean, required_scopes: List[String], user_scopes: List[String]): Unit ={
+      val res = WithScope.isAuthorized(identity.copy(scopes = user_scopes),required_scopes: _*)
+      res must beEqualTo(ok)
+    }
   }
 
-  trait ContextWithScopeAdmin extends ContextWithoutScope{
-    override def identity = super.identity.copy(scopes = List("admin"))
+
+
+  "Scope filter" should {
+    "allow when no scope is required and when user has no scope" in  new Context {
+      checkAND(ok = true, required_scopes = List(), user_scopes = List())
+      checkOR(ok = true, required_scopes = List(), user_scopes = List())
+    }
+
+
+    "block when one scope is required and when user has no scope" in  new Context {
+
+      checkAND(ok = false, required_scopes = List("admin"), user_scopes = List())
+      checkOR(ok = false, required_scopes = List("admin"), user_scopes = List())
+
+    }
+
+    "block when several scopes are required and when user has no scope" in  new Context {
+
+      checkAND(ok = false, required_scopes = List("admin", "test.mal.azdazd"), user_scopes = List())
+      checkOR(ok = false, required_scopes = List("admin", "test.mal.azdazd"), user_scopes = List())
+
+    }
+
+
+    "allow when no scope is required and when user has one scope" in  new Context {
+
+      checkAND(ok = true, required_scopes = List(), user_scopes = List("admin"))
+      checkOR(ok = true, required_scopes = List(), user_scopes = List("admin"))
+
+    }
+
+    "allow when no scope is required and when user has several scope" in  new Context {
+
+      checkAND(ok = true, required_scopes = List(), user_scopes = List("admin", "test.mal.azdazd"))
+      checkOR(ok = true, required_scopes = List(), user_scopes = List("admin", "test.mal.azdazd"))
+
+    }
+
+
+    "allow when one scope is required and when user has the right one" in  new Context {
+
+      checkAND(ok = true, required_scopes = List("admin"), user_scopes = List("admin"))
+      checkOR(ok = true, required_scopes = List("admin"), user_scopes = List("admin"))
+
+    }
+
+    "block when one scope is required and when user has one but different scope" in  new Context {
+
+      checkAND(ok = false, required_scopes = List("admin"), user_scopes = List("hello"))
+      checkOR(ok = false, required_scopes = List("admin"), user_scopes = List("hello"))
+
+    }
+
+
+    "allow when one scope is required and when user has several scopes including the right one" in  new Context {
+
+      checkAND(ok = true, required_scopes = List("hello.world.test"), user_scopes = List("hello.world", "admin"))
+      checkOR(ok = true, required_scopes = List("hello.world.test"), user_scopes = List("hello.world", "admin"))
+
+    }
+
+    "block when one scope is required and when user has several scopes without the right one" in  new Context {
+
+      checkAND(ok = false, required_scopes = List("hello.world.test"), user_scopes = List("world", "admin"))
+      checkOR(ok = false, required_scopes = List("hello.world.test"), user_scopes = List("world", "admin"))
+
+    }
+
+
+
+    "[AND] block when several scopes are required and one scope is provided (user) but the provided one doesn't share any part of the required one" in  new Context {
+
+      checkAND(ok = false, required_scopes = List("hello.world.test", "world"), user_scopes = List("admin.world"))
+
+    }
+
+    "[AND] block when several scopes are required and one scope is provided (user) but the provided one shares a part of the required one" in  new Context {
+
+      checkAND(ok = false, required_scopes = List("hello.world.test", "world"), user_scopes = List("hello.world"))
+
+    }
+
+    "[AND] allow when several scopes are required and one scope is provided (user) but the provided one shares all of the required one" in  new Context {
+
+      checkAND(ok = true, required_scopes = List("hello.world.test", "hello.world"), user_scopes = List("hello"))
+
+    }
+
+
+    "[OR] block when several scopes are required and one scope is provided (user) but the provided one doesn't share any part of the required one" in  new Context {
+
+      checkOR(ok = false, required_scopes = List("hello.world.test", "world"), user_scopes = List("admin.world"))
+
+    }
+
+    "[OR] allow when several scopes are required and one scope is provided (user) but the provided one shares a part of the required one" in  new Context {
+
+      checkOR(ok = true, required_scopes = List("hello.world.test", "hello"), user_scopes = List("hello.world"))
+
+    }
+
+    "[OR] allow when several scopes are required and one scope is provided (user) but the provided one shares all of the required one" in  new Context {
+
+      checkOR(ok = true, required_scopes = List("hello.world.test", "hello.share"), user_scopes = List("hello"))
+
+    }
+
+
+
+    "[AND] block when several scopes are required and several scope is provided (user) but the provided one doesn't share any part of the required one" in  new Context {
+
+      checkAND(ok = false, required_scopes = List("hello.world.test", "world"), user_scopes = List("admin.world", "o.world.test"))
+
+    }
+
+    "[AND] block when several scopes are required and several scope is provided (user) but the provided one shares a part of the required one" in  new Context {
+
+      checkAND(ok = false, required_scopes = List("hello.world.test", "world", "tom.jerry"), user_scopes = List("hello.world", "tom"))
+
+    }
+
+    "[AND] allow when several scopes are required and several scope is provided (user) but the provided one shares all of the required one" in  new Context {
+
+      checkAND(ok = true, required_scopes = List("hello.world.test", "world.world"), user_scopes = List("hello", "world.world"))
+
+    }
+
+
+    "[OR] block when several scopes are required and several scope is provided (user) but the provided one doesn't share any part of the required one" in  new Context {
+
+      checkOR(ok = false, required_scopes = List("hello.world.test", "world"), user_scopes = List("admin.world", "tom"))
+
+    }
+
+    "[OR] allow when several scopes are required and several scope is provided (user) but the provided one shares a part of the required one" in  new Context {
+
+      checkOR(ok = true, required_scopes = List("hello.world.test", "hello", "tom.jerry"), user_scopes = List("hello.world", "tom.jerry"))
+
+    }
+
+    "[OR] allow when several scopes are required and several scope is provided (user) but the provided one shares all of the required one" in  new Context {
+
+      checkOR(ok = true, required_scopes = List("hello.world.test", "hello.share"), user_scopes = List("hello.world", "hello.share"))
+
+    }
+
+
+
   }
 
-  trait ContextWithScopeAdminAndBuy extends ContextWithoutScope{
-    override def identity = super.identity.copy(scopes = List("admin", "buy"))
-  }
+
+
+
+
 
 }

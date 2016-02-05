@@ -14,11 +14,3 @@ POST        /signUp                          qgd.authorizationClient.controllers
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                    controllers.Assets.at(path="/public", file)
 GET         /webjars/*file                   controllers.WebJarAssets.at(file)
-
-
-
-GET         /3ae7000a-0026-41d0-80e2-3823bf2fd471     qgd.authorizationClient.controllers.TestScopeController.testNoScopeRequired
-GET         /a2a88799-4d2f-4409-8b86-11c0207b0749     qgd.authorizationClient.controllers.TestScopeController.testScopeAdminAndBuyRequired
-GET         /50331809-1331-401c-a53e-428c6e824957     qgd.authorizationClient.controllers.TestScopeController.testScopeAdminOrBuyRequired
-GET         /ba8c5c0c-4e8e-43f6-9658-d4dacc520819     qgd.authorizationClient.controllers.TestScopeController.testScopeAdminRequired
-GET         /a57679bb-8272-4c65-8c67-c559b65969c1     qgd.authorizationClient.controllers.TestScopeController.testScopeBuyRequired

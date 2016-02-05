@@ -22,7 +22,7 @@ trait WithScopeUtils {
     */
   def allRequiredScopesThatStartWithUserScope(requiredScopes: Seq[String], userScopes: List[String]): Seq[Boolean] =
     requiredScopes.map{ requiredScope =>
-      userScopes.map(userScope => requiredScope.startsWith(userScope)).reduce(_ || _)
+      userScopes.map(userScope => requiredScope.startsWith(userScope)).fold(false)(_ || _)
     }
 }
 
@@ -36,6 +36,7 @@ case class WithScope(anyOf: String*) extends WithScopeAuthorization{
 }
 object WithScope extends WithScopeUtils {
   def isAuthorized(user: User, anyOf: String*): Boolean =
+    allRequiredScopesThatStartWithUserScope(anyOf, user.scopes).isEmpty ||
     allRequiredScopesThatStartWithUserScope(anyOf, user.scopes).contains(true)
 }
 
@@ -49,6 +50,7 @@ case class WithScopes(allOf: String*) extends WithScopeAuthorization {
 }
 object WithScopes extends WithScopeUtils {
   def isAuthorized(user: User, allOf: String*): Boolean =
-    allRequiredScopesThatStartWithUserScope(allOf, user.scopes).reduce(_ && _)
+    allRequiredScopesThatStartWithUserScope(allOf, user.scopes).isEmpty ||
+    allRequiredScopesThatStartWithUserScope(allOf, user.scopes).fold(true)(_ && _)
 
 }
