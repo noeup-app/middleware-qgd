@@ -123,4 +123,8 @@ class ApplicationController @Inject() (
     env.authenticatorService.discard(request.authenticator, result)
   }
 
+  def forgotPassword = Action {
+    NotImplemented
+  }
+
 }

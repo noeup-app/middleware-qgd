@@ -3,28 +3,84 @@
 @import b3.inline.fieldConstructor
 
 @main(Messages("sign.up.title")) {
-    @request.flash.get("error").map { msg =>
-        <div class="col-md-6 col-md-offset-3 alert alert-danger alert-error">
-            <a href="#" class="close" data-dismiss="alert">&times;</a>
-            <strong>@Messages("error")</strong> @msg
-        </div>
-    }
-    <fieldset class="col-md-6 col-md-offset-3">
-        <legend>@Messages("sign.up.account")</legend>
-        @helper.form(action = qgd.authorizationClient.controllers.routes.SignUpController.signUpAction()) {
-            @helper.CSRF.formField
-            @b3.text(signInForm("firstName"), '_hiddenLabel -> Messages("first.name"), 'placeholder -> Messages("first.name"), 'class -> "form-control input-lg")
-            @b3.text(signInForm("lastName"), '_hiddenLabel -> Messages("last.name"), 'placeholder -> Messages("last.name"), 'class -> "form-control input-lg")
-            @b3.text(signInForm("email"), '_hiddenLabel -> Messages("email"), 'placeholder -> Messages("email"), 'class -> "form-control input-lg")
-            @b3.password(signInForm("password"), '_hiddenLabel -> Messages("password"), 'placeholder -> Messages("password"), 'class -> "form-control input-lg")
-            <div class="form-group">
-                <div>
-                    <button id="submit" type="submit" value="submit" class="btn btn-lg btn-primary btn-block">@Messages("sign.up")</button>
+
+    <body id="app" class="app body-auth body-wide">
+
+        <div class="main-container">
+            <div id="content" class="content-container">
+                    <!-- uiView:  --><section data-ui-view="" class="view-container animate-fade-up" style=""><div class="page-signin ng-scope" ng-controller="authCtrl">
+
+                <div class="signin-header">
+                    <section class="logo text-center">
+                        <h1><a href="/" class="ng-binding"><img class="logo_qgd" src="@routes.Assets.at("images/qgd.png")" alt="Logo qgd"></a></h1>
+                    </section>
                 </div>
+
+                <div class="wrapper">
+                    <div class="main-body">
+
+                        <div class="card bg-white">
+                        @helper.form(action = qgd.authorizationClient.controllers.routes.SignUpController.signUpAction()) {
+                            @helper.CSRF.formField
+                            <div class="card-content">
+
+                                    @request.flash.get("error").map { msg =>
+                                        <div class="col-md-6 col-md-offset-3 alert alert-danger alert-error">
+                                            <a href="#" class="close" data-dismiss="alert">&times;</a>
+                                            <strong>@Messages("error")</strong> @msg
+                                        </div>
+                                    }
+
+                                    <fieldset>
+                                        <div class="form-group">
+                                            <div class="ui-input-group">
+                                                <input type="text" required="" id="firstName" name="firstName" class="form-control">
+                                                <span class="input-bar"></span>
+                                                <label for="firstName">First name</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="ui-input-group">
+                                                <input type="text" required="" id="lastName" name="lastName" class="form-control">
+                                                <span class="input-bar"></span>
+                                                <label for="lastName">Last name</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="ui-input-group">
+                                                <input type="text" required="" id="email" name="email"  class="form-control">
+                                                <span class="input-bar"></span>
+                                                <label for="email">Email</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="ui-input-group">
+                                                <input type="password" required="" id="password" name="password" class="form-control">
+                                                <span class="input-bar"></span>
+                                                <label for="password">Password</label>
+                                            </div>
+                                        </div>
+                                        <div class="divider"></div>
+                                        <div class="form-group">
+                                            <p class="additional-info text-small">By clicking on sign up, you agree to <a href="javascript:;"><i>terms</i></a> and <a href="javascript:;"><i>privacy policy</i></a></p>
+                                        </div>
+                                    </fieldset>
+                            </div>
+                            <div class="card-action no-border text-right">
+                                <a href="@qgd.authorizationClient.controllers.routes.ApplicationController.signInAction()">Login</a>
+                                <input type="submit" class="color-primary" value="Sign Up">
+                            </div>
+                        }
+                        </div>
+                    </div>
+                </div>
+
+            </div></section>
             </div>
-            <div class="sign-in-now">
-                <p>@Messages("already.a.member") <a href="@qgd.authorizationClient.controllers.routes.ApplicationController.signInAction()">@Messages("sign.in.now")</a></p>
-            </div>
-        }
-    </fieldset>
+        </div>
+
+    </body>
+
+
+
 }
