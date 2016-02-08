@@ -24,4 +24,4 @@ object PasswordInfoDAO {
 /**
   * The DAO to store the password information.
   */
-class PasswordInfoDAO extends AuthInfoDAOImpl[PasswordInfo]
+class PasswordInfoDAO @Inject() (val pool: Pool) extends AuthInfoDAOImpl[PasswordInfo]

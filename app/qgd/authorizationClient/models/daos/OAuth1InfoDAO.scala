@@ -22,4 +22,4 @@ object OAuth1InfoDAO {
 /**
   * The DAO to store the OAuth1 information.
   */
-class OAuth1InfoDAO extends AuthInfoDAOImpl[OAuth1Info]
+class OAuth1InfoDAO @Inject() (val pool: Pool) extends AuthInfoDAOImpl[OAuth1Info]
