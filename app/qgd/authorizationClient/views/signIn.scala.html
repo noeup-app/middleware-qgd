@@ -33,9 +33,9 @@
                                 <div class="card-content">
 
                                     @request.flash.get("error").map { msg =>
-                                        <div class="alert alert-danger alert-error">
+                                        <div class="alert ng-isolate-scope alert-danger alert-dismissible">
                                             <a href="#" class="close" data-dismiss="alert">&times;</a>
-                                            <strong>@Messages("error")</strong> @msg
+                                            @msg
                                         </div>
                                     }
 
@@ -67,16 +67,19 @@
                                                 </div>
                                             </div>
 
-                                            <p>
-                                                <input type="checkbox" id="rememberMe" checked="checked"/>
-                                                <label for="rememberMe">@Messages("remember.me")</label>
-                                            </p>
 
-
-                                            <div class="divider"></div>
                                             <div class="form-group">
                                                 <a href="@qgd.authorizationClient.controllers.routes.ApplicationController.forgotPassword()" class="text-muted text-small">Forgot your password?</a>
                                             </div>
+
+                                            <div class="divider"></div>
+
+
+                                            <p style="text-align: center ;">
+                                                <input type="checkbox" id="rememberMe" checked="checked"/>
+                                                <label style="font-weight: normal ;" for="rememberMe">@Messages("remember.me")</label>
+                                            </p>
+
                                         </fieldset>
                                     </div>
                                 </div>
