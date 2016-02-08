@@ -86,7 +86,6 @@ class SignUpController @Inject() (
         for {
           avatar <- avatarService.retrieveURL(data.email)
           user <- userService.save(user.copy(avatarURL = avatar))
-          user <- userService.save(user)
           authInfo <- authInfoRepository.add(loginInfo, authInfo)
           authenticator <- env.authenticatorService.create(loginInfo)
           value <- env.authenticatorService.init(authenticator)
