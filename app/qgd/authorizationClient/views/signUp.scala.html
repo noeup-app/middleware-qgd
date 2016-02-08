@@ -27,7 +27,7 @@
                                     @request.flash.get("error").map { msg =>
                                         <div class="alert ng-isolate-scope alert-danger alert-dismissible">
                                             <a href="#" class="close" data-dismiss="alert">&times;</a>
-                                            <strong>@Messages("error")</strong> @msg
+                                            @msg
                                         </div>
                                     }
 

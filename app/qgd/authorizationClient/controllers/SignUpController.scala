@@ -9,7 +9,7 @@ import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
-import play.api.data
+import play.api.{Logger, data}
 import qgd.authorizationClient.forms.SignUpForm
 import qgd.authorizationClient.models.User
 import qgd.authorizationClient.models.services.UserService
@@ -67,7 +67,7 @@ class SignUpController @Inject() (
   }
 
   def signUp(loginInfo: LoginInfo, data: SignUpForm.Data, authorizationResult: AuthorizationResult)(implicit request: Request[Any]): Future[Result] = {
-    userService.retrieve(loginInfo).flatMap {
+    val res = userService.retrieve(loginInfo).flatMap {
       case Some(user) =>
         Future.successful(authorizationResult.userAlreadyExists())
       case None =>
@@ -95,6 +95,12 @@ class SignUpController @Inject() (
           env.eventBus.publish(LoginEvent(user, request, request2Messages))
           result
         }
+    }
+    res.recover{
+      case e: Exception => {
+        Logger.error("An exception occurred", e)
+        authorizationResult.manageErrorSignUp(e)
+      }
     }
   }
 }

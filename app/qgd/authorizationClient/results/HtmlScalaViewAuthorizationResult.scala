@@ -104,4 +104,27 @@ class HtmlScalaViewAuthorizationResult @Inject() (
   override def unexpectedProviderError(): Result =
     Redirect(routes.ApplicationController.signInAction()).flashing("error" -> Messages("could.not.authenticate"))
 
+  /**
+    * Manage exceptions that can occur in sign up
+    *
+    * For example : JedisConnectionException: Could not get a resource from the pool
+    *
+    * @param e the exception
+    * @return the result with the error managed
+    */
+  override def manageErrorSignUp(e: Exception): Result =
+    Redirect(routes.ApplicationController.signUpAction())
+      .flashing("error" -> Messages("internal.server.error"))
+
+  /**
+    * Manage exceptions that can occur in sign in
+    *
+    * For example : JedisConnectionException: Could not get a resource from the pool
+    *
+    * @param e the exception
+    * @return the result with the error managed
+    */
+  override def manageErrorSignIn(e: Exception): Result =
+    Redirect(routes.ApplicationController.signInAction())
+      .flashing("error" -> Messages("internal.server.error"))
 }

@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import qgd.authorizationClient.models.User
 import play.api.data.Form
-import play.api.i18n.MessagesApi
+import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.{Request, AnyContent, Result}
 import qgd.authorizationClient.forms.SignInForm
 import qgd.authorizationClient.forms.SignUpForm.Data
@@ -88,4 +88,26 @@ class AjaxAuthorizationResult  @Inject() (
     * Called when an unexpected error occurred
     */
   override def unexpectedProviderError(): Result = InternalServerError("Unexpected error occurred")
+
+  /**
+    * Manage exceptions that can occur in sign up
+    *
+    * For example : JedisConnectionException: Could not get a resource from the pool
+    *
+    * @param e the exception
+    * @return the result with the error managed
+    */
+  override def manageErrorSignUp(e: Exception): Result =
+    InternalServerError(Messages("internal.server.error"))
+
+  /**
+    * Manage exceptions that can occur in sign in
+    *
+    * For example : JedisConnectionException: Could not get a resource from the pool
+    *
+    * @param e the exception
+    * @return the result with the error managed
+    */
+  override def manageErrorSignIn(e: Exception): Result =
+    InternalServerError(Messages("internal.server.error"))
 }

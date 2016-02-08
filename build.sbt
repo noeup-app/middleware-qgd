@@ -14,6 +14,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "anorm" % "2.4.0",
   "com.typesafe.play" %% "play-slick" % "1.1.1",
   "com.typesafe.play" %% "play-slick-evolutions" % "1.1.1",
+  "com.typesafe.play.modules" %% "play-modules-redis" % "2.4.0",
   //
   // TESTS
   specs2 % Test,
@@ -44,7 +45,8 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers ++= Seq(
   "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
-  "sonatype releases" at "http://oss.sonatype.org/content/repositories/releases"
+  "sonatype releases" at "http://oss.sonatype.org/content/repositories/releases",
+  "google-sedis-fix" at "http://pk11-scratch.googlecode.com/svn/trunk"
 )
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )

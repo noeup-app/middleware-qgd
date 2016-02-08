@@ -10,12 +10,13 @@ import play.api.libs.json.{Reads, Json}
 import play.api.mvc.{Action, Result, AnyContent}
 import qgd.authorizationClient.forms._
 import qgd.authorizationClient.models.User
-import play.api.i18n.MessagesApi
+import play.api.i18n.{Messages, MessagesApi}
 import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
 import qgd.authorizationClient.utils.BodyParserHelper._
 import qgd.authorizationClient.utils.RequestHelper
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * The basic application controller.

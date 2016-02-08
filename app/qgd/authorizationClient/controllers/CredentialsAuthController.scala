@@ -11,7 +11,7 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers._
 import net.ceedubs.ficus.Ficus._
-import play.api.Configuration
+import play.api.{Logger, Configuration}
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Result, AnyContent, Request, Action}
@@ -101,6 +101,10 @@ class CredentialsAuthController @Inject() (
     }.recover {
       case e: ProviderException =>
         authorizationResult.invalidCredentials()
+      case e: Exception => {
+        Logger.error("An exception ocurred", e)
+        authorizationResult.manageErrorSignIn(e)
+      }
     }
   }
 }

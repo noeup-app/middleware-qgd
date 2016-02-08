@@ -15,6 +15,25 @@ import qgd.authorizationClient.forms.{SignUpForm, SignInForm}
 @ImplementedBy(classOf[HtmlScalaViewAuthorizationResult])
 trait AuthorizationResult extends Results with Silhouette[User, CookieAuthenticator]{
 
+  /**
+    * Manage exceptions that can occur in sign in
+    *
+    *  For example : JedisConnectionException: Could not get a resource from the pool
+    *
+    * @param e the exception
+    * @return the result with the error managed
+    */
+  def manageErrorSignIn(e: Exception): Result
+
+  /**
+    * Manage exceptions that can occur in sign up
+    *
+    *  For example : JedisConnectionException: Could not get a resource from the pool
+    *
+    * @param e the exception
+    * @return the result with the error managed
+    */
+  def manageErrorSignUp(e: Exception): Result
 
   /**
     * BadRequest sign in when sent data are incorrect or incomplete

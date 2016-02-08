@@ -39,3 +39,6 @@ twitter = Twitter
 vk = VK
 xing = Xing
 yahoo = Yahoo
+
+
+internal.server.error = An internal server error occurred ! Please try again later.
