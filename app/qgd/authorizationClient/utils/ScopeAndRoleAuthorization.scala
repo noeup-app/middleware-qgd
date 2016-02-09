@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.Future
 
-case class ScopeRoleAuthorization(
+case class ScopeAndRoleAuthorization(
                                    scopeRoleAuthorization: WithScopeAuthorization,
                                    roleAuthorization: WithRoleAuthorization)
   extends Authorization[User, CookieAuthenticator] {
