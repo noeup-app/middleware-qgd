@@ -1,4 +1,4 @@
-name := "oauth2ProvideAuthenticateAndAuthorize"
+name := "middleware-qgd"
 
 version := "1.0"
 
