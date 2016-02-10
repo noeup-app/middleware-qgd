@@ -2,7 +2,9 @@ package qgd.authorizationClient.models
 
 import java.util.UUID
 
-import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
+import com.mohiva.play.silhouette.api
+import anorm.SqlParser._
+import anorm._
 
 /**
  * The user object.
@@ -17,11 +19,35 @@ import com.mohiva.play.silhouette.api.{ Identity, LoginInfo }
  */
 case class User(
                  id: UUID,
-                 loginInfo: LoginInfo,
+                 loginInfo: api.LoginInfo,
                  firstName: Option[String],
                  lastName: Option[String],
                  fullName: Option[String],
                  email: Option[String],
                  scopes: List[String],
                  roles: List[String],
-                 avatarURL: Option[String]) extends Identity
+                 avatarURL: Option[String]) extends api.Identity
+
+
+object User {
+
+  val parse = {
+    get[UUID]("id") ~
+    LoginInfo.parse ~
+    get[Option[String]]("first_name") ~
+    get[Option[String]]("last_name") ~
+    get[Option[String]]("email") ~
+    get[String]("role_name") ~
+    get[Option[String]]("avatar_url") map {
+      case id ~ loginInfo ~ fname ~ lname ~ email ~ role ~ avatar => {
+        val full_name: Option[String] = (fname, lname) match {
+          case (Some(fn), Some(ln)) => Some(s"$fn $ln")
+          case _                    => None
+        }
+        User(id, loginInfo, fname, lname, full_name, email, List(), List(role), avatar)
+      }
+    }
+
+  }
+
+}
