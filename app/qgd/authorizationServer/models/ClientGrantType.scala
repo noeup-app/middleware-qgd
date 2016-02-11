@@ -1,9 +1,9 @@
 package qgd.authorizationServer.models
 
 import java.util.UUID
-import anorm._
+import scala.language.postfixOps
 import anorm.SqlParser._
-import org.bouncycastle.jcajce.provider.symmetric.CAST5
+import anorm._
 import play.api.Play.current
 import play.api.db.DB
 import play.api.libs.json.Json
@@ -20,8 +20,8 @@ object ClientGrantType {
 
   val clientGrantType =
     get[String]("client_Id") ~
-    get[GrantType]("grantType") map {
-      case id ~ grantType => ClientGrantType(id, grantType)
+    get[String]("grantType") map {
+      case id ~ grantType => ClientGrantType(id, GrantType.fromString(grantType))
     }
 
   /**
@@ -81,7 +81,7 @@ object ClientGrantType {
         """)
       .on(
         "client_id" -> clientId,
-        "grant_type" -> grantType
+        "grant_type" -> grantType.toString // TODO TO BE DISCUSSED : Is it a good idea to use enum in pg?
       ).execute()
   )
 
