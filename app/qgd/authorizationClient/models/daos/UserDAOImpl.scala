@@ -7,8 +7,8 @@ import anorm._
 import com.mohiva.play.silhouette.api.LoginInfo
 import play.api.Logger
 import play.api.db.DB
-import qgd.authorizationClient.models.User
 import qgd.authorizationClient.utils.GlobalReadsWrites
+import qgd.resourceServer.models.Account
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.collection.mutable
@@ -28,8 +28,8 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
     * @param loginInfo The login info of the user to find.
     * @return The found user or None if no user for the given login info could be found.
     */
-  def find(loginInfo: LoginInfo): Future[Option[User]] = DB.withConnection({ implicit c =>
-    val req: List[User] = SQL("""SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url
+  def find(loginInfo: LoginInfo): Future[Option[Account]] = DB.withConnection({ implicit c =>
+    val req: List[Account] = SQL("""SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url
           FROM entity_users u
           INNER JOIN entity_relation_login_infos_users r_li_u ON u.id = r_li_u.user_id
           LEFT JOIN entity_relation_users_roles r_u_r ON u.id = r_u_r.user_id
@@ -38,7 +38,7 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
         """).on(
       'provider_id -> loginInfo.providerID,
       'provider_key -> loginInfo.providerKey
-    ).as(User.parse *)
+    ).as(Account.parse *)
 
     val res = {
       req
@@ -57,8 +57,8 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
     * @param userID The ID of the user to find.
     * @return The found user or None if no user for the given ID could be found.
     */
-  def find(userID: UUID): Future[Option[User]] = DB.withConnection({ implicit c =>
-    val req: List[User] = SQL("""SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url
+  def find(userID: UUID): Future[Option[Account]] = DB.withConnection({ implicit c =>
+    val req: List[Account] = SQL("""SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url
           FROM entity_users u
           INNER JOIN entity_relation_login_infos_users r_li_u ON u.id = r_li_u.user_id
           LEFT JOIN entity_relation_users_roles r_u_r ON u.id = r_u_r.user_id
@@ -66,7 +66,7 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
           WHERE u.id = {user_id};
         """).on(
       'user_id -> userID
-    ).as(User.parse *)
+    ).as(Account.parse *)
 
     val res = {
       req
@@ -86,7 +86,7 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
     * @param user The user to save.
     * @return The saved user.
     */
-  def save(user: User): Future[User] = DB.withTransaction({ implicit c =>
+  def save(user: Account): Future[Account] = DB.withTransaction({ implicit c =>
     // Add user
     add(user)
 
@@ -102,10 +102,11 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
 
   /**
     * Insert user in entity_users
+    *
     * @param user the user to insert
     * @param connection the implicit connection of the transaction
     */
-  def add(user: User)(implicit connection: Connection) = {
+  def add(user: Account)(implicit connection: Connection) = {
     SQL(
       """INSERT INTO entity_users (id, first_name, last_name, email, avatar_url, base_node)
           VALUES ({id}, {first_name}, {last_name}, {email}, {avatar_url}, {base_node});""")
@@ -127,7 +128,7 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
     * @param user the user to to link with the role
     * @param connection the implicit connection of the transaction
     */
-  def addUserRoles(user: User)(implicit connection: Connection) = {
+  def addUserRoles(user: Account)(implicit connection: Connection) = {
     def addUserRole(user_id: UUID, role: String): Boolean = {
       val roleId = UUID.randomUUID()
       SQL(
@@ -157,7 +158,7 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
     * @param user the user that contains login infos
     * @param connection the implicit connection of the transaction
     */
-  private def addLoginInfoAndRelationWithUser(user: User)(implicit connection: Connection) = {
+  private def addLoginInfoAndRelationWithUser(user: Account)(implicit connection: Connection) = {
     // Add login info
     val loginInfo = user.loginInfo
     Logger.warn(loginInfo.toString)

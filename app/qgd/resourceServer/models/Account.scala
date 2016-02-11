@@ -1,10 +1,11 @@
-package qgd.authorizationClient.models
+package qgd.resourceServer.models
 
 import java.util.UUID
 
-import com.mohiva.play.silhouette.api
 import anorm.SqlParser._
 import anorm._
+import com.mohiva.play.silhouette.api
+import qgd.authorizationClient.models.LoginInfo
 
 /**
  * The user object.
@@ -17,7 +18,7 @@ import anorm._
  * @param email Maybe the email of the authenticated provider.
  * @param avatarURL Maybe the avatar URL of the authenticated provider.
  */
-case class User(
+case class Account(
                  id: UUID,
                  loginInfo: api.LoginInfo,
                  firstName: Option[String],
@@ -29,7 +30,7 @@ case class User(
                  avatarURL: Option[String]) extends api.Identity
 
 
-object User {
+object Account {
 
   val parse = {
     get[UUID]("id") ~
@@ -44,9 +45,11 @@ object User {
           case (Some(fn), Some(ln)) => Some(s"$fn $ln")
           case _                    => None
         }
-        User(id, loginInfo, fname, lname, full_name, email, List(), List(role), avatar)
+        Account(id, loginInfo, fname, lname, full_name, email, List(), List(role), avatar)
       }
     }
+
+    // TODO Need to parse roles and scopes
 
   }
 

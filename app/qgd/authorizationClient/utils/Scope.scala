@@ -2,13 +2,13 @@ package qgd.authorizationClient.utils
 
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import qgd.authorizationClient.models.User
 import play.api.mvc.Request
 import play.api.i18n.Messages
+import qgd.resourceServer.models.Account
 import scala.concurrent.Future
 
 
-trait WithScopeAuthorization extends Authorization[User, CookieAuthenticator]
+trait WithScopeAuthorization extends Authorization[Account, CookieAuthenticator]
 
 
 trait WithScopeUtils {
@@ -30,12 +30,12 @@ trait WithScopeUtils {
   * Only allows those users that have AT LEAST ONE correct scopes out of required scopes
   */
 case class WithScope(anyOf: String*) extends WithScopeAuthorization{
-  def isAuthorized[A](user: User, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
+  def isAuthorized[A](user: Account, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
     WithScope.isAuthorized(user, anyOf: _*)
   }
 }
 object WithScope extends WithScopeUtils {
-  def isAuthorized(user: User, anyOf: String*): Boolean =
+  def isAuthorized(user: Account, anyOf: String*): Boolean =
     allRequiredScopesThatStartWithUserScope(anyOf, user.scopes).isEmpty ||
     allRequiredScopesThatStartWithUserScope(anyOf, user.scopes).contains(true)
 }
@@ -44,12 +44,12 @@ object WithScope extends WithScopeUtils {
   * Only allows those users that have ALL correct scopes out of required scopes
   */
 case class WithScopes(allOf: String*) extends WithScopeAuthorization {
-  def isAuthorized[A](user: User, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
+  def isAuthorized[A](user: Account, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
     WithScopes.isAuthorized(user, allOf: _*)
   }
 }
 object WithScopes extends WithScopeUtils {
-  def isAuthorized(user: User, allOf: String*): Boolean =
+  def isAuthorized(user: Account, allOf: String*): Boolean =
     allRequiredScopesThatStartWithUserScope(allOf, user.scopes).isEmpty ||
     allRequiredScopesThatStartWithUserScope(allOf, user.scopes).fold(true)(_ && _)
 

@@ -6,13 +6,13 @@ import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.test._
-import qgd.authorizationClient.models.User
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.test.{ FakeRequest, PlaySpecification, WithApplication }
+import qgd.resourceServer.models.Account
 
 /**
  * Test case for the [[ApplicationController]] class.
@@ -61,14 +61,14 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
      */
     class FakeModule extends AbstractModule with ScalaModule {
       def configure() = {
-        bind[Environment[User, CookieAuthenticator]].toInstance(env)
+        bind[Environment[Account, CookieAuthenticator]].toInstance(env)
       }
     }
 
     /**
      * An identity.
      */
-    val identity = User(
+    val identity = Account(
       id = UUID.randomUUID(),
       loginInfo = LoginInfo("facebook", "user@facebook.com"),
       firstName = None,
@@ -83,7 +83,7 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
     /**
      * A Silhouette fake environment.
      */
-    implicit val env: Environment[User, CookieAuthenticator] = new FakeEnvironment[User, CookieAuthenticator](Seq(identity.loginInfo -> identity))
+    implicit val env: Environment[Account, CookieAuthenticator] = new FakeEnvironment[Account, CookieAuthenticator](Seq(identity.loginInfo -> identity))
 
     /**
      * The application.

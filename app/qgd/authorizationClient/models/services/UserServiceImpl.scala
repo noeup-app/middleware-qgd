@@ -5,10 +5,10 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import qgd.authorizationClient.models.User
 import play.api.Logger
 import play.api.libs.concurrent.Execution.Implicits._
 import qgd.authorizationClient.models.daos.UserDAO
+import qgd.resourceServer.models.Account
 
 import scala.concurrent.Future
 
@@ -25,7 +25,7 @@ class UserServiceImpl @Inject() (userDAO: UserDAO) extends UserService {
    * @param loginInfo The login info to retrieve a user.
    * @return The retrieved user or None if no user could be retrieved for the given login info.
    */
-  def retrieve(loginInfo: LoginInfo): Future[Option[User]] = {
+  def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
     Logger.debug("UserServiceImpl.retrieve : " + loginInfo)
     userDAO.find(loginInfo)
   }
@@ -36,7 +36,7 @@ class UserServiceImpl @Inject() (userDAO: UserDAO) extends UserService {
    * @param user The user to save.
    * @return The saved user.
    */
-  def save(user: User) = {
+  def save(user: Account) = {
     Logger.debug("UserServiceImpl.save : " + user)
     userDAO.save(user)
   }
@@ -61,7 +61,7 @@ class UserServiceImpl @Inject() (userDAO: UserDAO) extends UserService {
           avatarURL = profile.avatarURL
         ))
       case None => // Insert a new user
-        userDAO.save(User(
+        userDAO.save(Account(
           id = UUID.randomUUID(),
           loginInfo = profile.loginInfo,
           firstName = profile.firstName,

@@ -3,17 +3,17 @@ package qgd.authorizationClient.results
 import com.google.inject.ImplementedBy
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import qgd.authorizationClient.models.User
 import play.api.data.Form
 import play.api.mvc.{AnyContent, Results, Request, Result}
 import qgd.authorizationClient.forms.{SignUpForm, SignInForm}
+import qgd.resourceServer.models.Account
 
 
 /**
   * Define results (responses HTTP) from the AuthorizationClient
   */
 @ImplementedBy(classOf[HtmlScalaViewAuthorizationResult])
-trait AuthorizationResult extends Results with Silhouette[User, CookieAuthenticator]{
+trait AuthorizationResult extends Results with Silhouette[Account, CookieAuthenticator]{
 
   /**
     * Manage exceptions that can occur in sign in

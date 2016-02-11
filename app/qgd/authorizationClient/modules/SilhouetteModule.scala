@@ -18,7 +18,6 @@ import com.mohiva.play.silhouette.impl.providers.openid.services.PlayOpenIDServi
 import com.mohiva.play.silhouette.impl.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.services._
 import com.mohiva.play.silhouette.impl.util._
-import qgd.authorizationClient.models.User
 import qgd.authorizationClient.models.daos._
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
@@ -30,6 +29,7 @@ import play.api.libs.ws.WSClient
 import qgd.authorizationClient.models.daos._
 import qgd.authorizationClient.models.services.{UserServiceImpl, UserService}
 import qgd.authorizationClient.results.HtmlScalaViewAuthorizationResult
+import qgd.resourceServer.models.Account
 
 /**
  * The Guice module which wires all Silhouette dependencies.
@@ -75,9 +75,9 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
   def provideEnvironment(
     userService: UserService,
     authenticatorService: AuthenticatorService[CookieAuthenticator],
-    eventBus: EventBus): Environment[User, CookieAuthenticator] = {
+    eventBus: EventBus): Environment[Account, CookieAuthenticator] = {
 
-    Environment[User, CookieAuthenticator](
+    Environment[Account, CookieAuthenticator](
       userService,
       authenticatorService,
       Seq(),

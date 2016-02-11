@@ -2,14 +2,14 @@ package qgd.authorizationClient.models.services
 
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import qgd.authorizationClient.models.User
+import qgd.resourceServer.models.Account
 
 import scala.concurrent.Future
 
 /**
  * Handles actions to users.
  */
-trait UserService extends IdentityService[User] {
+trait UserService extends IdentityService[Account] {
 
   /**
    * Saves a user.
@@ -17,7 +17,7 @@ trait UserService extends IdentityService[User] {
    * @param user The user to save.
    * @return The saved user.
    */
-  def save(user: User): Future[User]
+  def save(user: Account): Future[Account]
 
   /**
    * Saves the social profile for a user.
@@ -27,5 +27,5 @@ trait UserService extends IdentityService[User] {
    * @param profile The social profile to save.
    * @return The user for whom the profile was saved.
    */
-  def save(profile: CommonSocialProfile): Future[User]
+  def save(profile: CommonSocialProfile): Future[Account]
 }

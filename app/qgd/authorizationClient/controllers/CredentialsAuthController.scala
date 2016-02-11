@@ -16,13 +16,13 @@ import play.api.i18n.{Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Result, AnyContent, Request, Action}
 import qgd.authorizationClient.forms.SignInForm
-import qgd.authorizationClient.models.User
 import qgd.authorizationClient.models.services.UserService
 import qgd.authorizationClient.models.Authenticate
 import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
 import qgd.authorizationClient.utils.BodyParserHelper._
 import qgd.authorizationClient.utils.RequestHelper
 import qgd.authorizationClient.models.Authenticate.authenticateFormat
+import qgd.resourceServer.models.Account
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -42,7 +42,7 @@ import scala.language.postfixOps
   */
 class CredentialsAuthController @Inject() (
                                             val messagesApi: MessagesApi,
-                                            val env: Environment[User, CookieAuthenticator],
+                                            val env: Environment[Account, CookieAuthenticator],
                                             userService: UserService,
                                             authInfoRepository: AuthInfoRepository,
                                             credentialsProvider: CredentialsProvider,
@@ -51,7 +51,7 @@ class CredentialsAuthController @Inject() (
                                             ajaxAuthorizationResult: AjaxAuthorizationResult,
                                             configuration: Configuration,
                                             clock: Clock)
-  extends Silhouette[User, CookieAuthenticator] {
+  extends Silhouette[Account, CookieAuthenticator] {
 
 
   /**

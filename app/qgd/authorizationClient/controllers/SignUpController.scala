@@ -11,7 +11,6 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
 import play.api.{Logger, data}
 import qgd.authorizationClient.forms.SignUpForm
-import qgd.authorizationClient.models.User
 import qgd.authorizationClient.models.services.UserService
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits._
@@ -21,6 +20,7 @@ import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAu
 import qgd.authorizationClient.utils.BodyParserHelper._
 import qgd.authorizationClient.utils.RequestHelper
 import qgd.authorizationClient.forms.SignUpForm.signUpFormDataFormat
+import qgd.resourceServer.models.Account
 
 import scala.concurrent.Future
 
@@ -34,15 +34,15 @@ import scala.concurrent.Future
  * @param passwordHasher The password hasher implementation.
  */
 class SignUpController @Inject() (
-  val messagesApi: MessagesApi,
-  val env: Environment[User, CookieAuthenticator],
-  userService: UserService,
-  authInfoRepository: AuthInfoRepository,
-  htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
-  ajaxAuthorizationResult: AjaxAuthorizationResult,
-  avatarService: AvatarService,
-  passwordHasher: PasswordHasher)
-  extends Silhouette[User, CookieAuthenticator] {
+                                   val messagesApi: MessagesApi,
+                                   val env: Environment[Account, CookieAuthenticator],
+                                   userService: UserService,
+                                   authInfoRepository: AuthInfoRepository,
+                                   htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
+                                   ajaxAuthorizationResult: AjaxAuthorizationResult,
+                                   avatarService: AvatarService,
+                                   passwordHasher: PasswordHasher)
+  extends Silhouette[Account, CookieAuthenticator] {
 
   /**
    * Registers a new user.
@@ -72,7 +72,7 @@ class SignUpController @Inject() (
         Future.successful(authorizationResult.userAlreadyExists())
       case None =>
         val authInfo = passwordHasher.hash(data.password)
-        val user = User(
+        val user = Account(
           id = UUID.randomUUID(),
           loginInfo = loginInfo,
           firstName = Some(data.firstName),

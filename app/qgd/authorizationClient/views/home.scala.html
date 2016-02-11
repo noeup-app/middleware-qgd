@@ -1,4 +1,5 @@
-@(user: qgd.authorizationClient.models.User)(implicit messages: Messages)
+@import qgd.resourceServer.models.Account
+@(user: Account)(implicit messages: Messages)
 
 
 @main(Messages("home.title"), Some(user)) {

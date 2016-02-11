@@ -4,12 +4,12 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import qgd.authorizationClient.models.User
 import play.api.data.Form
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.{Request, AnyContent, Result}
 import qgd.authorizationClient.forms.SignInForm
 import qgd.authorizationClient.forms.SignUpForm.Data
+import qgd.resourceServer.models.Account
 
 
 /**
@@ -17,7 +17,7 @@ import qgd.authorizationClient.forms.SignUpForm.Data
   */
 class AjaxAuthorizationResult  @Inject() (
                                            val messagesApi: MessagesApi,
-                                           val env: Environment[User, CookieAuthenticator])
+                                           val env: Environment[Account, CookieAuthenticator])
   extends AuthorizationResult {
 
   /**

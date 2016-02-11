@@ -7,13 +7,13 @@ import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
-import qgd.authorizationClient.models.User
 import qgd.authorizationClient.models.services.UserService
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{AnyContent, Request, Result, Action}
 import qgd.authorizationClient.results.{AuthorizationResult, AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult}
 import qgd.authorizationClient.utils.RequestHelper
+import qgd.resourceServer.models.Account
 
 import scala.concurrent.Future
 
@@ -27,14 +27,14 @@ import scala.concurrent.Future
  * @param socialProviderRegistry The social provider registry.
  */
 class SocialAuthController @Inject() (
-  val messagesApi: MessagesApi,
-  val env: Environment[User, CookieAuthenticator],
-  userService: UserService,
-  authInfoRepository: AuthInfoRepository,
-  htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
-  ajaxAuthorizationResult: AjaxAuthorizationResult,
-  socialProviderRegistry: SocialProviderRegistry)
-  extends Silhouette[User, CookieAuthenticator] with Logger {
+                                       val messagesApi: MessagesApi,
+                                       val env: Environment[Account, CookieAuthenticator],
+                                       userService: UserService,
+                                       authInfoRepository: AuthInfoRepository,
+                                       htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
+                                       ajaxAuthorizationResult: AjaxAuthorizationResult,
+                                       socialProviderRegistry: SocialProviderRegistry)
+  extends Silhouette[Account, CookieAuthenticator] with Logger {
 
   /**
    * Authenticates a user against a social provider.

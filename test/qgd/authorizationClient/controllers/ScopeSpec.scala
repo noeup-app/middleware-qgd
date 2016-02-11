@@ -13,7 +13,6 @@ import org.joda.time.DateTime
 import play.api
 import play.api.{Mode, Configuration}
 import play.api.i18n.{I18nComponents, Lang, Messages, MessagesApi}
-import qgd.authorizationClient.models.User
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
@@ -24,6 +23,7 @@ import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAu
 import qgd.authorizationClient.utils.{WithScopes, WithScope}
 import play.api.Play.current
 import play.api.i18n.Messages.Implicits._
+import qgd.resourceServer.models.Account
 
 
 class ScopeSpec extends PlaySpecification with Mockito {
@@ -37,7 +37,7 @@ class ScopeSpec extends PlaySpecification with Mockito {
     /**
       * An identity.
       */
-    val identity = User(
+    val identity = Account(
       id = UUID.randomUUID(),
       loginInfo = LoginInfo("facebook", "user@facebook.com"),
       firstName = None,
@@ -50,7 +50,7 @@ class ScopeSpec extends PlaySpecification with Mockito {
     )
 
 
-    def getInformations(scopes: List[String]): (User, CookieAuthenticator) = {
+    def getInformations(scopes: List[String]): (Account, CookieAuthenticator) = {
       val u = identity.copy(scopes = scopes)
       val cookieAuthenticator = new CookieAuthenticator("id", identity.loginInfo, new DateTime(), new DateTime(), None, None, None)
       (u, cookieAuthenticator)
