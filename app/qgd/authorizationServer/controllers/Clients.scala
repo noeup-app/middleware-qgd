@@ -1,172 +1,159 @@
-package qgd.authorizationServer.controllers
+package qgd.authorizationServer
+package controllers
 
-import play.api.mvc.{ Action, Controller }
-import models.oauth2.Client
-import play.api.db.slick.DBAction
-import play.api.data._
-import play.api.data.Forms._
-import play.api.Play.current
-import play.api.db.slick.DB
 import java.util.UUID
-import oauth2.Crypto
+import javax.inject.Inject
 
-object Clients extends Controller with Secured {
+import play.api.data.Forms._
+import play.api.data._
+import play.api.i18n.MessagesApi
+import play.api.mvc.{Action, Controller}
+import qgd.authorizationServer.models.Client
+import qgd.errorHandle.ExceptionEither._
+import play.api.Play.current
+import play.api.i18n.Messages.Implicits._
+
+import scalaz.{-\/, \/-}
+
+
+class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controller with SecuredAdminConsole {
   val log = play.Logger.of("application")
 
   val clientForm = Form(mapping(
     "id" -> nonEmptyText,
+    "name" -> nonEmptyText,
     "secret" -> nonEmptyText,
+    "grantType" -> optional(text),
     "description" -> nonEmptyText,
     "redirectUri" -> nonEmptyText,
-    "scope" -> text)(Clients.apply)(Clients.unapply))
+    "scope" -> optional(text))(Client.apply)(Client.unapply))
 
-  def list = withUser { user =>
-    implicit request =>
-      log.debug("Clients.list " + request.method)
-
-      val allClients = DB.withSession { implicit session =>
-        val clientsFromDb = models.oauth2.Clients.findByUser(user.username)
-        println(clientsFromDb)
-        clientsFromDb
-      }
-
-      Ok(views.html.clients.list(allClients, user))
+  def list = withAuth { username => implicit request =>
+    val allClients = models.Client.list()
+    Ok(qgd.authorizationServer.views.html.clients.list(allClients, None))
   }
 
-  def create() = withUser { user =>
-    implicit request =>
-      log.debug("Clients.newClient " + request.method)
-
+  def create() = withAuth { username => implicit request =>
       // generate unique and random values for id and secret
-      val clientId = Crypto.generateUUID
-      val clientSecret = Crypto.generateUUID
-      val boundForm = clientForm.bind(Map("id" -> clientId, "secret" -> clientSecret))
-
-      Ok(views.html.clients.new_client(boundForm, user))
+      val clientId = UUID.randomUUID().toString        // TODO : change format to fit RFC requierements
+      val clientSecret = UUID.randomUUID().toString    // TODO : change format to fit RFC requierements
+      val boundForm = clientForm.bind(
+        Map("id" -> clientId,
+            "secret" -> clientSecret)
+      )
+      Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None))
   }
 
-  def edit(id: String) = withUser { user =>
-    implicit request =>
-      log.debug("Clients.newClient " + request.method)
-
-      DB.withSession { implicit session =>
-        val clientOpt = models.oauth2.Clients.get(id)
-        clientOpt match {
-          case None => NotFound
-          case Some(client) =>
-            val boundForm = clientForm.bind(Map("id" -> client.id, "secret" -> client.secret,
-              "description" -> client.description, "redirectUri" -> client.redirectUri,
-              "scope" -> client.scope))
-
-            Ok(views.html.clients.edit_client(boundForm, user))
-        }
-      }
+  def edit(id: String) = withAuth { username => implicit request =>
+    val clientOpt = models.Client.findByClientId(id)
+    clientOpt match {
+      case None => NotFound
+      case Some(client) =>
+        val boundForm = clientForm.bind(
+          Map("id" -> client.clientId,
+              "name" -> client.clientName,
+              "secret" -> client.clientSecret,
+              "grantType" -> client.authorizedGrantTypes.getOrElse(""),
+              "description" -> client.description,
+              "redirectUri" -> client.redirect_uri,
+              "scope" -> client.defaultScope.getOrElse(""))
+          )
+        Ok(qgd.authorizationServer.views.html.clients.edit_client(boundForm, None))
+    }
   }
 
-  def get(id: String) = withUser { user =>
-    implicit request =>
-      log.debug("Clients.get " + request.method)
-      DB.withSession { implicit session =>
-        val clientOpt = models.oauth2.Clients.get(id)
-        clientOpt match {
-          case None => NotFound
-          case Some(client) =>
-            Ok(views.html.clients.show_client(client, user))
-        }
-      }
+  def get(id: String) = withAuth { username => implicit request =>
+    val clientOpt = models.Client.findByClientId(id)
+    clientOpt match {
+      case None => NotFound
+      case Some(client) =>
+        Ok(qgd.authorizationServer.views.html.clients.show_client(client, None))
+    }
   }
 
-  def delete(id: String) = withUser { user =>
-    implicit request =>
-      log.debug("Clients.delete " + request.method)
-      NotImplemented
-  }
+  def delete(id: String) = Action {NotImplemented}
 
-  def add = withUser { user =>
-    implicit request =>
-      log.debug("Clients.add " + request.method)
-      request.method match {
+  def add = withAuth { username => implicit request =>
+     request.method match {
         case "POST" =>
-          log.debug(request.body.toString)
-
           val boundForm = clientForm.bindFromRequest
+          // validate rules
           boundForm.fold(
 
-            // validate rules
-            // form has errors
             formWithErrors => {
               log.debug("Form has errors")
               log.debug(formWithErrors.errors.toString)
-              Ok(views.html.clients.new_client(formWithErrors, user)).flashing(
-                "error" -> "Form has errors. Please enter correct values.")
+              Ok(qgd.authorizationServer.views.html.clients.new_client(formWithErrors, None))
+                .flashing("error" -> "Form has errors. Please enter correct values.")
             },
 
             clientDetails => {
               // check for duplicate
-              log.debug(clientDetails.toString)
-              DB.withSession { implicit session =>
-                models.oauth2.Clients.get(clientDetails.id) match {
+                models.Client.findByClientId(clientDetails.clientId) match {
                   case None =>
-                    // save
                     log.debug("Saving new client")
-                    val client = models.oauth2.Client(clientDetails.id, user.username, clientDetails.secret,
-                      clientDetails.description, clientDetails.redirectUri, clientDetails.scope)
-                    models.oauth2.Clients.insert(client)
-                    // redirect to list
-                    log.debug("redirecting to client list")
-                    Redirect(routes.Clients.list)
+                    val client = Client(clientDetails.clientId,
+                                        clientDetails.clientName,
+                                        clientDetails.clientSecret,
+                                        clientDetails.authorizedGrantTypes,
+                                        clientDetails.description,
+                                        clientDetails.redirect_uri,
+                                        clientDetails.defaultScope)
+                    Try(models.Client.insert(client)) match {
+                      case -\/(_) =>
+                        log.debug("Error while saving client entry")
+                        Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None)).flashing("error" -> "Please try again")
+                      case \/-(_) =>
+                        log.debug("Successfully added. Redirecting to client list")
+                        Redirect(qgd.authorizationServer.controllers.routes.Clients.list)
+                    }
                   case Some(c) => // duplicate
                     log.debug("Duplicate client entry")
-                    val flash = play.api.mvc.Flash(Map("error" -> "Please select another id for this client"))
-                    Ok(views.html.clients.new_client(boundForm, user)(flash))
-
+                    Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None)).flashing("error" -> "Please select another id for this client")
                 }
               }
-            })
+            )
 
-        case "PUT" =>
-          NotImplemented
+        case "PUT" => NotImplemented
+        case _ => BadRequest("wrong verb usage")
       }
   }
 
-  def update = withUser { user =>
-    implicit request =>
-
+  def update =  withAuth { username => implicit request =>
       log.debug("Clients.update()")
       val boundForm = clientForm.bindFromRequest
       boundForm.fold(
 
-        formWithErrors => { // validate rules
+        formWithErrors => {
           log.debug("Form has errors")
           log.debug(formWithErrors.errors.toString)
-          Ok(views.html.clients.new_client(formWithErrors, user)).flashing(
-            "error" -> "Form has errors. Please enter correct values.")
+          Ok(qgd.authorizationServer.views.html.clients.new_client(formWithErrors, None))
+            .flashing("error" -> "Form has errors. Please enter correct values.")
         },
 
         clientDetails => {
-          val cd = clientDetails
           log.debug("Client details")
-          // log.debug((cd.id, cd.secret, cd.redirectUi, cd.scope, cd.description).toString)
-          DB.withSession { implicit session =>
-
-            // log.debug("Searching for client: " + cd.id)
-            models.oauth2.Clients.get(cd.id) match {
+          log.debug("Searching for client: " + clientDetails.clientId)
+          models.Client.findByClientId(clientDetails.clientId) match {
+          //models.oauth2.Clients.get(cd.id) match {
               case Some(c) => // existing client
                 log.debug("Saving new client")
-
-                val client = models.oauth2.Client(
-                  cd.id, user.username, cd.secret,
-                  cd.description, cd.redirectUri, cd.scope)
-
-                models.oauth2.Clients.update(client) // save
+                Try(models.Client.update(clientDetails)) match {
+                  case -\/(_) =>
+                    log.debug("Error while saving client entry")
+                    Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None)).flashing("error" -> "Please try again")
+                  case \/-(_) =>
+                    log.debug("Successfully added. Redirecting to client list")
+                    Redirect(qgd.authorizationServer.controllers.routes.Clients.list)
+                }
                 log.debug("redirecting to client list")
-                Redirect(routes.Clients.list) // redirect to client listing
+                Redirect(qgd.authorizationServer.controllers.routes.Clients.list)
               case None => // does not exist
                 log.debug("No such client")
                 NotFound
             }
           }
-        })
+        )
   }
 
 }

@@ -1,19 +1,32 @@
 package qgd.authorizationServer.models
 
 import java.util.UUID
-import anorm._
+import scala.language.postfixOps
 import anorm.SqlParser._
+import anorm._
 import play.api.Play.current
 import play.api.db.DB
 import play.api.libs.json.Json
 
+
+/**
+  *
+  * @param clientId Ramdom string
+  * @param clientName Client application name
+  * @param clientSecret Ramdom string
+  * @param authorizedGrantTypes list as comma separated value. Default : None
+  * @param description Optional client details or description
+  * @param redirect_uri List as comma separated value (default redirect URI is the first one)
+  * @param defaultScope Optional list (space separated value witch order does not matter). Default : None
+  */
 case class Client(
-                   client_id: UUID,
-                   client_name: String,
-                   client_secret: String,
+                   clientId: String,
+                   clientName: String,
+                   clientSecret: String,
+                   authorizedGrantTypes: Option[String] = None,
                    description: String,
-                   redirect_uri: String,  // TODO allow several URI
-                   scope: String          // TODO change Type to Option[List[String]] or List[String]
+                   redirect_uri: String,                    // TODO Should permit to set several uris
+                   defaultScope: Option[String] = None
                  )
 
 object Client {
@@ -21,31 +34,66 @@ object Client {
   implicit val clientFormat = Json.format[Client]
 
   val client =
-    get[UUID]("client_id") ~
+    get[String]("client_id") ~
     get[String]("client_name") ~
     get[String]("client_secret") ~
+    get[Option[String]]("authorized_grant_types") ~
     get[String]("description") ~
     get[String]("redirect_uri") ~
-    get[String]("scope") map {
-      case id ~ name ~ secret ~ description ~ redirectUri ~ scope => Client(id, name, secret, description, redirectUri, scope)
+    get[Option[String]]("default_scope") map {
+      case id ~ name ~ secret ~ authorizedGrantTypes ~ description ~ redirectUri ~ defaultScope =>
+        Client(id, name, secret, authorizedGrantTypes, description, redirectUri, defaultScope)
     }
+
 
   /**
     * Fetch a Client by ID
     *
-    * @param client_id UUID
+    * @param clientId String
     * @return
     */
-  def findByClientId(client_id: UUID) = DB.withConnection( implicit c =>
+  def findByClientId(clientId: String) = DB.withConnection( implicit c =>
     SQL(
       """
           SELECT *
           FROM auth_clients c
-          WHERE c.client_id = "client_id"
+          WHERE c.client_id = {client_id}
       """)
-      .on("client_id" -> client_id)
-      .as(client *)
+      .on("client_id" -> clientId)
+      .as(client *).headOption
   )
+
+  def validateClient(clientId: String, clientSecret: Option[String]=None, grantType: String): Boolean = { DB.withConnection( implicit c =>
+    SQL(
+      """
+          SELECT *
+          FROM auth_clients c
+          WHERE (c.client_id = {client_id} AND c.client_secret = {client_secret})
+      """)
+      .on("client_id" -> clientId,
+          "client_secret" -> clientSecret,
+          "authorizedGrantTypes" -> grantType)
+      .as(client *)
+      .headOption.flatMap(getGrantTypesToList(_)).contains(grantType)
+  )}
+
+
+  /**
+    * Transform space separated grant type values to list
+    *
+    * @param client Defined client
+    * @return List of authorized grant types
+    */
+  def getGrantTypesToList(client: Client) = client.authorizedGrantTypes.map(_.split(" "))
+
+
+  /**
+    * Transform space separated scope values to list
+    *
+    * @param client Defined client
+    * @return List of default scope for a given client
+    */
+  def getDefaultScopeToList(client: Client) = client.defaultScope.map(_.split(" "))
 
 
   /**
@@ -76,12 +124,12 @@ object Client {
             ({client_id}, {client_name}, {client_secret}, {description}, {redirect_uri}, {scope})
         """)
       .on(
-        "client_id" -> client.client_id,
-        "client_name"-> client.client_name ,
-        "client_secret" -> client.client_secret,
+        "client_id" -> client.clientId,
+        "client_name"-> client.clientName ,
+        "client_secret" -> client.clientSecret,
         "description" -> client.description,
         "redirect_uri" -> client.redirect_uri,
-        "scope" -> client.scope
+        "scope" -> client.defaultScope
       ).execute()
     )
 
@@ -121,14 +169,15 @@ object Client {
             WHERE client_id = {client_id}
           """)
       .on(
-        "client_id" -> client.client_id,
-        "client_name"-> client.client_name ,
-        "client_secret" -> client.client_secret,
+        "client_id" -> client.clientId,
+        "client_name"-> client.clientName ,
+        "client_secret" -> client.clientSecret,
         "description" -> client.description,
         "redirect_uri" -> client.redirect_uri,
-        "scope" -> client.scope
+        "scope" -> client.defaultScope
       ).execute()
     )
+
 
 }
 

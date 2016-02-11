@@ -1,0 +1,45 @@
+img.logo_qgd{
+	max-width: 200px;
+	height: auto;
+}
+
+img.logo_qgd_min{
+	margin-top: 7px;
+	max-width: 60px;
+	height: auto;	
+}
+
+
+.bg-primary {
+    background-color: #252833; /*616161;*/
+    color: #ffffff;
+}
+
+#askOauth{
+	max-width: 500px;
+	width: 100%;
+	margin:10px auto;
+}
+
+#askOauth .logo_qgd_min{
+	max-width: 100px;
+	margin: 0px 30px 0px 0px;
+}
+
+#askOauth h1{
+	margin: 0;
+	padding: 0;
+	font-size: 25px;
+}
+
+#askOauth p{
+	margin-top: 20px;
+	font-size: 16px;
+	margin-bottom: 30px;
+}
+
+@media (min-width: 768px){
+	.page-signin .signin-header, .page-signup .signin-header, .page-forgot .signin-header {
+	    margin-top: 100px;
+	}
+}

@@ -1,10 +1,12 @@
 package qgd.errorHandle
 
-import akka.actor.Actor
+import play.api.Play.current
 import play.api.libs.json.Json
 import play.api.libs.mailer._
 import play.api.mvc.Results._
 import qgd.errorHandle.ExceptionEither._
+
+import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz._
 
 final case class FailError(message: String, cause: Option[\/[Throwable, Error]] = None, errorType: Status = InternalServerError) {
@@ -29,7 +31,7 @@ final case class FailError(message: String, cause: Option[\/[Throwable, Error]] 
     val to = List("Support Cowebo <support@cowebo.com>")
     val from = "Support Cowebo <support@cowebo.com>"
     val mail = Email(subject, from, to, attachments = Seq(), bodyText = None, bodyHtml = Some(content))
-    FTry(MailerPlugin.send(mail)).map(_.map(r => Json.parse("{\"messageId\": \"" + r + "\"}")))
+    /*FTry(MailerPlugin.send(mail)).map(_.map(r => Json.parse("{\"messageId\": \"" + r + "\"}")))*/ // TODO uncomment and use injection and actor
   }
 
   def toResult(message: Option[String] = None) = errorType(message.getOrElse(this.message))

@@ -1,0 +1,13 @@
+
+
+
+cache:
+  untracked: true
+
+stages:
+  - test
+
+test:
+  script:
+    - echo "Running tests"
+    - sbt clean test

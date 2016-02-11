@@ -4,6 +4,7 @@ import play.api.mvc.Results._
 import play.api.mvc._
 import qgd.errorHandle.FailError.Expect
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz._
 
 object ExceptionEither {

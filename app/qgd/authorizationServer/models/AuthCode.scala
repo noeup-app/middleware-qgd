@@ -1,6 +1,8 @@
-package qgd.authorizationServer.models
+package qgd.authorizationServer
+package models
 
 import java.util.{Date, UUID}
+import scala.language.postfixOps
 import anorm.SqlParser._
 import anorm._
 import play.api.Play.current
@@ -8,12 +10,13 @@ import play.api.db.DB
 import play.api.libs.json.Json
 
 case class AuthCode(
-                     authorization_code: String,
-                     created_at: Date,
-                     client_id: String,
-                     expires_in: Long,
-                     redirect_uri: Option[String],
-                     user_uuid: UUID,
+                     authorizationCode: String,
+                     createdAt: Date,
+                     clientId: String,
+                     scope: Option[String],
+                     expiresIn: Long,
+                     redirectUri: Option[String],
+                     userId: UUID,
                      used: Boolean
                    ) {
   def isExpired = false
@@ -27,27 +30,23 @@ object AuthCode {
     get[String]("authorization_code") ~
     get[Date]("created_at") ~
     get[String]("client_id") ~
+    get[Option[String]]("scope") ~
     get[Long]("expires_in") ~
     get[Option[String]]("redirect_uri") ~
     get[UUID]("user_uuid") ~
     get[Boolean]("used") map {
-      case authorization_code ~ created_at ~ client_id ~ expires_in ~ redirect_uri ~ user_uuid ~ used =>
-        AuthCode(authorization_code, created_at, client_id, expires_in, redirect_uri, user_uuid, used)
+      case authorization_code ~ created_at ~ client_id ~ scope ~ expires_in ~ redirect_uri ~ user_uuid ~ used =>
+        AuthCode(authorization_code, created_at, client_id, scope, expires_in, redirect_uri, user_uuid, used)
     }
   }
 
   /**
     * add a new AuthCode in DB.
-    * @param code String
-    * @param clientId UUID
-    * @param createdAt DateTime
-    * @param expiresIn Integer (time in milliseconds)
-    * @param state String
-    * @param redirect_uri String
-    * @param user_uuid UUID
+ *
+    * @param code AuthCode
     * @return
     */
-  def insert(code: String, clientId: String, createdAt: Date, expiresIn: Int, state: Option[String], redirect_uri: Option[String], user_uuid: UUID) = {
+  def insert(code: AuthCode) = {
     DB.withConnection({ implicit c =>
       SQL(
         """
@@ -56,6 +55,7 @@ object AuthCode {
             expires_in,
             created_at,
             client_id,
+            scope,
             redirect_uri,
             user_uuid,
             used
@@ -65,18 +65,20 @@ object AuthCode {
             {expires_in},
             {created_at},
             {client_id},
+            {scope},
             {redirect_uri},
             {user_uuid}::uuid,
             {used}
           )
         """)
         .on(
-          "authorization_code" -> code,
-          "expires_in"         -> expiresIn,
-          "created_at"         -> createdAt,
-          "client_id"          -> clientId,
-          "redirect_uri"       -> redirect_uri,
-          "user_uuid"          -> user_uuid,
+          "authorization_code" -> code.authorizationCode,
+          "expires_in"         -> code.expiresIn,
+          "created_at"         -> code.createdAt,
+          "client_id"          -> code.clientId,
+          "scope"              -> code.scope,
+          "redirect_uri"       -> code.redirectUri,
+          "user_uuid"          -> code.userId,
           "used"               -> false
         ).execute()
     })
@@ -104,13 +106,47 @@ object AuthCode {
            SELECT *
            FROM oauth_auth_codes
            WHERE
-            authorization_code = {code} AND
+            authorization_code = {code}
             used = false
         """)
         .on(
           "code" -> code
         ).as(authcode *).headOption
   )
+
+
+  import java.sql.Timestamp
+  /**
+    * Generate a new AuthCode for given client and other details.
+    *
+    * @param clientId
+    * @param redirectUri
+    * @param scope
+    * @param userId
+    * @param expiresIn
+    * @return
+    */
+  def generateAuthCodeForClient(clientId: String, redirectUri: String, scope: String, userId: UUID, expiresIn: Int): Option[AuthCode] = {
+
+    Client.findByClientId(clientId).map {
+      client =>
+        val authCode = utils.AuthCodeGenerator.generateAuthCode()
+        val createdAt = new Timestamp(new Date().getTime)
+        val ac = AuthCode(authCode,
+                          createdAt,
+                          clientId,
+                          Some(scope),
+                          expiresIn.toLong,
+                          Some(redirectUri),
+                          userId,
+                          false)
+
+        // replace with new auth code
+        setAuthCodeAsUsed(ac.authorizationCode)
+        insert(ac)
+        ac //TODO MANAGE ERROR and USE WITH TRANSACTION
+    }
+  }
 
 }
 //package qgd.authorizationServer.models
