@@ -80,49 +80,48 @@ class Clients @Inject()(
   def delete(id: String) = Action {NotImplemented}
 
   def add = SecuredAction { implicit request =>
-     request.method match {
-        case "POST" =>
-          val boundForm = clientForm.bindFromRequest
-          // validate rules
-          boundForm.fold(
+    request.method match {
+      case "POST" =>
+        val boundForm = clientForm.bindFromRequest
+        boundForm.fold(
 
-            formWithErrors => {
-              log.debug("Form has errors")
-              log.debug(formWithErrors.errors.toString)
-              Ok(qgd.authorizationServer.views.html.clients.new_client(formWithErrors, None))
-                .flashing("error" -> "Form has errors. Please enter correct values.")
-            },
+          formWithErrors => {
+            log.debug("Form has errors")
+            log.debug(formWithErrors.errors.toString)
+            Ok(qgd.authorizationServer.views.html.clients.new_client(formWithErrors, None))
+              .flashing("error" -> "Form has errors. Please enter correct values.")
+          },
 
-            clientDetails => {
-              // check for duplicate
-                models.Client.findByClientId(clientDetails.clientId) match {
-                  case None =>
-                    log.debug("Saving new client")
-                    val client = Client(clientDetails.clientId,
-                                        clientDetails.clientName,
-                                        clientDetails.clientSecret,
-                                        clientDetails.authorizedGrantTypes,
-                                        clientDetails.description,
-                                        clientDetails.redirect_uri,
-                                        clientDetails.defaultScope)
-                    Try(models.Client.insert(client)) match {
-                      case -\/(_) =>
-                        log.debug("Error while saving client entry")
-                        Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None)).flashing("error" -> "Please try again")
-                      case \/-(_) =>
-                        log.debug("Successfully added. Redirecting to client list")
-                        Redirect(qgd.authorizationServer.controllers.routes.Clients.list)
-                    }
-                  case Some(c) => // duplicate
-                    log.debug("Duplicate client entry")
-                    Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None)).flashing("error" -> "Please select another id for this client")
+          clientDetails => {
+            // check for duplicate
+            models.Client.findByClientId(clientDetails.clientId) match {
+              case None =>
+                log.debug("Saving new client")
+                val client = Client(clientDetails.clientId,
+                                    clientDetails.clientName,
+                                    clientDetails.clientSecret,
+                                    clientDetails.authorizedGrantTypes,
+                                    clientDetails.description,
+                                    clientDetails.redirect_uri,
+                                    clientDetails.defaultScope)
+                Try(models.Client.insert(client)) match {
+                  case -\/(_) =>
+                    log.debug("Error while saving client entry")
+                    Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None)).flashing("error" -> "Please try again")
+                  case \/-(_) =>
+                    log.debug("Successfully added. Redirecting to client list")
+                    Redirect(qgd.authorizationServer.controllers.routes.Clients.list)
                 }
-              }
-            )
+              case Some(c) => // duplicate
+                log.debug("Duplicate client entry")
+                Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None)).flashing("error" -> "Please select another id for this client")
+            }
+          }
+        )
 
-        case "PUT" => NotImplemented
-        case _ => BadRequest("wrong verb usage")
-      }
+      case "PUT" => NotImplemented
+      case _ => BadRequest("wrong verb usage")
+    }
   }
 
   def update =  SecuredAction { implicit request =>
@@ -150,10 +149,10 @@ class Clients @Inject()(
                     Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None)).flashing("error" -> "Please try again")
                   case \/-(_) =>
                     log.debug("Successfully added. Redirecting to client list")
-                    Redirect(qgd.authorizationServer.controllers.routes.Clients.list)
+                    Redirect(qgd.authorizationServer.controllers.routes.Clients.list())
                 }
                 log.debug("redirecting to client list")
-                Redirect(qgd.authorizationServer.controllers.routes.Clients.list)
+                Redirect(qgd.authorizationServer.controllers.routes.Clients.list())
               case None => // does not exist
                 log.debug("No such client")
                 NotFound
