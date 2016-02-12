@@ -1,9 +1,9 @@
 
 @* authorize Template File *@
-@import qgd.resourceServer.models.OauthIdentity
 @import qgd.authorizationServer.forms.AppAuthInfo
 
-@(userOpt: Option[OauthIdentity], appAuthForm: Form[AppAuthInfo.Data])(implicit messages: Messages)
+@import qgd.resourceServer.models.Account
+@(userOpt: Option[Account], appAuthForm: Form[AppAuthInfo.Data])(implicit messages: Messages)
 
 @qgd.authorizationServer.views.html.main("Authorize App", userOpt) {
 

@@ -74,14 +74,15 @@ class SignUpController @Inject() (
         val authInfo = passwordHasher.hash(data.password)
         val user = Account(
           id = UUID.randomUUID(),
-          loginInfo = loginInfo,
+          loginInfo = Some(loginInfo),
           firstName = Some(data.firstName),
           lastName = Some(data.lastName),
           fullName = Some(data.firstName + " " + data.lastName),
           email = Some(data.email),
           scopes = List(),
           roles = List(),
-          avatarURL = None
+          avatarURL = None,
+          deleted = false
         )
         for {
           avatar <- avatarService.retrieveURL(data.email)

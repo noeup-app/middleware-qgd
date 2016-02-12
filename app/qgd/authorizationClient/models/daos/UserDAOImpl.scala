@@ -161,26 +161,29 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
     */
   private def addLoginInfoAndRelationWithUser(user: Account)(implicit connection: Connection) = {
     // Add login info
-    val loginInfo = user.loginInfo
-    Logger.warn(loginInfo.toString)
-    SQL(
-      """INSERT INTO entity_login_infos (provider_id, provider_key)
+    user.loginInfo match {
+      case Some(loginInfo) =>
+        Logger.warn(loginInfo.toString)
+        SQL(
+          """INSERT INTO entity_login_infos (provider_id, provider_key)
          (SELECT {provider_id}, {provider_key}
          WHERE NOT EXISTS (SELECT * FROM entity_login_infos WHERE provider_id = {provider_id} AND provider_key = {provider_key}));""")
-      .on(
-        'provider_id -> loginInfo.providerID,
-        'provider_key -> loginInfo.providerKey
-      ).execute()
+          .on(
+            'provider_id -> loginInfo.providerID,
+            'provider_key -> loginInfo.providerKey
+          ).execute()
 
-    SQL(
-      """INSERT INTO entity_relation_login_infos_users (provider_id, provider_key, user_id)
+        SQL(
+          """INSERT INTO entity_relation_login_infos_users (provider_id, provider_key, user_id)
          (SELECT {provider_id}, {provider_key}, {user_id}
          WHERE NOT EXISTS (SELECT * FROM entity_relation_login_infos_users WHERE provider_id = {provider_id} AND provider_key = {provider_key} AND user_id = {user_id}));""")
-      .on(
-        'provider_id -> loginInfo.providerID,
-        'provider_key -> loginInfo.providerKey,
-        'user_id -> user.id
-      ).execute()
+          .on(
+            'provider_id -> loginInfo.providerID,
+            'provider_key -> loginInfo.providerKey,
+            'user_id -> user.id
+          ).execute()
+      case None =>
+    }
   }
 }
 
