@@ -1,7 +1,7 @@
-@import qgd.resourceServer.models.OauthIdentity
-@(message: String, userOpt: Option[OauthIdentity]) (implicit messages: Messages)
+@import qgd.resourceServer.models.Account
+@(message: String, userOpt: Option[Account])(implicit messages: Messages)
 
-@qgd.authorizationServer.views.html.main("Welcome to Apps", userOpt) {
+@qgd.views.html.main("Welcome to Apps", userOpt) {
 	<div class="container">
 	
 Welcome to Apps. Here you can find details for

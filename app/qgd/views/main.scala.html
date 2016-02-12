@@ -1,0 +1,33 @@
+@import qgd.resourceServer.models.Account
+@(title: String, user: Option[Account] = None)(content: Html)(implicit messages: Messages)
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+        <link rel="shortcut icon" type="image/png" href="@routes.Assets.at("../../../public/images/favicon.png")">
+
+        <title>@title</title>
+
+
+        <link rel="stylesheet" href="@routes.Assets.at("../../../public/stylesheets/font-awesome.min.css")">
+        <link rel="stylesheet" href="@routes.Assets.at("../../../public/stylesheets/material-design-iconic-font.min.css")">
+        <!-- end Needs images -->
+
+
+        <!-- build:css({.tmp,client}) styles/main.css -->
+        <link rel="stylesheet" href="@routes.Assets.at("../../../public/stylesheets/angular-material.min.css")">
+        <link rel="stylesheet" href="@routes.Assets.at("../../../public/stylesheets/bootstrap.css")">
+        <link rel="stylesheet" href="@routes.Assets.at("../../../public/stylesheets/ui.css")">
+        <link rel="stylesheet" href="@routes.Assets.at("../../../public/stylesheets/main.css")">
+        <link rel="stylesheet" href="@routes.Assets.at("../../../public/stylesheets/scala.css")">
+
+    </head>
+
+    @content
+
+</html>

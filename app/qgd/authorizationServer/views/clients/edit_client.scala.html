@@ -1,8 +1,8 @@
 
-@import qgd.resourceServer.models.OauthIdentity
-@(clientForm: Form[qgd.authorizationServer.models.Client], userOpt: Option[OauthIdentity])(implicit flash: Flash, message: Messages)
+@import qgd.resourceServer.models.Account
+@(clientForm: Form[qgd.authorizationServer.models.Client], userOpt: Option[Account])(implicit flash: Flash, message: Messages)
 
-@qgd.authorizationServer.views.html.main("Welcome to Apps", userOpt) {
+@qgd.views.html.main("Welcome to Apps", userOpt) {
  @flash.get("error").map { errorMessage =>
    <div class="alert-message error"><p><strong>Oops!</strong> @errorMessage</p></div>
  }

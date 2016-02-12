@@ -1,7 +1,7 @@
-@import qgd.resourceServer.models.OauthIdentity
-@(clients: List[qgd.authorizationServer.models.Client], userOpt: Option[OauthIdentity])  (implicit messages: Messages)
+@import qgd.resourceServer.models.Account
+@(clients: List[qgd.authorizationServer.models.Client], userOpt: Option[Account])(implicit messages: Messages)
 
-@qgd.authorizationServer.views.html.main("List of Clients", userOpt) {
+@qgd.views.html.main("List of Clients", userOpt) {
 
 <div class="container">
 

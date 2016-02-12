@@ -1,7 +1,7 @@
-@import qgd.resourceServer.models.OauthIdentity
-@(client: qgd.authorizationServer.models.Client, userOpt: Option[OauthIdentity])(implicit messages: Messages)
+@import qgd.resourceServer.models.Account
+@(client: qgd.authorizationServer.models.Client, userOpt: Option[Account])(implicit messages: Messages)
 
-@qgd.authorizationServer.views.html.main("Welcome to Apps", userOpt) {
+@qgd.views.html.main("Welcome to Apps", userOpt) {
  show client
  
  <h3>Client: @client.clientId</h3>
