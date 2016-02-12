@@ -4,6 +4,8 @@ package controllers
 import java.util.UUID
 import javax.inject.Inject
 
+import com.mohiva.play.silhouette.api.{Environment, Silhouette}
+import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import play.api.data.Forms._
 import play.api.data._
 import play.api.i18n.MessagesApi
@@ -11,12 +13,16 @@ import play.api.mvc.{Action, Controller}
 import qgd.authorizationServer.models.Client
 import qgd.errorHandle.ExceptionEither._
 import play.api.Play.current
-import play.api.i18n.Messages.Implicits._
+import qgd.resourceServer.models.Account
 
 import scalaz.{-\/, \/-}
 
 
-class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controller with SecuredAdminConsole {
+class Clients @Inject()(
+                         val messagesApi: MessagesApi,
+                         val env: Environment[Account, CookieAuthenticator])
+  extends Silhouette[Account, CookieAuthenticator]{
+
   val log = play.Logger.of("application")
 
   val clientForm = Form(mapping(
@@ -28,12 +34,12 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
     "redirectUri" -> nonEmptyText,
     "scope" -> optional(text))(Client.apply)(Client.unapply))
 
-  def list = withAuth { username => implicit request =>
+  def list = SecuredAction { implicit request =>
     val allClients = models.Client.list()
     Ok(qgd.authorizationServer.views.html.clients.list(allClients, None))
   }
 
-  def create() = withAuth { username => implicit request =>
+  def create() = SecuredAction { implicit request =>
       // generate unique and random values for id and secret
       val clientId = UUID.randomUUID().toString        // TODO : change format to fit RFC requierements
       val clientSecret = UUID.randomUUID().toString    // TODO : change format to fit RFC requierements
@@ -44,7 +50,7 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
       Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None))
   }
 
-  def edit(id: String) = withAuth { username => implicit request =>
+  def edit(id: String) = SecuredAction { implicit request =>
     val clientOpt = models.Client.findByClientId(id)
     clientOpt match {
       case None => NotFound
@@ -62,7 +68,7 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
     }
   }
 
-  def get(id: String) = withAuth { username => implicit request =>
+  def get(id: String) = SecuredAction { implicit request =>
     val clientOpt = models.Client.findByClientId(id)
     clientOpt match {
       case None => NotFound
@@ -73,7 +79,7 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
 
   def delete(id: String) = Action {NotImplemented}
 
-  def add = withAuth { username => implicit request =>
+  def add = SecuredAction { implicit request =>
      request.method match {
         case "POST" =>
           val boundForm = clientForm.bindFromRequest
@@ -119,7 +125,7 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
       }
   }
 
-  def update =  withAuth { username => implicit request =>
+  def update =  SecuredAction { implicit request =>
       log.debug("Clients.update()")
       val boundForm = clientForm.bindFromRequest
       boundForm.fold(

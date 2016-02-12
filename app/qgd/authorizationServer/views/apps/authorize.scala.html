@@ -5,7 +5,7 @@
 @import qgd.resourceServer.models.Account
 @(userOpt: Option[Account], appAuthForm: Form[AppAuthInfo.Data])(implicit messages: Messages)
 
-@qgd.authorizationServer.views.html.main("Authorize App", userOpt) {
+@qgd.views.html.main("Authorize App", userOpt) {
 
 
 <p>Following app has requested access to your data.</p>

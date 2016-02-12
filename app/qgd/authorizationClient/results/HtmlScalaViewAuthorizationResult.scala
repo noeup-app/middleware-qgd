@@ -70,7 +70,7 @@ class HtmlScalaViewAuthorizationResult @Inject() (
     * WARNING : probably temporary
     */
   override def getResource(implicit request: SecuredRequest[AnyContent]): Result =
-    Ok(qgd.views.html.home(request.identity))
+    Ok(qgd.authorizationClient.views.html.ressource(Some(request.identity)))
 
 
   /**

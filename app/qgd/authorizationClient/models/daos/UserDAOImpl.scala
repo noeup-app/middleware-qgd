@@ -29,7 +29,7 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
     * @return The found user or None if no user for the given login info could be found.
     */
   def find(loginInfo: LoginInfo): Future[Option[Account]] = DB.withConnection({ implicit c =>
-    val req: List[Account] = SQL("""SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url
+    val req: List[Account] = SQL("""SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.deleted
           FROM entity_users u
           INNER JOIN entity_relation_login_infos_users r_li_u ON u.id = r_li_u.user_id
           LEFT JOIN entity_relation_users_roles r_u_r ON u.id = r_u_r.user_id
@@ -58,7 +58,7 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
     * @return The found user or None if no user for the given ID could be found.
     */
   def find(userID: UUID): Future[Option[Account]] = DB.withConnection({ implicit c =>
-    val req: List[Account] = SQL("""SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url
+    val req: List[Account] = SQL("""SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.deleted
           FROM entity_users u
           INNER JOIN entity_relation_login_infos_users r_li_u ON u.id = r_li_u.user_id
           LEFT JOIN entity_relation_users_roles r_u_r ON u.id = r_u_r.user_id

@@ -1,26 +1,26 @@
 @import qgd.resourceServer.models.Account
 @(clientForm: Form[qgd.authorizationServer.models.Client], userOpt: Option[Account])(implicit flash: Flash, messages: Messages)
 
-@qgd.views.html.main("Welcome to Apps", userOpt) {
+@qgd.views.html.home("Welcome to Apps", userOpt) {
 
- @flash.get("error").map { errorMessage =>
-   <div class="alert-message error"><p><strong>Oops!</strong> @errorMessage</p></div>
- }
+    @flash.get("error").map { errorMessage =>
+        <div class="alert-message error"><p><strong>Oops!</strong> @errorMessage</p></div>
+    }
 
- @clientForm.globalError.map { error =>
-     <p class="error">@error.message</p>
- }
- 
- @helper.form(action = qgd.authorizationServer.controllers.routes.Clients.add()) {
-  @helper.inputText(clientForm("id"), 'size -> 40, 'disabled -> "disabled")
-  @helper.inputText(clientForm("secret"), 'size -> 40, 'disabled -> "disabled")
-  <input type="hidden" value="@(clientForm("id").value)" name="id"/>
-  <input type="hidden" value="@(clientForm("secret").value)" name="secret"/>
-  @helper.inputText(clientForm("description"), 'size -> 100)
-  @helper.inputText(clientForm("redirectUri"), 'size -> 100)
-  @helper.inputText(clientForm("scope"), 'size -> 40)
+    @clientForm.globalError.map { error =>
+        <p class="error">@error.message</p>
+    }
 
-  <input type="hidden" value="@clientForm("username")" name="username"/>
-  <input type="submit" value="Save"/><a href="@qgd.authorizationServer.controllers.routes.Clients.list">Cancel</a>
- }
+    @helper.form(action = qgd.authorizationServer.controllers.routes.Clients.add()) {
+        @helper.inputText(clientForm("id"), 'size -> 40, 'disabled -> "disabled")
+        @helper.inputText(clientForm("secret"), 'size -> 40, 'disabled -> "disabled")
+        <input type="hidden" value="@(clientForm("id").value)" name="id"/>
+        <input type="hidden" value="@(clientForm("secret").value)" name="secret"/>
+        @helper.inputText(clientForm("description"), 'size -> 100)
+        @helper.inputText(clientForm("redirectUri"), 'size -> 100)
+        @helper.inputText(clientForm("scope"), 'size -> 40)
+
+        <input type="hidden" value="@clientForm("username")" name="username"/>
+        <input type="submit" value="Save"/> <a href="@qgd.authorizationServer.controllers.routes.Clients.list">Cancel</a>
+    }
 }
