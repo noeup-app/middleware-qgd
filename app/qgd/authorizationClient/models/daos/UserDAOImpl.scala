@@ -109,7 +109,8 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
   def add(user: Account)(implicit connection: Connection) = {
     SQL(
       """INSERT INTO entity_users (id, first_name, last_name, email, avatar_url, base_node)
-          VALUES ({id}, {first_name}, {last_name}, {email}, {avatar_url}, {base_node});""")
+         (SELECT {id}, {first_name}, {last_name}, {email}, {avatar_url}, {base_node}
+         WHERE NOT EXISTS (SELECT id FROM entity_users WHERE id = {id}));""")
       .on(
         'id -> user.id,
         'first_name -> user.firstName,
@@ -164,7 +165,8 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
     Logger.warn(loginInfo.toString)
     SQL(
       """INSERT INTO entity_login_infos (provider_id, provider_key)
-         VALUES ({provider_id}, {provider_key});""")
+         (SELECT {provider_id}, {provider_key}
+         WHERE NOT EXISTS (SELECT * FROM entity_login_infos WHERE provider_id = {provider_id} AND provider_key = {provider_key}));""")
       .on(
         'provider_id -> loginInfo.providerID,
         'provider_key -> loginInfo.providerKey
@@ -172,7 +174,8 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
 
     SQL(
       """INSERT INTO entity_relation_login_infos_users (provider_id, provider_key, user_id)
-         VALUES ({provider_id}, {provider_key}, {user_id});""")
+         (SELECT {provider_id}, {provider_key}, {user_id}
+         WHERE NOT EXISTS (SELECT * FROM entity_relation_login_infos_users WHERE provider_id = {provider_id} AND provider_key = {provider_key} AND user_id = {user_id}));""")
       .on(
         'provider_id -> loginInfo.providerID,
         'provider_key -> loginInfo.providerKey,
