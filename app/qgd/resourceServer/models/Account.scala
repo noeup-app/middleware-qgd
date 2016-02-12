@@ -38,14 +38,18 @@ object Account {
     get[Option[String]]("first_name") ~
     get[Option[String]]("last_name") ~
     get[Option[String]]("email") ~
-    get[String]("role_name") ~
+    get[Option[String]]("role_name") ~
     get[Option[String]]("avatar_url") map {
       case id ~ loginInfo ~ fname ~ lname ~ email ~ role ~ avatar => {
         val full_name: Option[String] = (fname, lname) match {
           case (Some(fn), Some(ln)) => Some(s"$fn $ln")
           case _                    => None
         }
-        Account(id, loginInfo, fname, lname, full_name, email, List(), List(role), avatar)
+        val roleList = role match {
+          case Some(r) => List(r)
+          case None    => List()
+        }
+        Account(id, loginInfo, fname, lname, full_name, email, List(), roleList, avatar)
       }
     }
 

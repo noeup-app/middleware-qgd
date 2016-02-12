@@ -33,7 +33,7 @@ class UserDAOImpl extends UserDAO with GlobalReadsWrites {
           FROM entity_users u
           INNER JOIN entity_relation_login_infos_users r_li_u ON u.id = r_li_u.user_id
           LEFT JOIN entity_relation_users_roles r_u_r ON u.id = r_u_r.user_id
-          INNER JOIN entity_roles r ON r.id = r_u_r.role_id
+          LEFT JOIN entity_roles r ON r.id = r_u_r.role_id
           WHERE r_li_u.provider_id = {provider_id} AND r_li_u.provider_key = {provider_key};
         """).on(
       'provider_id -> loginInfo.providerID,
