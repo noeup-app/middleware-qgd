@@ -1,3 +1,6 @@
+/conf/env/*
+!/conf/env/database.dev.default
+!/conf/env/database.reset
 ### OSX template
 .DS_Store
 .AppleDouble

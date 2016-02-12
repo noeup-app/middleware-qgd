@@ -73,3 +73,28 @@ scalacOptions ++= Seq(
   "-Ywarn-nullary-override", // Warn when non-nullary overrides nullary, e.g. def foo() over def foo.
   "-Ywarn-numeric-widen" // Warn when numerics are widened.
 )
+
+val dev = taskKey[Unit]("Dev config")
+val local = taskKey[Unit]("Local config")
+
+def setEnvVar(env: String) = {
+  try{
+    val split: Array[String] = (s"cat conf/env/database.$env" !!).split("\\n")
+    val raw_vars = split.map(_.span(! _.equals('='))).map(x => x._1 -> x._2.tail).toList
+    raw_vars foreach (v => {
+      println(s"INJECTING ${v._1} = ${v._2}")
+      javaOptions += s"-D${v._1}=${v._2}"
+    })
+  }catch{
+    case e: Exception => println(s"Cannot inject env vars (${e.getMessage})")
+  }
+}
+
+
+dev := {
+  setEnvVar("dev")
+}
+
+local := {
+  setEnvVar("local")
+}

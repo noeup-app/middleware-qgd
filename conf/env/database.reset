@@ -1,0 +1,5 @@
+unset QGD_PG_DB
+unset QGD_PG_HOST
+unset QGD_PG_PORT
+unset QGD_PG_USERNAME
+unset QGD_PG_PASSWORD
