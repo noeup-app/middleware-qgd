@@ -75,17 +75,15 @@ scalacOptions ++= Seq(
 )
 
 
-/**
-  * The following code is used to set a configuration (env. vars.) for a task
-  *
-  *   e.g. $ sbt dev run
-  *     This command injects environment variables defined in `conf/env/database.env`
-  *
-  * To add another configuration :
-  *   - add a taskKey
-  *   - add a conf file in conf/env/
-  *   - define the task by calling setEnvVar() function
-  */
+// The following code is used to set a configuration (env. vars.) for a task
+//
+//   e.g. $ sbt dev run
+//     This command injects environment variables defined in `conf/env/database.env`
+//
+// To add another configuration :
+//   - add a taskKey
+//   - add a conf file in conf/env/
+//   - define the task by calling setEnvVar() function
 
 fork := true
 
