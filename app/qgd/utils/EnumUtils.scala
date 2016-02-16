@@ -7,9 +7,14 @@ import play.api.libs.json._
 import scala.language.implicitConversions
 
 /**
- * http://stackoverflow.com/questions/15488639/how-to-write-readst-and-writest-in-scala-enumeration-play-framework-2-1
- */
+  * // TODO comment
+  *
+  * http://stackoverflow.com/questions/15488639/how-to-write-readst-and-writest-in-scala-enumeration-play-framework-2-1
+  */
 object EnumUtils {
+
+  // TODO add comments ?
+
   def enumReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {
     def reads(json: JsValue): JsResult[E#Value] = json match {
       case JsString(s) => {

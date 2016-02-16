@@ -2,8 +2,9 @@ package qgd.authorizationServer
 package handlers
 
 import org.joda.time.DateTime
+import scala.language.implicitConversions
 import scalaoauth2.provider
-import utils.{ Config, /*JsonWebTokenGenerator,*/ BearerTokenGenerator, PasswordHasher}
+import qgd.authorizationServer.utils.{NamedLogger, Config, BearerTokenGenerator}
 import scalaoauth2.provider._
 import controllers.Clients
 import models.{ Client, AuthCode, OauthAccessToken}
@@ -14,11 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
 
-class AuthorizationHandler extends DataHandler[OauthIdentity] {
-
-  val logger = Logger(this.getClass)
-
-  // common
+class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
 
 
   /**
@@ -28,7 +25,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
     * @return
     */
   def validateClient(request: AuthorizationRequest): Future[Boolean] = Future.successful {
-    val clientCredential = request.clientCredential.get
+    val clientCredential = request.clientCredential.get // TODO manage None
     val grantType = request.grantType
 
     logger.debug("validating client ...")
@@ -37,13 +34,13 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
 
     val isValid = Client.validateClient(clientCredential.clientId, clientCredential.clientSecret, grantType)
 
-    logger.debug(s"Client isValid : ${isValid}")
+    logger.debug(s"Client isValid : $isValid")
     isValid
   }
 
 
   /**
-    * Creates a bearer access token
+    * Creates a bearer/access token
     *
     * @param authInfo
     */
@@ -70,12 +67,12 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
 
     logger.debug(s"...create access Token: $token")
 
-    Future.successful(toAccessToken(token))
-    }
+    Future.successful(token)
+  }
 
 
   /**
-    *
+    * // TODO DOC
     * @param authInfo
     * @return
     */
@@ -83,16 +80,18 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
 
   /**
     * Creates an provider Access Token response from full OauthAccessToken
+    *
     * @param accessToken OauthAccessToken
     * @return
     */
-  private def toAccessToken(accessToken: OauthAccessToken) = AccessToken(
-                                                                accessToken.accessToken,
-                                                                accessToken.refreshToken,
-                                                                None,
-                                                                accessToken.expiresIn,
-                                                                accessToken.createdAt
-                                                              )
+  implicit def oauthAccessTokenToAccessToken(accessToken: OauthAccessToken): AccessToken =
+    AccessToken(
+      accessToken.accessToken,
+      accessToken.refreshToken,
+      None,
+      accessToken.expiresIn,
+      accessToken.createdAt
+    )
 
 
 
@@ -110,28 +109,13 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
       case request: PasswordRequest =>
         Future.successful(OauthIdentity.findByEmailAndPassword(request.username, request.password))
       case request: ClientCredentialsRequest =>
-        // TODO Implement Client credential flow here
-//        val maybeAccount = request.clientCredential.flatMap { clientCredential =>
-//          OauthClient.findClientCredentials(
-//            clientCredential.clientId,
-//            clientCredential.clientSecret.getOrElse("")
-//          )
-//        }
-//        Future.successful(maybeAccount)
-          Future.successful(None)
+        // Client credential cannot return any user and is just used to provide general information on client
+        logger.debug("ClientCredentialsRequest : no user defined")
+        Future.successful(None)
       case _ =>
+        logger.warn("Unauthorized request grant type")
         Future.successful(None)
     }
-  }
-
-
-// Client credentials grant
-
-
-  def findClientUser(clientCredential: ClientCredential, scope: Option[String]): Future[Option[OauthIdentity]] = {
-    logger.warn("...findClientUser :: NOT_IMPLEMENTED")
-    //Future.successful(OauthClient.findClientCredentials(clientCredential.clientId, clientCredential.clientSecret.getOrElse("")))
-    Future.successful(None)
   }
 
 
@@ -139,7 +123,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
 
 
   /**
-    *
+    * // TODO DOC
     * @param refreshToken
     * @return
     */
@@ -149,13 +133,13 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
   }
 
   /**
-    *
+    * // TODO DOC
     * @param authInfo
     * @param refreshToken
     * @return
     */
   def refreshAccessToken(authInfo: AuthInfo[OauthIdentity], refreshToken: String): Future[AccessToken] = {
-    logger.warn("...refreshAccessToken :: NOT_IMPLEMENTED")
+    // TODO GUILLAUME : refresh != create
     createAccessToken(authInfo)
   }
 
@@ -164,11 +148,11 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
 
 
   /**
-    *
+    * // TODO DOC
     * @param code
     * @return
     */
-  def findAuthInfoByCode(code: String): Future[Option[AuthInfo[OauthIdentity]]] = Future.successful{ // TODO MANAGE FUTURE IN HIGHER LEVEL!
+  def findAuthInfoByCode(code: String): Future[Option[AuthInfo[OauthIdentity]]] = Future.successful{ // TODO MANAGE FUTURE IN SERVICE
   val storedCode = AuthCode.find(code)
     val now = new Date().getTime
 
@@ -188,7 +172,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
   }
 
   /**
-    *
+    * // TODO DOC
     * @param code
     * @return
     */
@@ -202,7 +186,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
 
 
   /**
-    *
+    * // TODO DOC
     * @param token
     * @return
     */
@@ -218,7 +202,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] {
   }
 
   /**
-    *
+    * // TODO DOC
     * @param accessToken
     * @return
     */

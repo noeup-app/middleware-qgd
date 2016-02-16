@@ -18,7 +18,7 @@ import play.api.mvc.{Result, AnyContent, Request, Action}
 import qgd.authorizationClient.forms.SignInForm
 import qgd.authorizationClient.models.services.UserService
 import qgd.authorizationClient.models.Authenticate
-import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
+import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
 import qgd.authorizationClient.utils.BodyParserHelper._
 import qgd.authorizationClient.utils.RequestHelper
 import qgd.authorizationClient.models.Authenticate.authenticateFormat
@@ -40,7 +40,7 @@ import scala.language.postfixOps
   * @param configuration The Play configuration.
   * @param clock The clock instance.
   */
-class CredentialsAuthController @Inject() (
+class LoginController @Inject()(
                                             val messagesApi: MessagesApi,
                                             val env: Environment[Account, CookieAuthenticator],
                                             userService: UserService,

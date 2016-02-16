@@ -8,6 +8,8 @@ import play.api.Play.current
 
 object Config {
 
+  // TODO : .get ??? Error !
+
   lazy val minimumStateLength = Play.configuration.getInt("authorize.state.minLength").get
   lazy val maximumStateLength = Play.configuration.getInt("authorize.state.maxLength").get
 
@@ -22,8 +24,7 @@ object Config {
 
   lazy val redirectURICheckingEnabled = Play.configuration.getBoolean("security.redirectURICheckingEnabled").get
 
-  lazy val publicUrl = Play.configuration.getString("yetu.publicUrl").get
-
+  // TODO : REMOVE
   // OAUTH2 constants
   val GRANT_TYPE_AUTHORIZATION_CODE = "authorization_code"
   val GRANT_TYPE_RESOURCE_OWNER_PASSWORD = "password"
@@ -53,7 +54,7 @@ object Config {
 
     object Defaults {
       val defaultGrantTypes = Some(List(GRANT_TYPE_AUTHORIZATION_CODE, GRANT_TYPE_RESOURCE_OWNER_PASSWORD, GRANT_TYPE_SIGNATURE, GRANT_TYPE_TOKEN))
-
+      // TODO move to GrantType
     }
 
     lazy val jsonWebTokenPrivateKeyFilename = Play.configuration.getString("security.jsonWebToken.privateKeyFilename").get
@@ -67,55 +68,10 @@ object Config {
 
   }
 
-  object SessionStatusCookie {
-
-//    lazy val cookieName = Play.application.configuration.getString("session.statusCookie.name").getOrElse("status-cookie")
-//    lazy val cookiePath = Play.application.configuration.getString("session.statusCookie.path").getOrElse(CookieAuthenticator.cookiePath)
-//    lazy val cookieDomain = CookieAuthenticator.cookieDomain
-//
-//    lazy val cookieHttpOnly: Boolean = Play.application.configuration.getBoolean("session.statusCookie.httpOnly").getOrElse(false)
-//    lazy val idleTimeoutInMinutes = CookieAuthenticator.idleTimeout
-//    lazy val absoluteTimeoutInSeconds = CookieAuthenticator.absoluteTimeoutInSeconds
-//
-//    lazy val cookieSecure = CookieAuthenticator.cookieSecure
-//    lazy val discardingCookie: DiscardingCookie = DiscardingCookie(cookieName, cookiePath, cookieDomain, cookieSecure)
-  }
-
-  object FrontendConfiguration {
-    lazy val setupDownloadUrlMac = Play.configuration.getString("frontendConfig.setupDownloadUrlMac").get
-    lazy val setupDownloadUrlWin = Play.configuration.getString("frontendConfig.setupDownloadUrlWin").get
-  }
-
-  object YetuMessageEvents {
-    lazy val logoutEventName = Play.configuration.getString("yetu.events.logoutEvent").get
-    lazy val clientId = Play.configuration.getString("yetu.events.clientId").get
-  }
 
   // play.configuration requires a started play app; however this configuration value needs to eb read before
   // application start. Use the standard ConfigFactory (loading reference.conf / application.conf)
   val config = ConfigFactory.load()
   val persist = config.getBoolean("persist")
-
-  val minimumPasswordLength = config.getInt("securesocial.userpass.minimumPasswordLength")
-
-  val InvalidPasswordMessage = "securesocial.signup.invalidPassword"
-
-//  object RiakSettings extends RiakConnection {
-//    override def host: String = config.getString("riak.host")
-//    override def port: Int = config.getInt("riak.port")
-//    override def accessTokenBucketName: String = config.getString("riak.accesstokenbucket")
-//    override def authInfoBucketName: String = config.getString("riak.authinfobucket")
-//    override def mailTokenBucketName: String = config.getString("riak.mailtokenbucket")
-//    override def sessionBucketName: String = config.getString("riak.sessionbucket")
-//  }
-//
-//  object TestRiakSettings extends RiakConnection {
-//    override def host: String = config.getString("riak.test.host")
-//    override def port: Int = config.getInt("riak.test.port")
-//    override def accessTokenBucketName: String = config.getString("riak.test.accesstokenbucket")
-//    override def authInfoBucketName: String = config.getString("riak.test.authinfobucket")
-//    override def mailTokenBucketName: String = config.getString("riak.test.mailtokenbucket")
-//    override def sessionBucketName: String = config.getString("riak.test.sessionbucket")
-//  }
 
 }

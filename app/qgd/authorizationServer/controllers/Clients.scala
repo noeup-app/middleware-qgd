@@ -17,11 +17,12 @@ import play.api.i18n.Messages.Implicits._
 
 import scalaz.{-\/, \/-}
 
+// TODO implement switch json/html
 
 class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controller with SecuredAdminConsole with NamedLogger {
 
   def list = withAuth { username => implicit request =>
-    val allClients = models.Client.list()
+    val allClients = Client.list()
     Ok(qgd.authorizationServer.views.html.clients.list(allClients, None))
   }
 
@@ -29,7 +30,7 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
     // generate unique and random values for id and secret
     val clientId = UUID.randomUUID().toString        // TODO : change format to fit RFC requierements
     val clientSecret = UUID.randomUUID().toString    // TODO : change format to fit RFC requierements
-    val boundForm = ClientForm.form.bind(
+    val boundForm = ClientForm.form.bind( // TODO extract form
       Map("id"     -> clientId,
           "secret" -> clientSecret)
     )
@@ -37,11 +38,11 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
   }
 
   def edit(id: String) = withAuth { username => implicit request =>
-    val clientOpt = models.Client.findByClientId(id)
+    val clientOpt = Client.findByClientId(id)
     clientOpt match {
       case None => NotFound
       case Some(client) =>
-        val boundForm = ClientForm.form.bind(
+        val boundForm = ClientForm.form.bind( // TODO extract form
           Map("id"          -> client.clientId,
               "name"        -> client.clientName,
               "secret"      -> client.clientSecret,
@@ -55,7 +56,7 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
   }
 
   def get(id: String) = withAuth { username => implicit request =>
-    val clientOpt = models.Client.findByClientId(id)
+    val clientOpt = Client.findByClientId(id)
     clientOpt match {
       case None => NotFound
       case Some(client) =>
@@ -66,7 +67,7 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
   def delete(id: String) = Action {NotImplemented}
 
   def add = withAuth { username => implicit request =>
-    request.method match {
+    request.method match { // TODO explode into actions according to method
       case "POST" =>
         val boundForm = ClientForm.form.bindFromRequest
         // validate rules
@@ -79,19 +80,12 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
               .flashing("error" -> "Form has errors. Please enter correct values.")
           },
 
-          clientDetails => {
+          client => {
             // check for duplicate
-            models.Client.findByClientId(clientDetails.clientId) match {
+            Client.findByClientId(client.clientId) match {
               case None =>
                 logger.debug("Saving new client")
-                val client = Client(clientDetails.clientId,
-                                    clientDetails.clientName,
-                                    clientDetails.clientSecret,
-                                    clientDetails.authorizedGrantTypes,
-                                    clientDetails.description,
-                                    clientDetails.redirect_uri,
-                                    clientDetails.defaultScope)
-                Try(models.Client.insert(client)) match {
+                Try(Client.insert(client)) match {
                   case -\/(_) =>
                     logger.debug("Error while saving client entry")
                     Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None))
@@ -128,20 +122,20 @@ class Clients @Inject()(implicit val messagesApi: MessagesApi) extends Controlle
       clientDetails => {
         logger.debug("Client details")
         logger.debug("Searching for client: " + clientDetails.clientId)
-        models.Client.findByClientId(clientDetails.clientId) match {
+        Client.findByClientId(clientDetails.clientId) match {
           //models.oauth2.Clients.get(cd.id) match {
           case Some(c) => // existing client
             logger.debug("Saving new client")
-            Try(models.Client.update(clientDetails)) match {
+            Try(Client.update(clientDetails)) match {
               case -\/(_) =>
                 logger.debug("Error while saving client entry")
                 Ok(qgd.authorizationServer.views.html.clients.new_client(boundForm, None)).flashing("error" -> "Please try again")
               case \/-(_) =>
                 logger.debug("Successfully added. Redirecting to client list")
-                Redirect(qgd.authorizationServer.controllers.routes.Clients.list)
+                Redirect(qgd.authorizationServer.controllers.routes.Clients.list())
             }
             logger.debug("redirecting to client list")
-            Redirect(qgd.authorizationServer.controllers.routes.Clients.list)
+            Redirect(qgd.authorizationServer.controllers.routes.Clients.list())
           case None => // does not exist
             logger.debug("No such client")
             NotFound

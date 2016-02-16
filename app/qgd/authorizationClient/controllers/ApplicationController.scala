@@ -10,7 +10,7 @@ import play.api.libs.json.{Reads, Json}
 import play.api.mvc.{Action, Result, AnyContent}
 import qgd.authorizationClient.forms._
 import play.api.i18n.{Messages, MessagesApi}
-import qgd.authorizationClient.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
+import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
 import qgd.authorizationClient.utils.BodyParserHelper._
 import qgd.authorizationClient.utils.RequestHelper
 import qgd.resourceServer.models.Account
@@ -83,7 +83,7 @@ class ApplicationController @Inject() (
    *
    * @return The result to display.
    */
-  def signUpAction = UserAwareAction.async { implicit request =>
+  def signUpAction = UserAwareAction.async { implicit request => // TODO : move to signupcontroller
     RequestHelper.isJson(request) match {
       case true  =>
         signUp(request, ajaxAuthorizationResult)

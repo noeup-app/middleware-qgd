@@ -4,7 +4,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 
 /**
-  * The form which handles the user authorization for client to access there data with scope(s)
+  * The form which handles the user authorization for client to access their data with scope(s)
   */
 object UserAuthorizationForClientForm {
 

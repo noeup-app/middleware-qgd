@@ -1,5 +1,11 @@
 package qgd.authorizationServer.utils
 
+import java.security.MessageDigest
+import java.util.Date
+import javax.xml.bind.DatatypeConverter
+
+import scala.util.Random
+
 import java.security.SecureRandom
 
 /**
@@ -35,12 +41,6 @@ object UUIDGenerator {         // TODO MUCH TODO ABOUT NOTHING
   *  and random string of length 100 characters.
   * @return Hex encoded SHA-1 digest.
   */
-import java.security.MessageDigest
-import java.util.Date
-import javax.xml.bind.DatatypeConverter
-
-import scala.util.Random
-
 object AuthCodeGenerator {
 
   val CODE_LENGTH = 100

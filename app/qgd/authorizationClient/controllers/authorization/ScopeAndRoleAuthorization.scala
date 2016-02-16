@@ -1,12 +1,12 @@
-package qgd.authorizationClient.utils
+package qgd.authorizationClient.controllers.authorization
 
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import play.api.i18n.Messages
 import play.api.mvc.Request
 import qgd.resourceServer.models.Account
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 case class ScopeAndRoleAuthorization(

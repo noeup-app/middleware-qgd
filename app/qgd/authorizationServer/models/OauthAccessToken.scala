@@ -14,7 +14,8 @@ import qgd.errorHandle.FailError.Expect
 import scala.language.postfixOps
 import scalaz._
 
-/** As described in RFC 6749
+/**
+  * As described in RFC 6749
   *
   * @param accessToken REQUIRED.  The access token issued by the authorization server.
   * @param refreshToken OPTIONAL.  The refresh token, which can be used to obtain new access tokens using the same authorization grant as described in Section 6.
@@ -65,7 +66,7 @@ object OauthAccessToken {
 
   /**
     * Fetch AccessToken by its ID.
- *
+    *
     * @param token_id String
     * @return
     */
@@ -89,23 +90,13 @@ object OauthAccessToken {
     })
   }
 
-
   /**
-   * Find AccessToken by token value
-   *
-   * @return
-   */
-  //def find(accessToken: String): Option[AccessToken]
-    //accessTokens.where(_.accessToken === accessToken).firstOption
-
-
-  /**
-   * Find AccessToken by User and Client
- *
-   * @param userId
-   * @param clientId
-   * @return
-   */
+    * Find AccessToken by User and Client
+    *
+    * @param userId
+    * @param clientId
+    * @return
+    */
   def findByUserAndClient(userId: UUID, clientId: String): Option[OauthAccessToken] = {
       Logger.trace("getStoredAccessToken - Try to getStoredAccessToken")
       DB.withConnection({ implicit c =>
@@ -199,32 +190,8 @@ object OauthAccessToken {
   }
 
 
-  /** DEPRECATED ?
-    * Find user name from AccessToken
-    *
-    * @param token
-    * @return
-    */
-  def findUserNameFromToken(token: String): Expect[String] =  {
-    DB.withConnection({ implicit c =>
-      SQL(
-        """
-          SELECT u.cwb_user
-          FROM oauth_access_tokens at
-          LEFT JOIN cwb_users u ON at.user_uuid = u.uuid
-          WHERE token = {token}
-        """)
-        .on(
-          "token" -> token
-        ).as(scalar[String].singleOpt) match {
-        case None    => -\/(FailError("User not found"))
-        case Some(x) => \/-(x)
-      }
-    })
-  }
-
   def deleteExistingAndCreate(tokenObject: OauthAccessToken, user_uuid: UUID, client_id: String): OauthAccessToken = {
-    DB.withConnection({ implicit c =>
+    DB.withTransaction({ implicit c => // TODO extract service/DAO
 
       Logger.trace("AccessTokens - deleteExistingAndCreate")
 

@@ -6,7 +6,7 @@ import qgd.authorizationServer.models.Client
 
 
 /**
-  * Form used to manage clients
+  * Form used to manage clients (add, update)
   */
 object ClientForm {
 
