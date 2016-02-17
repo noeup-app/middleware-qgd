@@ -1,17 +1,16 @@
-package qgd.authorizationClient.utils
+package qgd.errorHandle
 
 import java.util.Locale
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.SecuredErrorHandler
-import controllers.routes
 import play.api.http.DefaultHttpErrorHandler
 import play.api.i18n.Messages
 import play.api.libs.json.Json
 import play.api.mvc.Results._
-import play.api.mvc.{ Result, RequestHeader }
+import play.api.mvc.{RequestHeader, Result}
 import play.api.routing.Router
-import play.api.{Logger, OptionalSourceMapper, Configuration}
+import play.api.{Configuration, Logger, OptionalSourceMapper}
 
 import scala.concurrent.Future
 

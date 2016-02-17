@@ -1,8 +1,8 @@
-package qgd.authorizationClient.utils
+package qgd.utils
 
 import java.util.Locale
 
-import play.api.mvc.{RequestHeader, Request}
+import play.api.mvc.RequestHeader
 
 object RequestHelper {
 

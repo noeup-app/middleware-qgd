@@ -1,4 +1,4 @@
-package qgd.authorizationClient.utils
+package qgd.utils
 
 import javax.inject.Inject
 

@@ -1,6 +1,7 @@
-package qgd.authorizationClient.utils
+package qgd.utils
 
-import play.api.libs.json.{Reads, Json, Writes}
+import play.api.libs.json.{Json, Reads, Writes}
+
 import scala.language.implicitConversions
 
 trait CaseClassUtils {
