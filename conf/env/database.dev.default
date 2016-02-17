@@ -1,0 +1,9 @@
+QGD_PG_DB=bvrgicxjphglirb
+QGD_PG_HOST=bvrgicxjphglirb-postgresql.services.clever-cloud.com
+QGD_PG_PORT=5432
+QGD_PG_USERNAME=utna9i4i4hveomqu91ya
+QGD_PG_PASSWORD=gQ2o7ELC1WbYRdi2KZau
+REDIS_HOST=b8cvglxuz-redis.services.clever-cloud.com
+REDIS_PORT=1307
+REDIS_PWD=wAxzY7H5rKAa5B4iM3C
+REDIS_DATABASE=0

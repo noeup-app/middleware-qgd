@@ -73,3 +73,42 @@ scalacOptions ++= Seq(
   "-Ywarn-nullary-override", // Warn when non-nullary overrides nullary, e.g. def foo() over def foo.
   "-Ywarn-numeric-widen" // Warn when numerics are widened.
 )
+
+
+// The following code is used to set a configuration (env. vars.) for a task
+//
+//   e.g. $ sbt dev run
+//     This command injects environment variables defined in `conf/env/database.env`
+//
+// To add another configuration :
+//   - add a taskKey
+//   - add a conf file in conf/env/
+//   - define the task by calling setEnvVar() function
+
+fork := true
+
+val dev = taskKey[Unit]("Dev config")
+val local = taskKey[Unit]("Local config")
+
+def setEnvVar(env: String) = {
+  try{
+    val split: Array[String] = (s"cat conf/env/database.$env" !!).split("\\n")
+    val raw_vars = split.map(_.span(! _.equals('='))).map(x => x._1 -> x._2.tail).toList
+    val sysProp = System.getProperties
+    raw_vars foreach (v => {
+      println(s"INJECTING ${v._1} = ${v._2}")
+      sysProp.put(v._1, v._2)
+    })
+    System.setProperties(sysProp)
+  }catch{
+    case e: Exception => println(s"Cannot inject env vars (${e.getMessage})")
+  }
+}
+
+dev := {
+  setEnvVar("dev")
+}
+
+local := {
+  setEnvVar("dev.default")
+}
