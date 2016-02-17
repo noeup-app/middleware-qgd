@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.impl.providers.OAuth1Info
 import org.sedis.Pool
 import play.api.libs.json.{Writes, Reads}
-import qgd.authorizationClient.utils.CaseClassUtils
+import qgd.utils.CaseClassUtils
 import redis.clients.jedis.{JedisPool, JedisPoolConfig}
 import scala.concurrent.ExecutionContext.Implicits.global
 

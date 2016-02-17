@@ -7,8 +7,8 @@ import anorm._
 import com.mohiva.play.silhouette.api.LoginInfo
 import play.api.Logger
 import play.api.db.DB
-import qgd.authorizationClient.utils.GlobalReadsWrites
 import qgd.resourceServer.models.Account
+import qgd.utils.GlobalReadsWrites
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.collection.mutable

@@ -1,6 +1,4 @@
-package qgd.authorizationClient.utils
-
-import java.util.Locale
+package qgd.utils
 
 import play.api.libs.json.Reads
 import play.api.mvc.BodyParsers.parse
@@ -8,9 +6,9 @@ import play.api.mvc.BodyParsers.parse
 
 object BodyParserHelper {
 
-
   /**
     * Parse Json or any content
+    *
     * @tparam T the json type you want to get
     * @return the parse according to the request content type
     */

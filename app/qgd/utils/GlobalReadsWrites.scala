@@ -1,11 +1,11 @@
-package qgd.authorizationClient.utils
+package qgd.utils
 
 import java.sql.PreparedStatement
 import java.util.UUID
 
-import anorm.{Column, MetaDataItem, TypeDoesNotMatch, ToStatement}
+import anorm.{Column, MetaDataItem, ToStatement, TypeDoesNotMatch}
 import org.joda.time.DateTime
-import org.joda.time.format.{DateTimeFormatter, DateTimeFormat}
+import org.joda.time.format.{DateTimeFormat, DateTimeFormatter}
 import play.api.data.validation.ValidationError
 import play.api.libs.json._
 

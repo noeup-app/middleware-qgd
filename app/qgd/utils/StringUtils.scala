@@ -1,6 +1,6 @@
-package qgd.authorizationServer.utils
+package qgd.utils
 
-object StringUtils { // TODO move upstairs
+object StringUtils {
 
 
   /**

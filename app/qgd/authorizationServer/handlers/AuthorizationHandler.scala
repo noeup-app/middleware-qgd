@@ -2,9 +2,10 @@ package qgd.authorizationServer
 package handlers
 
 import org.joda.time.DateTime
+import qgd.utils.NamedLogger
 import scala.language.implicitConversions
 import scalaoauth2.provider
-import qgd.authorizationServer.utils.{NamedLogger, Config, BearerTokenGenerator}
+import qgd.authorizationServer.utils.{Config, BearerTokenGenerator}
 import scalaoauth2.provider._
 import controllers.Clients
 import models.{ Client, AuthCode, OauthAccessToken}
@@ -72,6 +73,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
 
   /**
     * // TODO DOC
+ *
     * @param authInfo
     * @return
     */
@@ -123,6 +125,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
 
   /**
     * // TODO DOC
+ *
     * @param refreshToken
     * @return
     */
@@ -133,6 +136,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
 
   /**
     * // TODO DOC
+ *
     * @param authInfo
     * @param refreshToken
     * @return
@@ -148,6 +152,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
 
   /**
     * // TODO DOC
+ *
     * @param code
     * @return
     */
@@ -172,6 +177,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
 
   /**
     * // TODO DOC
+ *
     * @param code
     * @return
     */
@@ -186,6 +192,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
 
   /**
     * // TODO DOC
+ *
     * @param token
     * @return
     */
@@ -202,6 +209,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
 
   /**
     * // TODO DOC
+ *
     * @param accessToken
     * @return
     */

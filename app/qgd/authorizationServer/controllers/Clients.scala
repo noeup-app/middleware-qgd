@@ -12,10 +12,10 @@ import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, Controller}
 import qgd.authorizationServer.forms.ClientForm
 import qgd.authorizationServer.models.Client
-import qgd.authorizationServer.utils.NamedLogger
 import qgd.errorHandle.ExceptionEither._
 import play.api.Play.current
 import qgd.resourceServer.models.Account
+import qgd.utils.NamedLogger
 
 import scalaz.{-\/, \/-}
 

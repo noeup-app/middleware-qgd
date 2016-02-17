@@ -19,8 +19,8 @@ import qgd.authorizationClient.forms.SignInForm
 import qgd.authorizationClient.models.services.UserService
 import qgd.authorizationClient.models.Authenticate
 import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
-import qgd.authorizationClient.utils.BodyParserHelper._
-import qgd.authorizationClient.utils.RequestHelper
+import qgd.utils.{RequestHelper, BodyParserHelper}
+import BodyParserHelper._
 import qgd.authorizationClient.models.Authenticate.authenticateFormat
 import qgd.resourceServer.models.Account
 

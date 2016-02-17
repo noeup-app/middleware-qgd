@@ -11,8 +11,8 @@ import play.api.mvc.{Action, Result, AnyContent}
 import qgd.authorizationClient.forms._
 import play.api.i18n.{Messages, MessagesApi}
 import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
-import qgd.authorizationClient.utils.BodyParserHelper._
-import qgd.authorizationClient.utils.RequestHelper
+import qgd.utils.{RequestHelper, BodyParserHelper}
+import BodyParserHelper._
 import qgd.resourceServer.models.Account
 
 import scala.concurrent.Future
