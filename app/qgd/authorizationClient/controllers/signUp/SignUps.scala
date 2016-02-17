@@ -32,7 +32,7 @@ import scala.concurrent.Future
  * @param authInfoRepository The auth info repository implementation.
  * @param passwordHasher The password hasher implementation.
  */
-class SignUpController @Inject() (
+class SignUps @Inject()(
                                    val messagesApi: MessagesApi,
                                    val env: Environment[Account, CookieAuthenticator],
                                    userService: UserService,
