@@ -1,4 +1,4 @@
-package qgd.authorizationClient.controllers
+package qgd.authorizationClient.controllers.signUp
 
 import java.util.UUID
 import javax.inject.Inject
@@ -9,18 +9,17 @@ import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
-import play.api.{Logger, data}
-import qgd.authorizationClient.forms.SignUpForm
-import qgd.authorizationClient.models.services.UserService
-import play.api.i18n.{Messages, MessagesApi}
+import play.api.Logger
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Request, Result, Action}
-import qgd.authorizationClient.models.Authenticate
-import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
-import qgd.utils.{RequestHelper, BodyParserHelper}
-import BodyParserHelper._
+import play.api.mvc.{Action, Request, Result}
+import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, AuthorizationResult, HtmlScalaViewAuthorizationResult}
+import qgd.authorizationClient.forms.SignUpForm
 import qgd.authorizationClient.forms.SignUpForm.signUpFormDataFormat
+import qgd.authorizationClient.models.services.UserService
 import qgd.resourceServer.models.Account
+import qgd.utils.BodyParserHelper._
+import qgd.utils.{BodyParserHelper, RequestHelper}
 
 import scala.concurrent.Future
 
