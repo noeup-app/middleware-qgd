@@ -17,12 +17,12 @@ GET         /webjars/*file                   controllers.WebJarAssets.at(file)
 
 
 # Clients management
-GET      /clients/                         qgd.authorizationServer.controllers.Clients.list
+GET      /clients                          qgd.authorizationServer.controllers.Clients.list
 GET      /client/new                       qgd.authorizationServer.controllers.Clients.create
 POST     /client/add                       qgd.authorizationServer.controllers.Clients.add
 POST     /client/update                    qgd.authorizationServer.controllers.Clients.update
 GET      /client/edit/:id                  qgd.authorizationServer.controllers.Clients.edit(id: String)
-PUT      /client/                          qgd.authorizationServer.controllers.Clients.update
+PUT      /client                           qgd.authorizationServer.controllers.Clients.update
 GET      /client/:id                       qgd.authorizationServer.controllers.Clients.get(id: String)
 DELETE   /client/:id                       qgd.authorizationServer.controllers.Clients.delete(id: String)
 

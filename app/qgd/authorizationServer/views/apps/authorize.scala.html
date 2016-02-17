@@ -1,11 +1,12 @@
 
 @* authorize Template File *@
-@import qgd.resourceServer.models.OauthIdentity
+@import qgd.resourceServer.models.Account
 @import qgd.authorizationServer.forms.UserAuthorizationForClientForm
 
-@(userOpt: Option[OauthIdentity], appAuthForm: Form[UserAuthorizationForClientForm.Data])(implicit messages: Messages)
+@(userOpt: Option[Account], appAuthForm: Form[UserAuthorizationForClientForm.Data])(implicit messages: Messages)
 
-@qgd.authorizationServer.views.html.main("Authorize App", userOpt) {
+
+@qgd.views.html.main("Authorize App", userOpt) {
 
 
 <p>Following app has requested access to your data.</p>

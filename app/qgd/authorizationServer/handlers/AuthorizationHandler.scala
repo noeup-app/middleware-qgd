@@ -8,15 +8,14 @@ import qgd.authorizationServer.utils.{NamedLogger, Config, BearerTokenGenerator}
 import scalaoauth2.provider._
 import controllers.Clients
 import models.{ Client, AuthCode, OauthAccessToken}
-import qgd.resourceServer.models.OauthIdentity
+import qgd.resourceServer.models.Account
 import java.util.{Date, UUID}
 import play.api.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
 
-class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
-
+class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
 
   /**
     * Validate Client if client & secret matches and grantType is in the authorized list // TODO check RFC about refresh token
@@ -44,7 +43,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
     *
     * @param authInfo
     */
-  def createAccessToken(authInfo: AuthInfo[OauthIdentity]): Future[AccessToken]  = {
+  def createAccessToken(authInfo: AuthInfo[Account]): Future[AccessToken]  = {
 
     val refreshToken = Some(BearerTokenGenerator.generateToken)
     //val jsonWebToken = JsonWebTokenGenerator.generateToken(authInfo)
@@ -55,7 +54,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
     val token = new OauthAccessToken( accessToken, //jsonWebToken,
                                       refreshToken,
                                       authInfo.clientId.getOrElse(""),    // TODO Why does Nulab did use option Here?
-                                      authInfo.user.userID,
+                                      authInfo.user.id,
                                       "Bearer",
                                       authInfo.scope,
                                       expiration,
@@ -76,7 +75,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
     * @param authInfo
     * @return
     */
-  override def getStoredAccessToken(authInfo: AuthInfo[OauthIdentity]): Future[Option[AccessToken]] = ???
+  override def getStoredAccessToken(authInfo: AuthInfo[Account]): Future[Option[AccessToken]] = ???
 
   /**
     * Creates an provider Access Token response from full OauthAccessToken
@@ -99,15 +98,15 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
 
 
   /**
-    * Find User Account from Resources server account  // TODO Account and OauthIdentity should be the same
+    * Find User Account from Resources server account  // TODO Account and Account should be the same
     *
     * @param request
     * @return
     */
-  def findUser(request: AuthorizationRequest): Future[Option[OauthIdentity]] = {
+  def findUser(request: AuthorizationRequest): Future[Option[Account]] = {
     request match {
       case request: PasswordRequest =>
-        Future.successful(OauthIdentity.findByEmailAndPassword(request.username, request.password))
+        Future.successful(Account.findByEmailAndPassword(request.username, request.password))
       case request: ClientCredentialsRequest =>
         // Client credential cannot return any user and is just used to provide general information on client
         logger.debug("ClientCredentialsRequest : no user defined")
@@ -127,7 +126,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
     * @param refreshToken
     * @return
     */
-  def findAuthInfoByRefreshToken(refreshToken: String): Future[Option[AuthInfo[OauthIdentity]]] = {
+  def findAuthInfoByRefreshToken(refreshToken: String): Future[Option[AuthInfo[Account]]] = {
     logger.warn("...findAuthInfoByRefreshToken :: NOT_IMPLEMENTED")
     Future.successful(None)
   }
@@ -138,7 +137,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
     * @param refreshToken
     * @return
     */
-  def refreshAccessToken(authInfo: AuthInfo[OauthIdentity], refreshToken: String): Future[AccessToken] = {
+  def refreshAccessToken(authInfo: AuthInfo[Account], refreshToken: String): Future[AccessToken] = {
     // TODO GUILLAUME : refresh != create
     createAccessToken(authInfo)
   }
@@ -152,7 +151,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
     * @param code
     * @return
     */
-  def findAuthInfoByCode(code: String): Future[Option[AuthInfo[OauthIdentity]]] = Future.successful{ // TODO MANAGE FUTURE IN SERVICE
+  def findAuthInfoByCode(code: String): Future[Option[AuthInfo[Account]]] = Future.successful{ // TODO MANAGE FUTURE IN SERVICE
   val storedCode = AuthCode.find(code)
     val now = new Date().getTime
 
@@ -163,7 +162,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
       codeTime > now
     }.flatMap { c =>
       logger.debug("valid code found!")
-      OauthIdentity.findByUserId(c.userId).map { user =>
+      Account.findByUserId(c.userId).map { user =>
         val authInfo = AuthInfo(user, Some(c.clientId), c.scope, c.redirectUri)
         logger.debug(s"findAuthInfoByCode: $code -> authInfo: $authInfo")
         authInfo
@@ -206,7 +205,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
     * @param accessToken
     * @return
     */
-  def findAuthInfoByAccessToken(accessToken: AccessToken): Future[Option[AuthInfo[OauthIdentity]]] = {
+  def findAuthInfoByAccessToken(accessToken: AccessToken): Future[Option[AuthInfo[Account]]] = {
     logger.warn("...findAuthInfoByAccessToken :: NOT_IMPLEMENTED")
     Future.successful(None)
     /*// TODO MANAGE FUTURE IN HIGHER LEVEL!
@@ -221,7 +220,7 @@ class AuthorizationHandler extends DataHandler[OauthIdentity] with NamedLogger {
         logger.debug(s"findAuthInfoByAccessToken: $accessToken -> Expired")
         None
       case false =>
-        models.OauthIdentity.findByUserId(accessToken.userId).map { user =>
+        models.Account.findByUserId(accessToken.userId).map { user =>
           val authInfo = AuthInfo(user, Some(accessToken.clientId), accessToken.scope, None)
           logger.debug(s"findAuthInfoByAccessToken: $accessToken -> authInfo: $authInfo")
           authInfo
