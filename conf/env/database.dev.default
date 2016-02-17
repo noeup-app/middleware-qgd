@@ -1,5 +1,5 @@
-export QGD_PG_DB="bvrgicxjphglirb"
-export QGD_PG_HOST="bvrgicxjphglirb-postgresql.services.clever-cloud.com"
-export QGD_PG_PORT=5432
-export QGD_PG_USERNAME="utna9i4i4hveomqu91ya"
-export QGD_PG_PASSWORD="gQ2o7ELC1WbYRdi2KZau"
+QGD_PG_DB=bvrgicxjphglirb
+QGD_PG_HOST=bvrgicxjphglirb-postgresql.services.clever-cloud.com
+QGD_PG_PORT=5432
+QGD_PG_USERNAME=utna9i4i4hveomqu91ya
+QGD_PG_PASSWORD=gQ2o7ELC1WbYRdi2KZau
