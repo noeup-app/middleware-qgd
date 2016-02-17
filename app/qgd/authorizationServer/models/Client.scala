@@ -10,6 +10,7 @@ import play.api.libs.json.Json
 
 
 /**
+  * // TODO DOC
   *
   * @param clientId Ramdom string
   * @param clientName Client application name

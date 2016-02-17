@@ -11,7 +11,7 @@ import qgd.authorizationClient.models.services.UserService
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{AnyContent, Request, Result, Action}
-import qgd.authorizationClient.results.{AuthorizationResult, AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult}
+import qgd.authorizationClient.controllers.results.{AuthorizationResult, AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult}
 import qgd.authorizationClient.utils.RequestHelper
 import qgd.resourceServer.models.Account
 

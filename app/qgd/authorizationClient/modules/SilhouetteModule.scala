@@ -28,7 +28,7 @@ import play.api.libs.openid.OpenIdClient
 import play.api.libs.ws.WSClient
 import qgd.authorizationClient.models.daos._
 import qgd.authorizationClient.models.services.{UserServiceImpl, UserService}
-import qgd.authorizationClient.results.HtmlScalaViewAuthorizationResult
+import qgd.authorizationClient.controllers.results.HtmlScalaViewAuthorizationResult
 import qgd.resourceServer.models.Account
 
 /**

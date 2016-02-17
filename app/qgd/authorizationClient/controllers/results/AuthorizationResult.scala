@@ -1,4 +1,4 @@
-package qgd.authorizationClient.results
+package qgd.authorizationClient.controllers.results
 
 import com.google.inject.ImplementedBy
 import com.mohiva.play.silhouette.api.Silhouette

@@ -25,17 +25,7 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     * @return The retrieved auth info or None if no auth info could be retrieved for the given login info.
     */
   override def find(loginInfo: LoginInfo): Future[Option[T]] =
-    Future.successful(pool.withClient(_.get(loginInfo)) flatMap (r => r))
-
-  /**
-    * Updates the auth info for the given login info.
-    *
-    * @param loginInfo The login info for which the auth info should be updated.
-    * @param authInfo The auth info to update.
-    * @return The updated auth info.
-    */
-  override def update(loginInfo: LoginInfo, authInfo: T): Future[T] =
-    add(loginInfo, authInfo)
+    Future.successful(pool.withClient(_.get(loginInfo)) flatMap (r => r)) // TODO manage errors
 
   /**
     * Removes the auth info for the given login info.
@@ -45,7 +35,7 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     */
   override def remove(loginInfo: LoginInfo): Future[Unit] ={
     val serializedLoginInfo: String = loginInfo
-    Future.successful(pool.withClient(_.del(serializedLoginInfo)))
+    Future.successful(pool.withClient(_.del(serializedLoginInfo))) // TODO manage errors
   }
 
   /**
@@ -53,6 +43,8 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     *
     * This method either adds the auth info if it doesn't exists or it updates the auth info
     * if it already exists.
+    *
+    * NOTE : in our implementation (with redis database) add = update. So, save, add and update could be merged. But the library requires this 3 methods.
     *
     * @param loginInfo The login info for which the auth info should be saved.
     * @param authInfo The auth info to save.
@@ -75,7 +67,19 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
   override def add(loginInfo: LoginInfo, authInfo: T): Future[T] = {
     val serializedLoginInfo: String = loginInfo
     val serializedAuthInfo: String  = authInfo
-    pool.withClient(_.set(serializedLoginInfo, serializedAuthInfo))
+    pool.withClient(_.set(serializedLoginInfo, serializedAuthInfo)) // TODO manage errors
     Future.successful(authInfo)
   }
+
+
+  /**
+    * Updates the auth info for the given login info.
+    *
+    * @param loginInfo The login info for which the auth info should be updated.
+    * @param authInfo The auth info to update.
+    * @return The updated auth info.
+    */
+  override def update(loginInfo: LoginInfo, authInfo: T): Future[T] =
+    add(loginInfo, authInfo)
+
 }

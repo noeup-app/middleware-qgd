@@ -26,6 +26,7 @@ class UserServiceImpl @Inject() (userDAO: UserDAO) extends UserService {
    * @return The retrieved user or None if no user could be retrieved for the given login info.
    */
   def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
+    // TODO cas particulier de l'utilisation de l'Expect ? gérer l'erreur avec eventbus
     Logger.debug("UserServiceImpl.retrieve : " + loginInfo)
     userDAO.find(loginInfo)
   }

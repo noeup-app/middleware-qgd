@@ -8,7 +8,7 @@ object RequestHelper {
 
   /**
     * This check if a request is a json one
- *
+    *
     * @param request the request to test
     * @return true if the request is json ; false otherwise
     */
