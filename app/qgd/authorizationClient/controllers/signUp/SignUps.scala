@@ -37,8 +37,8 @@ class SignUps @Inject()(
                                    val env: Environment[Account, CookieAuthenticator],
                                    userService: UserService,
                                    authInfoRepository: AuthInfoRepository,
-                                   htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
-                                   ajaxAuthorizationResult: AjaxAuthorizationResult,
+                                   htmlSignUpsResult: HtmlSignUpsResult,
+                                   ajaxSignUpsResult: AjaxSignUpsResult,
                                    avatarService: AvatarService,
                                    passwordHasher: PasswordHasher)
   extends Silhouette[Account, CookieAuthenticator] {
@@ -53,19 +53,19 @@ class SignUps @Inject()(
       case true =>
         val data: SignUpForm.Data = request.body.asInstanceOf[SignUpForm.Data]
         val loginInfo = LoginInfo(CredentialsProvider.ID, data.email)
-        signUp(loginInfo, data, ajaxAuthorizationResult)
+        signUp(loginInfo, data, ajaxSignUpsResult)
       case false =>
         SignUpForm.form.bindFromRequest.fold(
-          form => Future.successful(htmlScalaViewAuthorizationResult.badRequestSignUp(form)),
+          form => Future.successful(htmlSignUpsResult.badRequest(form)),
           data => {
             val loginInfo = LoginInfo(CredentialsProvider.ID, data.email)
-            signUp(loginInfo, data, htmlScalaViewAuthorizationResult)
+            signUp(loginInfo, data, htmlSignUpsResult)
           }
         )
     }
   }
 
-  def signUp(loginInfo: LoginInfo, data: SignUpForm.Data, authorizationResult: AuthorizationResult)(implicit request: Request[Any]): Future[Result] = {
+  def signUp(loginInfo: LoginInfo, data: SignUpForm.Data, authorizationResult: SignUpsResult)(implicit request: Request[Any]): Future[Result] = {
     val res = userService.retrieve(loginInfo).flatMap {
       case Some(user) =>
         Future.successful(authorizationResult.userAlreadyExists())
@@ -99,7 +99,7 @@ class SignUps @Inject()(
     res.recover{
       case e: Exception => {
         Logger.error("An exception occurred", e)
-        authorizationResult.manageErrorSignUp(e)
+        authorizationResult.manageError(e)
       }
     }
   }
