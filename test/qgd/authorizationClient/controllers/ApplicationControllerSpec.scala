@@ -12,11 +12,11 @@ import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.test.{ FakeRequest, PlaySpecification, WithApplication }
-import qgd.authorizationClient.controllers.application.ApplicationController
+import qgd.authorizationClient.controllers.application.Applications
 import qgd.resourceServer.models.Account
 
 /**
- * Test case for the [[ApplicationController]] class.
+ * Test case for the [[Applications]] class.
  */
 class ApplicationControllerSpec extends PlaySpecification with Mockito {
   sequential

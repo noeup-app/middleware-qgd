@@ -20,7 +20,7 @@ import scala.concurrent.Future
  * @param env The Silhouette environment.
  * @param socialProviderRegistry The social provider registry.
  */
-class ApplicationController @Inject() (
+class Applications @Inject()(
                                         val messagesApi: MessagesApi,
                                         val env: Environment[Account, CookieAuthenticator],
                                         socialProviderRegistry: SocialProviderRegistry,
@@ -36,10 +36,10 @@ class ApplicationController @Inject() (
   def index = SecuredAction.async { implicit request =>
     RequestHelper.isJson(request) match {
       case true =>
-        val req = request.asInstanceOf[ApplicationController.this.ajaxAuthorizationResult.SecuredRequest[AnyContent]]
+        val req = request.asInstanceOf[Applications.this.ajaxAuthorizationResult.SecuredRequest[AnyContent]]
         Future.successful(ajaxAuthorizationResult.getResource(req))
       case false =>
-        val req = request.asInstanceOf[ApplicationController.this.htmlScalaViewAuthorizationResult.SecuredRequest[AnyContent]]
+        val req = request.asInstanceOf[Applications.this.htmlScalaViewAuthorizationResult.SecuredRequest[AnyContent]]
         Future.successful(htmlScalaViewAuthorizationResult.getResource(req))
     }
   }
