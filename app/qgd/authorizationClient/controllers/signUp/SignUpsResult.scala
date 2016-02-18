@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import play.api.data.Form
 import play.api.i18n.{Messages, MessagesApi}
-import play.api.mvc.Result
+import play.api.mvc.{Request, Result}
 import qgd.authorizationClient.controllers.results.AuthorizationResult
 import qgd.authorizationClient.forms.SignUpForm
 import qgd.authorizationClient.forms.SignUpForm.Data
@@ -16,7 +16,7 @@ import qgd.resourceServer.models.Account
   * Define all HTTP results (Json/Html)
   */
 trait SignUpsResult extends AuthorizationResult {
-  def badRequest(form: Form[SignUpForm.Data]): Result
+  def badRequest(form: Form[SignUpForm.Data])(implicit request: Request[Any]): Result
   def userAlreadyExists(): Result
   def userSuccessfullyCreated(): Result
   def manageError(e: Exception): Result
@@ -33,7 +33,7 @@ class HtmlSignUpsResult @Inject() (
                                      val env: Environment[Account, CookieAuthenticator])
   extends SignUpsResult {
 
-  override def badRequest(form: Form[Data]): Result =
+  override def badRequest(form: Form[Data])(implicit request: Request[Any]): Result =
     BadRequest(qgd.authorizationClient.views.html.signUp(form))
 
   override def userSuccessfullyCreated(): Result =
@@ -59,7 +59,7 @@ class AjaxSignUpsResult @Inject() (
                                      val env: Environment[Account, CookieAuthenticator])
   extends SignUpsResult {
 
-  override def badRequest(form: Form[Data]): Result =
+  override def badRequest(form: Form[Data])(implicit request: Request[Any]): Result =
     BadRequest("Incorrect or incomplete sign in information provided")
 
   override def userSuccessfullyCreated(): Result =
