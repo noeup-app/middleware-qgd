@@ -68,7 +68,7 @@ class AjaxSignUpsResult @Inject() (
   extends SignUpsResult {
 
   override def badRequest(form: Form[Data])(implicit request: Request[Any]): Result =
-    BadRequest("Incorrect or incomplete sign in information provided")
+    BadRequest("Incorrect or incomplete login information provided")
 
   override def userSuccessfullyCreated(): Result =
     Ok("User successfully created")

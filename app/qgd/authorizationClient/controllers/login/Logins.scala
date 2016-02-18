@@ -54,7 +54,7 @@ class Logins @Inject()(
 
 
   /**
-    * Handles the Sign In action.
+    * Handles the login action.
     *
     * @return The result to display.
     */
@@ -68,7 +68,7 @@ class Logins @Inject()(
   }
 
   /**
-    * Sign in generic process
+    * Login generic process
     *
     * @param request the request
     * @param loginsResult the implementation of authorizationResult
@@ -140,16 +140,16 @@ class Logins @Inject()(
 
 
   /**
-    * Handles the Sign Out action.
+    * Handles the logout action.
     *
     * @return The result to display.
     */
-  def signOut = SecuredAction.async { implicit request =>
+  def logOut = SecuredAction.async { implicit request =>
     val result = RequestHelper.isJson(request) match {
       case true =>
-        ajaxLoginsResult.userSignOut()
+        ajaxLoginsResult.userLogout()
       case false =>
-        htmlLoginsResult.userSignOut()
+        htmlLoginsResult.userLogout()
     }
     env.eventBus.publish(LogoutEvent(request.identity, request, request2Messages))
 

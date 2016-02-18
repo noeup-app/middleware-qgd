@@ -4,9 +4,9 @@
 
 # Home page
 GET         /                                qgd.authorizationClient.controllers.application.Applications.index
-GET         /signIn                          qgd.authorizationClient.controllers.login.Logins.loginAction
+GET         /login                           qgd.authorizationClient.controllers.login.Logins.loginAction
 GET         /signUp                          qgd.authorizationClient.controllers.signUp.SignUps.signUpActionGet
-GET         /signOut                         qgd.authorizationClient.controllers.login.Logins.signOut
+GET         /logout                         qgd.authorizationClient.controllers.login.Logins.logOut
 GET         /forgotPassword                  qgd.authorizationClient.controllers.signUp.SignUps.forgotPassword
 GET         /authenticate/:provider          qgd.authorizationClient.controllers.socialAuth.SocialAuths.authenticateAction(provider)
 POST        /authenticate/credentials        qgd.authorizationClient.controllers.login.Logins.authenticateAction

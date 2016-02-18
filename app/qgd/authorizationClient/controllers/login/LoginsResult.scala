@@ -23,7 +23,7 @@ trait LoginsResult extends AuthorizationResult {
   def manageError(e: Exception): Result
   def userIsConnected(): Result
   def userIsNotConnected(implicit request: UserAwareRequest[AnyContent]): Result
-  def userSignOut(): Result
+  def userLogout(): Result
 }
 
 /**
@@ -55,7 +55,7 @@ class HtmlLoginsResult @Inject() (
   override def userIsConnected(): Result =
     Redirect(qgd.authorizationClient.controllers.application.routes.Applications.index())
 
-  override def userSignOut(): Result =
+  override def userLogout(): Result =
     Redirect(qgd.authorizationClient.controllers.application.routes.Applications.index())
 
   override def userIsNotConnected(implicit request: UserAwareRequest[AnyContent]): Result =
@@ -74,7 +74,7 @@ class AjaxLoginsResult @Inject() (
   extends LoginsResult {
 
   override def badRequest(form: Form[SignInForm.Data])(implicit request: Request[Any]): Result =
-    BadRequest("Incorrect or incomplete sign in information provided")
+    BadRequest("Incorrect or incomplete login information provided")
 
   override def userIsAuthenticated(): Result =
     Ok("User is authenticated")
@@ -89,5 +89,5 @@ class AjaxLoginsResult @Inject() (
 
   override def userIsNotConnected(implicit request: UserAwareRequest[AnyContent]): Result = Forbidden("User is not connected")
 
-  override def userSignOut(): Result = Ok("User successfully signed out")
+  override def userLogout(): Result = Ok("User successfully signed out")
 }
