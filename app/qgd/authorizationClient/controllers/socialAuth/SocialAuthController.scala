@@ -1,4 +1,4 @@
-package qgd.authorizationClient.controllers
+package qgd.authorizationClient.controllers.socialAuth
 
 import javax.inject.Inject
 
@@ -7,11 +7,11 @@ import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
-import qgd.authorizationClient.models.services.UserService
-import play.api.i18n.{Messages, MessagesApi}
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{AnyContent, Request, Result, Action}
-import qgd.authorizationClient.controllers.results.{AuthorizationResult, AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult}
+import play.api.mvc.{Action, AnyContent, Request, Result}
+import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, AuthorizationResult, HtmlScalaViewAuthorizationResult}
+import qgd.authorizationClient.models.services.UserService
 import qgd.resourceServer.models.Account
 import qgd.utils.RequestHelper
 
