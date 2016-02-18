@@ -1,9 +1,8 @@
-package qgd.authorizationClient.controllers.results
+package qgd.authorizationClient.controllers
 
 import com.mohiva.play.silhouette.api.Silhouette
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import play.api.mvc.{AnyContent, Results, Request, Result}
-import qgd.authorizationClient.forms.{SignUpForm, SignInForm}
+import play.api.mvc.Results
 import qgd.resourceServer.models.Account
 
 
