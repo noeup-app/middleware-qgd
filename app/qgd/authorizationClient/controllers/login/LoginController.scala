@@ -1,4 +1,4 @@
-package qgd.authorizationClient.controllers
+package qgd.authorizationClient.controllers.login
 
 import javax.inject.Inject
 
@@ -6,23 +6,23 @@ import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.api.util.{Clock, Credentials}
+import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers._
 import net.ceedubs.ficus.Ficus._
-import play.api.{Logger, Configuration}
-import play.api.i18n.{Messages, MessagesApi}
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Result, AnyContent, Request, Action}
+import play.api.mvc.{Action, Request, Result}
+import play.api.{Configuration, Logger}
+import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, AuthorizationResult, HtmlScalaViewAuthorizationResult}
 import qgd.authorizationClient.forms.SignInForm
-import qgd.authorizationClient.models.services.UserService
 import qgd.authorizationClient.models.Authenticate
-import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
-import qgd.utils.{RequestHelper, BodyParserHelper}
-import BodyParserHelper._
 import qgd.authorizationClient.models.Authenticate.authenticateFormat
+import qgd.authorizationClient.models.services.UserService
 import qgd.resourceServer.models.Account
+import qgd.utils.BodyParserHelper._
+import qgd.utils.{BodyParserHelper, RequestHelper}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
