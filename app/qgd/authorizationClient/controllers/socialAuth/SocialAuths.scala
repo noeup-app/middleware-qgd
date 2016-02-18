@@ -31,8 +31,8 @@ class SocialAuths @Inject()(
                                        val env: Environment[Account, CookieAuthenticator],
                                        userService: UserService,
                                        authInfoRepository: AuthInfoRepository,
-                                       htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
-                                       ajaxAuthorizationResult: AjaxAuthorizationResult,
+                                       htmlSocialAuthsResult: HtmlSocialAuthsResult,
+                                       ajaxSocialAuthsResult: AjaxSocialAuthsResult,
                                        socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[Account, CookieAuthenticator] with Logger {
 
@@ -45,13 +45,13 @@ class SocialAuths @Inject()(
   def authenticateAction(provider: String) = Action.async { implicit request =>
     RequestHelper.isJson(request) match {
       case true  =>
-        authenticate(provider, ajaxAuthorizationResult)
+        authenticate(provider, ajaxSocialAuthsResult)
       case false =>
-        authenticate(provider, htmlScalaViewAuthorizationResult)
+        authenticate(provider, htmlSocialAuthsResult)
     }
   }
 
-  def authenticate(provider: String, authorizationResult: AuthorizationResult)(implicit request: Request[AnyContent]): Future[Result] = {
+  def authenticate(provider: String, authorizationResult: SocialAuthsResult)(implicit request: Request[AnyContent]): Future[Result] = {
     (socialProviderRegistry.get[SocialProvider](provider) match {
       case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
         p.authenticate().flatMap {
