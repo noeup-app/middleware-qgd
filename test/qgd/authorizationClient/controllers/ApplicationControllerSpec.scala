@@ -7,8 +7,8 @@ import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
+import org.specs2.matcher.Scope
 import org.specs2.mock.Mockito
-import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.test.{ FakeRequest, PlaySpecification, WithApplication }

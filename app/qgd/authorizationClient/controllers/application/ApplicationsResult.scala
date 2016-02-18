@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Result, AnyContent}
-import qgd.authorizationClient.controllers.results.AuthorizationResult
+import qgd.authorizationClient.controllers.AuthorizationResult
 import qgd.resourceServer.models.Account
 
 /**
