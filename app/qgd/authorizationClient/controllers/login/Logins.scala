@@ -40,7 +40,7 @@ import scala.language.postfixOps
   * @param configuration The Play configuration.
   * @param clock The clock instance.
   */
-class LoginController @Inject()(
+class Logins @Inject()(
                                             val messagesApi: MessagesApi,
                                             val env: Environment[Account, CookieAuthenticator],
                                             userService: UserService,
