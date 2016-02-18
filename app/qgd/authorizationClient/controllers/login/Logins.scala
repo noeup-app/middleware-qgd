@@ -47,8 +47,8 @@ class Logins @Inject()(
                                             authInfoRepository: AuthInfoRepository,
                                             credentialsProvider: CredentialsProvider,
                                             socialProviderRegistry: SocialProviderRegistry,
-                                            htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
-                                            ajaxAuthorizationResult: AjaxAuthorizationResult,
+                                            htmlLoginsResult: HtmlLoginsResult,
+                                            ajaxLoginsResult: AjaxLoginsResult,
                                             configuration: Configuration,
                                             clock: Clock)
   extends Silhouette[Account, CookieAuthenticator] {
@@ -63,19 +63,19 @@ class Logins @Inject()(
     RequestHelper.isJson(request) match {
       case true  =>
         val authenticateData: Authenticate = request.body.asInstanceOf[Authenticate] // TODO Ugly
-        authenticate(authenticateData, ajaxAuthorizationResult)
+        authenticate(authenticateData, ajaxLoginsResult)
       case false =>
         SignInForm.form.bindFromRequest.fold(
-          form => Future.successful(htmlScalaViewAuthorizationResult.badRequestSignIn(form)),
+          form => Future.successful(htmlLoginsResult.badRequest(form)),
           data => {
             val authenticateData = Authenticate(data.email, data.password, data.rememberMe)
-            authenticate(authenticateData, htmlScalaViewAuthorizationResult)
+            authenticate(authenticateData, htmlLoginsResult)
           }
         )
     }
 
   }
-  def authenticate(authenticate: Authenticate, authorizationResult: AuthorizationResult)(implicit request: Request[Any]): Future[Result] = {
+  def authenticate(authenticate: Authenticate, authorizationResult: LoginsResult)(implicit request: Request[Any]): Future[Result] = {
     val credentials = authenticate.getCredentials
     credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
       val result = authorizationResult.userIsAuthenticated()
@@ -103,7 +103,7 @@ class Logins @Inject()(
         authorizationResult.invalidCredentials()
       case e: Exception => {
         Logger.error("An exception ocurred", e)
-        authorizationResult.manageErrorSignIn(e)
+        authorizationResult.manageError(e)
       }
     }
   }
