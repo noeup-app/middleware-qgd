@@ -8,7 +8,6 @@ import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.Result
 import qgd.authorizationClient.controllers.results.AuthorizationResult
-import qgd.authorizationClient.controllers.routes
 import qgd.resourceServer.models.Account
 
 /**
@@ -29,10 +28,11 @@ class HtmlSocialAuthsResult @Inject() (
                                         val env: Environment[Account, CookieAuthenticator])
   extends SocialAuthsResult {
 
-  override def userSuccessfullyAuthenticated(): Result = Redirect(routes.ApplicationController.index())
+  override def userSuccessfullyAuthenticated(): Result =
+    Redirect(qgd.authorizationClient.controllers.application.routes.Applications.index())
 
   override def unexpectedProviderError(): Result =
-    Redirect(routes.ApplicationController.signInAction())
+    Redirect(qgd.authorizationClient.controllers.login.routes.Logins.loginAction())
       .flashing("error" -> Messages("could.not.authenticate"))
 }
 

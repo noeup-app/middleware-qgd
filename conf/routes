@@ -3,13 +3,13 @@
 # ~~~~
 
 # Home page
-GET         /                                qgd.authorizationClient.controllers.ApplicationController.index
-GET         /signIn                          qgd.authorizationClient.controllers.ApplicationController.signInAction
-GET         /signUp                          qgd.authorizationClient.controllers.ApplicationController.signUpAction
-GET         /signOut                         qgd.authorizationClient.controllers.ApplicationController.signOut
-GET         /forgotPassword                         qgd.authorizationClient.controllers.ApplicationController.forgotPassword
-GET         /authenticate/:provider          qgd.authorizationClient.controllers.SocialAuthController.authenticateAction(provider)
-POST        /authenticate/credentials        qgd.authorizationClient.controllers.LoginController.authenticateAction
+GET         /                                qgd.authorizationClient.controllers.application.Applications.index
+GET         /signIn                          qgd.authorizationClient.controllers.login.Logins.loginAction
+GET         /signUp                          qgd.authorizationClient.controllers.signUp.SignUps.signUpActionGet
+GET         /signOut                         qgd.authorizationClient.controllers.login.Logins.signOut
+GET         /forgotPassword                  qgd.authorizationClient.controllers.signUp.SignUps.forgotPassword
+GET         /authenticate/:provider          qgd.authorizationClient.controllers.socialAuth.SocialAuths.authenticateAction(provider)
+POST        /authenticate/credentials        qgd.authorizationClient.controllers.login.Logins.authenticateAction
 POST        /signUp                          qgd.authorizationClient.controllers.signUp.SignUps.signUpAction
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                    controllers.Assets.at(path="/public", file)

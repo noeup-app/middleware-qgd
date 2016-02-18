@@ -13,9 +13,8 @@ import com.mohiva.play.silhouette.impl.providers._
 import net.ceedubs.ficus.Ficus._
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Action, Request, Result}
+import play.api.mvc.{AnyContent, Action, Request, Result}
 import play.api.{Configuration, Logger}
-import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, AuthorizationResult, HtmlScalaViewAuthorizationResult}
 import qgd.authorizationClient.forms.SignInForm
 import qgd.authorizationClient.models.Authenticate
 import qgd.authorizationClient.models.Authenticate.authenticateFormat
@@ -55,6 +54,37 @@ class Logins @Inject()(
 
 
   /**
+    * Handles the Sign In action.
+    *
+    * @return The result to display.
+    */
+  def loginAction = UserAwareAction.async { implicit request =>
+    RequestHelper.isJson(request) match {
+      case true  =>
+        login(request, ajaxLoginsResult)
+      case false =>
+        login(request, htmlLoginsResult)
+    }
+  }
+
+  /**
+    * Sign in generic process
+    *
+    * @param request the request
+    * @param loginsResult the implementation of authorizationResult
+    * @return The result to return
+    */
+  def login(request: UserAwareRequest[AnyContent], loginsResult: LoginsResult): Future[Result] = {
+    val req = request.asInstanceOf[loginsResult.UserAwareRequest[AnyContent]]
+    request.identity match {
+      case Some(user) => Future.successful(loginsResult.userIsConnected())
+      case None => Future.successful(loginsResult.userIsNotConnected(req))
+    }
+  }
+
+
+
+  /**
     * Authenticates a user against the credentials provider.
     *
     * @return The result to display.
@@ -75,10 +105,10 @@ class Logins @Inject()(
     }
 
   }
-  def authenticate(authenticate: Authenticate, authorizationResult: LoginsResult)(implicit request: Request[Any]): Future[Result] = {
+  def authenticate(authenticate: Authenticate, loginsResult: LoginsResult)(implicit request: Request[Any]): Future[Result] = {
     val credentials = authenticate.getCredentials
     credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
-      val result = authorizationResult.userIsAuthenticated()
+      val result = loginsResult.userIsAuthenticated()
       userService.retrieve(loginInfo).flatMap {
         case Some(user) =>
           val c = configuration.underlying
@@ -100,11 +130,30 @@ class Logins @Inject()(
       }
     }.recover {
       case e: ProviderException =>
-        authorizationResult.invalidCredentials()
+        loginsResult.invalidCredentials()
       case e: Exception => {
         Logger.error("An exception ocurred", e)
-        authorizationResult.manageError(e)
+        loginsResult.manageError(e)
       }
     }
   }
+
+
+  /**
+    * Handles the Sign Out action.
+    *
+    * @return The result to display.
+    */
+  def signOut = SecuredAction.async { implicit request =>
+    val result = RequestHelper.isJson(request) match {
+      case true =>
+        ajaxLoginsResult.userSignOut()
+      case false =>
+        htmlLoginsResult.userSignOut()
+    }
+    env.eventBus.publish(LogoutEvent(request.identity, request, request2Messages))
+
+    env.authenticatorService.discard(request.authenticator, result)
+  }
+
 }

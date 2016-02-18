@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import play.api.data.Form
 import play.api.i18n.{Messages, MessagesApi}
-import play.api.mvc.{Request, Result}
+import play.api.mvc.{AnyContent, Request, Result}
 import qgd.authorizationClient.controllers.results.AuthorizationResult
 import qgd.authorizationClient.forms.SignUpForm
 import qgd.authorizationClient.forms.SignUpForm.Data
@@ -20,6 +20,8 @@ trait SignUpsResult extends AuthorizationResult {
   def userAlreadyExists(): Result
   def userSuccessfullyCreated(): Result
   def manageError(e: Exception): Result
+  def userIsConnected(): Result
+  def userIsNotRegistered(implicit request: UserAwareRequest[AnyContent]): Result
 }
 
 
@@ -37,15 +39,21 @@ class HtmlSignUpsResult @Inject() (
     BadRequest(qgd.authorizationClient.views.html.signUp(form))
 
   override def userSuccessfullyCreated(): Result =
-    Redirect(routes.ApplicationController.index())
+    Redirect(qgd.authorizationClient.controllers.application.routes.Applications.index())
 
   override def manageError(e: Exception): Result =
-    Redirect(routes.ApplicationController.signUpAction())
+    Redirect(qgd.authorizationClient.controllers.signUp.routes.SignUps.signUpAction())
       .flashing("error" -> Messages("internal.server.error"))
 
   override def userAlreadyExists(): Result =
-    Redirect(routes.ApplicationController.signUpAction())
+    Redirect(qgd.authorizationClient.controllers.signUp.routes.SignUps.signUpAction())
       .flashing("error" -> Messages("user.exists"))
+
+  override def userIsConnected(): Result =
+    Redirect(qgd.authorizationClient.controllers.application.routes.Applications.index())
+
+  override def userIsNotRegistered(implicit request: UserAwareRequest[AnyContent]): Result =
+    Ok(qgd.authorizationClient.views.html.signUp(SignUpForm.form))
 }
 
 
@@ -70,4 +78,9 @@ class AjaxSignUpsResult @Inject() (
 
   override def userAlreadyExists(): Result =
     BadRequest("User already exists")
+
+  override def userIsConnected(): Result = Ok("User is connected")
+
+  override def userIsNotRegistered(implicit request: UserAwareRequest[AnyContent]): Result =
+    Ok("User is not registered")
 }

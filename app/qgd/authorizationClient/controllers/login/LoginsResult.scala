@@ -7,9 +7,8 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import play.api.data.Form
 import play.api.i18n.{Messages, MessagesApi}
-import play.api.mvc.{Request, Result}
+import play.api.mvc.{AnyContent, Request, Result}
 import qgd.authorizationClient.controllers.results.AuthorizationResult
-import qgd.authorizationClient.controllers.routes
 import qgd.authorizationClient.forms.SignInForm
 import qgd.resourceServer.models.Account
 
@@ -22,6 +21,9 @@ trait LoginsResult extends AuthorizationResult {
   def userIsAuthenticated(): Result
   def invalidCredentials(): Result
   def manageError(e: Exception): Result
+  def userIsConnected(): Result
+  def userIsNotConnected(implicit request: UserAwareRequest[AnyContent]): Result
+  def userSignOut(): Result
 }
 
 /**
@@ -40,15 +42,24 @@ class HtmlLoginsResult @Inject() (
     BadRequest(qgd.authorizationClient.views.html.signIn(form, socialProviderRegistry))
 
   override def userIsAuthenticated(): Result =
-    Redirect(routes.ApplicationController.index())
+    Redirect(qgd.authorizationClient.controllers.application.routes.Applications.index())
 
   override def invalidCredentials(): Result =
-    Redirect(routes.ApplicationController.signInAction())
+    Redirect(qgd.authorizationClient.controllers.login.routes.Logins.loginAction())
       .flashing("error" -> Messages("invalid.credentials"))
 
   override def manageError(e: Exception): Result =
-    Redirect(routes.ApplicationController.signInAction())
+    Redirect(qgd.authorizationClient.controllers.login.routes.Logins.loginAction())
       .flashing("error" -> Messages("internal.server.error"))
+
+  override def userIsConnected(): Result =
+    Redirect(qgd.authorizationClient.controllers.application.routes.Applications.index())
+
+  override def userSignOut(): Result =
+    Redirect(qgd.authorizationClient.controllers.application.routes.Applications.index())
+
+  override def userIsNotConnected(implicit request: UserAwareRequest[AnyContent]): Result =
+    Ok(qgd.authorizationClient.views.html.signIn(SignInForm.form, socialProviderRegistry))
 }
 
 
@@ -73,4 +84,10 @@ class AjaxLoginsResult @Inject() (
 
   override def manageError(e: Exception): Result =
     InternalServerError(Messages("internal.server.error"))
+
+  override def userIsConnected(): Result = Ok("User is connected")
+
+  override def userIsNotConnected(implicit request: UserAwareRequest[AnyContent]): Result = Forbidden("User is not connected")
+
+  override def userSignOut(): Result = Ok("User successfully signed out")
 }

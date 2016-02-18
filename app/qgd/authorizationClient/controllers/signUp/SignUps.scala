@@ -12,8 +12,7 @@ import com.mohiva.play.silhouette.impl.providers._
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Action, Request, Result}
-import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, AuthorizationResult, HtmlScalaViewAuthorizationResult}
+import play.api.mvc.{AnyContent, Action, Request, Result}
 import qgd.authorizationClient.forms.SignUpForm
 import qgd.authorizationClient.forms.SignUpForm.signUpFormDataFormat
 import qgd.authorizationClient.models.services.UserService
@@ -42,6 +41,39 @@ class SignUps @Inject()(
                                    avatarService: AvatarService,
                                    passwordHasher: PasswordHasher)
   extends Silhouette[Account, CookieAuthenticator] {
+
+
+
+  /**
+    * Handles the Sign Up action.
+    *
+    * @return The result to display.
+    */
+  def signUpActionGet = UserAwareAction.async { implicit request =>
+    RequestHelper.isJson(request) match {
+      case true  =>
+        signUp(request, ajaxSignUpsResult)
+      case false =>
+        signUp(request, htmlSignUpsResult)
+    }
+  }
+
+  /**
+    * Sign up generic process
+    *
+    * @param request the request
+    * @param signUpsResult the implementation of authorizationResult
+    * @return The result to return
+    */
+  def signUp(request: UserAwareRequest[AnyContent], signUpsResult: SignUpsResult): Future[Result] = {
+    val req = request.asInstanceOf[signUpsResult.UserAwareRequest[AnyContent]]
+    request.identity match {
+      case Some(user) => Future.successful(signUpsResult.userIsConnected())
+      case None => Future.successful(signUpsResult.userIsNotRegistered(req))
+    }
+  }
+
+
 
   /**
    * Registers a new user.
@@ -102,5 +134,9 @@ class SignUps @Inject()(
         authorizationResult.manageError(e)
       }
     }
+  }
+
+  def forgotPassword = Action {
+    NotImplemented
   }
 }
