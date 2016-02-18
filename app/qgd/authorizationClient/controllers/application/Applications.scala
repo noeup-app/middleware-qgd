@@ -24,8 +24,8 @@ class Applications @Inject()(
                                         val messagesApi: MessagesApi,
                                         val env: Environment[Account, CookieAuthenticator],
                                         socialProviderRegistry: SocialProviderRegistry,
-                                        htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
-                                        ajaxAuthorizationResult: AjaxAuthorizationResult)
+                                        htmlApplicationsResult: HtmlApplicationsResult,
+                                        ajaxApplicationsResult: AjaxApplicationsResult)
   extends Silhouette[Account, CookieAuthenticator] {
 
   /**
@@ -36,11 +36,11 @@ class Applications @Inject()(
   def index = SecuredAction.async { implicit request =>
     RequestHelper.isJson(request) match {
       case true =>
-        val req = request.asInstanceOf[Applications.this.ajaxAuthorizationResult.SecuredRequest[AnyContent]]
-        Future.successful(ajaxAuthorizationResult.getResource(req))
+        val req = request.asInstanceOf[Applications.this.ajaxApplicationsResult.SecuredRequest[AnyContent]]
+        Future.successful(ajaxApplicationsResult.getResource(req))
       case false =>
-        val req = request.asInstanceOf[Applications.this.htmlScalaViewAuthorizationResult.SecuredRequest[AnyContent]]
-        Future.successful(htmlScalaViewAuthorizationResult.getResource(req))
+        val req = request.asInstanceOf[Applications.this.htmlApplicationsResult.SecuredRequest[AnyContent]]
+        Future.successful(htmlApplicationsResult.getResource(req))
     }
   }
 
@@ -52,9 +52,9 @@ class Applications @Inject()(
   def signInAction = UserAwareAction.async { implicit request =>
     RequestHelper.isJson(request) match {
       case true  =>
-        signIn(request, ajaxAuthorizationResult)
+        signIn(request, ajaxApplicationsResult)
       case false =>
-        signIn(request, htmlScalaViewAuthorizationResult)
+        signIn(request, htmlApplicationsResult)
     }
   }
 
@@ -81,9 +81,9 @@ class Applications @Inject()(
   def signUpAction = UserAwareAction.async { implicit request => // TODO : move to signupcontroller
     RequestHelper.isJson(request) match {
       case true  =>
-        signUp(request, ajaxAuthorizationResult)
+        signUp(request, ajaxApplicationsResult)
       case false =>
-        signUp(request, htmlScalaViewAuthorizationResult)
+        signUp(request, htmlApplicationsResult)
     }
   }
 
@@ -110,9 +110,9 @@ class Applications @Inject()(
   def signOut = SecuredAction.async { implicit request =>
     val result = RequestHelper.isJson(request) match {
       case true =>
-        ajaxAuthorizationResult.userSignOut()
+        ajaxApplicationsResult.userSignOut()
       case false =>
-        htmlScalaViewAuthorizationResult.userSignOut()
+        htmlApplicationsResult.userSignOut()
     }
     env.eventBus.publish(LogoutEvent(request.identity, request, request2Messages))
 
