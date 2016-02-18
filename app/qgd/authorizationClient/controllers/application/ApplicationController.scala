@@ -1,22 +1,17 @@
-package qgd.authorizationClient.controllers
+package qgd.authorizationClient.controllers.application
 
-import java.util.Locale
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, LogoutEvent, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import play.api.libs.json.{Reads, Json}
-import play.api.mvc.{Action, Result, AnyContent}
-import qgd.authorizationClient.forms._
-import play.api.i18n.{Messages, MessagesApi}
-import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
-import qgd.utils.{RequestHelper, BodyParserHelper}
-import BodyParserHelper._
+import play.api.i18n.MessagesApi
+import play.api.mvc.{Action, AnyContent, Result}
+import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, AuthorizationResult, HtmlScalaViewAuthorizationResult}
 import qgd.resourceServer.models.Account
+import qgd.utils.RequestHelper
 
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * The basic application controller.
