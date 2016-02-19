@@ -19,7 +19,7 @@ import scala.concurrent.Future
   *
   * @param userDAO The user DAO implementation.
   */
-class UserService @Inject() (userDAO: UserDAO) extends IdentityService[Account] {
+class UserService @Inject() (userDAO: UserDAO, roleService: RoleService) extends IdentityService[Account] {
 
   /**
     * Retrieves a user that matches the specified login info.
@@ -29,16 +29,34 @@ class UserService @Inject() (userDAO: UserDAO) extends IdentityService[Account] 
     */
   def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = DB.withConnection({ implicit c =>
     Logger.debug("UserService.retrieve : " + loginInfo)
+    // Cas particulier de l'utilisation de l'Expect. gérer l'erreur avec eventbus et retourner une Future
+    // TODO factoriser
+    Future(groupRolesByAccount(userDAO.find(loginInfo)) match {
+      // TODO send log to event bus
+      case None =>
+        Logger.debug("userDAO.find : no user found with " + loginInfo)
+        None
+      case Some(account) => Some(account)
+    })
+    // TODO Case Future fails -> dans la factorisation ?
+  })
 
   /**
-    * Saves a user.
+    * group DAO find account result by role
     *
-    * @param user The user to save.
-    * @return The saved user.
+    * @param list all records for an account (with several roles)
+    * @return
     */
-  def save(user: Account) = {
-    Logger.debug("UserService.save : " + user)
-    userDAO.save(user)
+  def groupRolesByAccount(list: List[Account]): Option[Account] = {
+    val res = {
+      list
+        .groupBy(_.id)
+        .values.filter(_.nonEmpty).map { u =>
+        val roles = u.flatMap(_.roles)
+        u.head.copy(roles = roles)
+      }
+    }
+    res.headOption
   }
 
 
@@ -75,9 +93,9 @@ class UserService @Inject() (userDAO: UserDAO) extends IdentityService[Account] 
     */
   def save(profile: CommonSocialProfile): Future[Account] = DB.withTransaction({ implicit c => /*Future.successful*/ {
     Logger.debug("UserService.save.profile : " + profile)
-    userDAO.find(profile.loginInfo).flatMap {
+    groupRolesByAccount(userDAO.find(profile.loginInfo)) match {
       case Some(user) => // Update user with profile
-        userDAO.save(user.copy(
+        save(user.copy(
           firstName = profile.firstName,
           lastName = profile.lastName,
           fullName = profile.fullName,
@@ -85,7 +103,7 @@ class UserService @Inject() (userDAO: UserDAO) extends IdentityService[Account] 
           avatarURL = profile.avatarURL
         ))
       case None => // Insert a new user
-        userDAO.save(Account(
+        save(Account(
           id = UUID.randomUUID(),
           loginInfo = Some(profile.loginInfo),
           firstName = profile.firstName,
@@ -99,4 +117,5 @@ class UserService @Inject() (userDAO: UserDAO) extends IdentityService[Account] 
         ))
     }
   }
+  })
 }

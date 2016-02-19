@@ -2,7 +2,6 @@ package qgd.authorizationClient.models.daos
 
 import java.sql.Connection
 import java.util.UUID
-
 import anorm._
 import com.mohiva.play.silhouette.api.LoginInfo
 import play.api.Logger
@@ -88,48 +87,18 @@ class UserDAO extends GlobalReadsWrites {
       ).execute()
   }
 
-  /**
-    * Insert :
-    *   - role name
-    *   - relation between user and role
-    *
-    * @param user the user to to link with the role
-    * @param connection the implicit connection of the transaction
-    */
-  def addUserRoles(user: Account)(implicit connection: Connection) = {
-    def addUserRole(user_id: UUID, role: String): Boolean = {
-      val roleId = UUID.randomUUID()
-      SQL(
-        """INSERT INTO entity_roles (id, role_name)
-           VALUES ({id}, {role_name});""")
-        .on(
-          'id -> roleId,
-          'role_name -> role
-        ).execute()
 
-      SQL(
-        """INSERT INTO entity_relation_users_roles (role_id, user_id)
-           VALUES ({role_id}, {user_id});""")
-        .on(
-          'role_id -> roleId,
-          'user_id -> user_id
-        ).execute()
-    }
-    user.roles.map(addUserRole(user.id, _))
-  }
 
   /**
     * Insert :
     *   - login info
-    *   - relation between user and login info
     *
     * @param user the user that contains login infos
     * @param connection the implicit connection of the transaction
     */
   def addLoginInfo(user: Account)(implicit connection: Connection) = {
     // Add login info
-    user.loginInfo match {
-      case Some(loginInfo) =>
+    user.loginInfo.map {loginInfo =>
         Logger.warn(loginInfo.toString)
         SQL(
           """INSERT INTO entity_login_infos (provider_id, provider_key)
@@ -139,7 +108,19 @@ class UserDAO extends GlobalReadsWrites {
             'provider_id -> loginInfo.providerID,
             'provider_key -> loginInfo.providerKey
           ).execute()
+    }
+  }
 
+  /**
+    * Insert :
+    *   - relation between user and login info
+    *
+    * @param user the user that contains login infos
+    * @param connection the implicit connection of the transaction
+    */
+  def addRelationWithUser(user: Account)(implicit connection: Connection) = {
+    // Add login info
+    user.loginInfo.map {loginInfo =>
         SQL(
           """INSERT INTO entity_relation_login_infos_users (provider_id, provider_key, user_id)
          (SELECT {provider_id}, {provider_key}, {user_id}
@@ -149,7 +130,8 @@ class UserDAO extends GlobalReadsWrites {
             'provider_key -> loginInfo.providerKey,
             'user_id -> user.id
           ).execute()
-      case None =>
     }
   }
+
+
 }
