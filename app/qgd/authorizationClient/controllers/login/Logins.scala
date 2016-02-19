@@ -152,7 +152,7 @@ class Logins @Inject()(
         htmlLoginsResult.userLogout()
     }
     env.eventBus.publish(LogoutEvent(request.identity, request, request2Messages))
-
+    // TODO Voir si on ne peut pas utiliser ce bus ou reproduire le modele
     env.authenticatorService.discard(request.authenticator, result)
   }
 

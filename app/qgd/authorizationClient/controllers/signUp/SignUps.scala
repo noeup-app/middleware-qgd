@@ -137,6 +137,6 @@ class SignUps @Inject()(
   }
 
   def forgotPassword = Action {
-    NotImplemented
+    NotImplemented // TODO
   }
 }

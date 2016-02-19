@@ -71,7 +71,7 @@ class AjaxSignUpsResult @Inject() (
     BadRequest("Incorrect or incomplete login information provided")
 
   override def userSuccessfullyCreated(): Result =
-    Ok("User successfully created")
+    Ok("User successfully created") // TODO Should return User Json
 
   override def manageError(e: Exception): Result =
     InternalServerError(Messages("internal.server.error"))
