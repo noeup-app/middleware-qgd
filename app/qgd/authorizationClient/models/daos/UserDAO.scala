@@ -25,28 +25,26 @@ class UserDAO extends GlobalReadsWrites {
     * @param loginInfo The login info of the user to find.
     * @return The found user or None if no user for the given login info could be found.
     */
-  def find(loginInfo: LoginInfo): Future[Option[Account]] = DB.withConnection({ implicit c =>
-    val req: List[Account] = SQL("""SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.deleted
+  def find(loginInfo: LoginInfo)(implicit connection: Connection): List[Account] = {
+    SQL(
+      """SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.deleted
           FROM entity_users u
           INNER JOIN entity_relation_login_infos_users r_li_u ON u.id = r_li_u.user_id
           LEFT JOIN entity_relation_users_roles r_u_r ON u.id = r_u_r.user_id
           LEFT JOIN entity_roles r ON r.id = r_u_r.role_id
           WHERE r_li_u.provider_id = {provider_id} AND r_li_u.provider_key = {provider_key};
-                                 """).on(
-      'provider_id -> loginInfo.providerID,
+                                 """)
+      .on(
+      'provider_id ->
+        loginInfo.providerID,
       'provider_key -> loginInfo.providerKey
-    ).as(Account.parse *)
+      )
+      .as(
 
-    val res = {
-      req
-        .groupBy(_.id)
-        .values.filter(_.nonEmpty).map{ u =>
-        val roles = u.flatMap(_.roles)
-        u.head.copy(roles = roles)
-      }
-    }
-    Future.successful(res.headOption)
-  })
+
+        Account.parse *)
+  }
+
 
   /**
     * Finds a user by its user ID.
@@ -54,48 +52,20 @@ class UserDAO extends GlobalReadsWrites {
     * @param userID The ID of the user to find.
     * @return The found user or None if no user for the given ID could be found.
     */
-  def find(userID: UUID): Future[Option[Account]] = DB.withConnection({ implicit c =>
-    val req: List[Account] = SQL("""SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.deleted
+  def find(userID: UUID)(implicit connection:
+  Connection): List[Account] = {
+      SQL(
+        """SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.deleted
           FROM entity_users u
           INNER JOIN entity_relation_login_infos_users r_li_u ON u.id = r_li_u.user_id
           LEFT JOIN entity_relation_users_roles r_u_r ON u.id = r_u_r.user_id
           INNER JOIN entity_roles r ON r.id = r_u_r.role_id
           WHERE u.id = {user_id};
-                                 """).on(
-      'user_id -> userID
-    ).as(Account.parse *)
-
-    val res = {
-      req
-        .groupBy(_.id)
-        .values.filter(_.isEmpty).map{ u =>
-        val roles = u.flatMap(_.roles)
-        u.head.copy(roles = roles)
-      }
-    }
-    Future.successful(res.headOption)
-  })
-
-
-  /**
-    * Saves a user.
-    *
-    * @param user The user to save.
-    * @return The saved user.
-    */
-  def save(user: Account): Future[Account] = DB.withTransaction({ implicit c =>
-    // Add user
-    add(user)
-
-    // Add user login info
-    addLoginInfoAndRelationWithUser(user)
-
-    // Add user roles
-    addUserRoles(user)
-
-    Future.successful(user)
-  })
-
+                                 """)
+      .on(
+        'user_id -> userID)
+        .as(Account.parse *)
+  }
 
   /**
     * Insert user in entity_users
@@ -156,7 +126,7 @@ class UserDAO extends GlobalReadsWrites {
     * @param user the user that contains login infos
     * @param connection the implicit connection of the transaction
     */
-  private def addLoginInfoAndRelationWithUser(user: Account)(implicit connection: Connection) = {
+  def addLoginInfo(user: Account)(implicit connection: Connection) = {
     // Add login info
     user.loginInfo match {
       case Some(loginInfo) =>
