@@ -42,7 +42,7 @@ class HtmlLoginsResult @Inject() (
     BadRequest(qgd.authorizationClient.views.html.signIn(form, socialProviderRegistry))
 
   override def userIsAuthenticated(): Result =
-    Redirect(qgd.authorizationClient.controllers.application.routes.Applications.index())
+    Redirect(qgd.authorizationClient.controllers.application.routes.Applications.index()) // TODO Check if Result return also a session
 
   override def invalidCredentials(): Result =
     Redirect(qgd.authorizationClient.controllers.login.routes.Logins.loginAction())
@@ -77,7 +77,7 @@ class AjaxLoginsResult @Inject() (
     BadRequest("Incorrect or incomplete login information provided")
 
   override def userIsAuthenticated(): Result =
-    Ok("User is authenticated")
+    Ok("User is authenticated") // TODO should return bearer
 
   override def invalidCredentials(): Result =
     Ok("Your credentials are invalid")

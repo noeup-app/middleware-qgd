@@ -47,7 +47,7 @@ class AjaxSocialAuthsResult @Inject() (
                                         val env: Environment[Account, CookieAuthenticator])
   extends SocialAuthsResult {
 
-  override def userSuccessfullyAuthenticated(): Result = Ok("User successfully authenticated")
+  override def userSuccessfullyAuthenticated(): Result = Ok("User successfully authenticated") // TODO Doublon avec Logins?
 
   override def unexpectedProviderError(): Result = InternalServerError("Unexpected error occurred")
 }
