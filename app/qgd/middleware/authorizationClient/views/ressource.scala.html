@@ -1,0 +1,6 @@
+@import qgd.middleware.models.Account
+@(userOpt: Option[Account])(implicit flash: Flash, message: Messages)
+
+@qgd.middleware.views.html.home("Welcome to Apps", userOpt) {
+    Hello
+}

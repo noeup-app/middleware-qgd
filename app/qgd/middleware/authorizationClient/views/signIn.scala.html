@@ -1,0 +1,131 @@
+@(signInForm: Form[qgd.middleware.authorizationClient.forms.SignInForm.Data], socialProviders: com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry)(implicit request: RequestHeader, messages: Messages)
+
+@import com.mohiva.play.silhouette.impl.providers.oauth2.ClefProvider
+@import b3.inline.fieldConstructor
+
+@qgd.middleware.views.html.main(Messages("sign.in.title")) {
+
+
+    <body id="app" class="app body-auth body-wide">
+
+        <div class="main-container">
+            <div id="content" class="content-container">
+                    <!-- uiView:  --><section data-ui-view="" class="view-container animate-fade-up" style=""><div class="page-signin ng-scope" ng-controller="authCtrl">
+
+                <div class="signin-header">
+                    <section class="logo text-center">
+                        <h1><a href="/" class="ng-binding"><img class="logo_qgd" src="@routes.Assets.at("images/qgd.png")" alt=""></a></h1>
+                    </section>
+                </div>
+
+                <div class="wrapper">
+                    <div class="main-body">
+                        <div class="card bg-white">
+
+
+                            @helper.form(
+                                action = qgd.middleware.authorizationClient.controllers.login.routes.Logins.authenticateAction(),
+                                'class -> "form-horizontal ng-pristine ng-valid") {
+
+                                @helper.CSRF.formField
+
+
+                                <div class="card-content">
+
+                                    @request.flash.get("error").map { msg =>
+                                        <div class="alert ng-isolate-scope alert-danger alert-dismissible">
+                                            <a href="#" class="close" data-dismiss="alert">&times;</a>
+                                            @msg
+                                        </div>
+                                    }
+
+
+                                    <div>
+
+                                        @*<div class="form-group">*@
+                                        @*<div>*@
+                                        @*<button id="submit" type="submit" value="submit" class="btn btn-lg btn-primary btn-block">@Messages("sign.in")</button>*@
+                                        @*</div>*@
+                                        @*</div>*@
+
+
+
+                                        <fieldset>
+                                            <div class="form-group">
+                                                <div class="ui-input-group">
+
+                                                    <input type="text" required="" class="form-control" name="email" id="email">
+                                                    <span class="input-bar"></span>
+                                                    <label for="email">Email</label>
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <div class="ui-input-group">
+                                                    <input type="password" required="" class="form-control" id="password" name="password">
+                                                    <span class="input-bar"></span>
+                                                    <label for="password">Password</label>
+                                                </div>
+                                            </div>
+
+
+                                            <div class="form-group">
+                                                <a href="@qgd.middleware.authorizationClient.controllers.signUp.routes.SignUps.forgotPassword()" class="text-muted text-small">Forgot your password?</a>
+                                            </div>
+
+                                            <div class="divider"></div>
+
+
+                                            <p style="text-align: center ;">
+                                                <input type="checkbox" id="rememberMe" checked="checked"/>
+                                                <label style="font-weight: normal ;" for="rememberMe">@Messages("remember.me")</label>
+                                            </p>
+
+                                        </fieldset>
+                                    </div>
+                                </div>
+                                <div class="card-action no-border text-right">
+                                    <a href="@qgd.middleware.authorizationClient.controllers.signUp.routes.SignUps.signUpAction()">@Messages("register")</a>
+                                    <input type="submit" class="color-primary" value="@Messages("sign.in")">
+                                </div>
+
+                            }
+
+
+
+                            @if(socialProviders.providers.nonEmpty) {
+                                <div style="margin: 20px; padding: 10px; background-color:#263237 ;">
+                                    <p style="color:white ;">@Messages("or.use.social")</p>
+                                    <div>
+                                    @for(p <- socialProviders.providers if p.id != "clef") {
+                                        <a href="@qgd.middleware.authorizationClient.controllers.socialAuth.routes.SocialAuths.authenticateAction(p.id)" class="provider @p.id" title="@Messages(p.id)"><img src="@routes.Assets.at(s"images/providers/${p.id}.png")" width="64px" height="64px" alt="@Messages(p.id)"></a>
+                                    }
+                                    </div>
+                                    @defining(socialProviders.get[ClefProvider]) { clef =>
+                                        @if(clef.isDefined) {
+                                            <script type="text/javascript" src="https://clef.io/v3/clef.js" class="clef-button" data-app-id="@clef.get.settings.clientID" data-color="blue" data-style="flat" data-redirect-url="@clef.get.settings.redirectURL" data-type="login"></script>
+                                        }
+                                    }
+                                </div>
+                            }
+
+
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+            </section>
+            </div>
+        </div>
+
+    </body>
+
+
+
+
+
+
+
+
+}
