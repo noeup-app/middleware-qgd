@@ -70,7 +70,7 @@ object Config {
 
 
   // play.configuration requires a started play app; however this configuration value needs to eb read before
-  // application start. Use the standard ConfigFactory (loading reference.conf / application.conf)
+  // application start. Use the standard ConfigFactory (loading reference.conf / middleware.conf)
   val config = ConfigFactory.load()
   val persist = config.getBoolean("persist")
 

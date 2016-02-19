@@ -11,7 +11,7 @@
 
 <p>Following app has requested access to your data.</p>
 	
-@* @helper.form(action = qgd.authorizationServer.controllers.routes.Auth.authenticate()) { @*TODO need a controller send_auth here*@ @* TODO Uncomment *@
+@* @helper.form(action = qgd.authorizationServer.controllers.middleware.routes.Auth.authenticate()) { @*TODO need a controller send_auth here*@ @* TODO Uncomment *@
 
     <ul>
    <li>ClientId: <strong>@(appAuthForm("client_id").value)</strong></li>

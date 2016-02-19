@@ -36,7 +36,7 @@
 
                         <li class="dropdown text-normal nav-profile">
                             <a href="javascript:;" class="dropdown-toggle ui-wave" aria-haspopup="true" aria-expanded="false" aria-disabled="false">
-                                @*<img src="@user.avatarURL.getOrElse(routes.Assets.at("images/g1.jpg"))" alt="" class="img-circle img30_30">*@
+                                @*<img src="@user.avatarURL.getOrElse(middleware.routes.Assets.at("images/g1.jpg"))" alt="" class="img-circle img30_30">*@
                                 <span class="hidden-xs">
                                     @*<span class="ng-scope">@user.fullName.getOrElse("None")</span>*@
                                 </span>
@@ -105,9 +105,9 @@
 
 
         <script src="http://maps.google.com/maps/api/js?sensor=false"></script>
-        @*<script src="@routes.Assets.at("javascripts/vendor.js")"></script>*@
+        @*<script src="@middleware.routes.Assets.at("javascripts/vendor.js")"></script>*@
         <script src="@routes.Assets.at("javascripts/ui.js")"></script>
-        @*<script src="@routes.Assets.at("javascripts/app.js")"></script>*@
+        @*<script src="@middleware.routes.Assets.at("javascripts/app.js")"></script>*@
 
         @*<input id="textAngular-editableFix-010203040506070809" class="ta-hidden-input" aria-hidden="true" unselectable="on" tabindex="-1"><span id="buffer-extension-hover-button" style="display: none ; position: absolute ; z-index: 8675309 ; width: 100px ; height: 25px ; background-image: url(chrome-extension://noojglkidnpfjbincgijbaiedldjfbhh/data/shared/img/buffer-hover-icon@2x.png) ; background-size: 100px 25px ; opacity: 0.9 ; cursor: pointer ;"></span></body>*@
 
