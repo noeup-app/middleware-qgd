@@ -1,4 +1,4 @@
-package qgd.authorizationClient.controllers
+package qgd.authorizationClient.controllers.signUp
 
 import java.util.UUID
 import javax.inject.Inject
@@ -9,18 +9,16 @@ import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
-import play.api.{Logger, data}
-import qgd.authorizationClient.forms.SignUpForm
-import qgd.authorizationClient.models.services.UserService
-import play.api.i18n.{Messages, MessagesApi}
+import play.api.Logger
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Request, Result, Action}
-import qgd.authorizationClient.models.Authenticate
-import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
-import qgd.utils.{RequestHelper, BodyParserHelper}
-import BodyParserHelper._
+import play.api.mvc.{AnyContent, Action, Request, Result}
+import qgd.authorizationClient.forms.SignUpForm
 import qgd.authorizationClient.forms.SignUpForm.signUpFormDataFormat
+import qgd.authorizationClient.models.services.UserService
 import qgd.resourceServer.models.Account
+import qgd.utils.BodyParserHelper._
+import qgd.utils.{BodyParserHelper, RequestHelper}
 
 import scala.concurrent.Future
 
@@ -33,16 +31,49 @@ import scala.concurrent.Future
  * @param authInfoRepository The auth info repository implementation.
  * @param passwordHasher The password hasher implementation.
  */
-class SignUpController @Inject() (
+class SignUps @Inject()(
                                    val messagesApi: MessagesApi,
                                    val env: Environment[Account, CookieAuthenticator],
                                    userService: UserService,
                                    authInfoRepository: AuthInfoRepository,
-                                   htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
-                                   ajaxAuthorizationResult: AjaxAuthorizationResult,
+                                   htmlSignUpsResult: HtmlSignUpsResult,
+                                   ajaxSignUpsResult: AjaxSignUpsResult,
                                    avatarService: AvatarService,
                                    passwordHasher: PasswordHasher)
   extends Silhouette[Account, CookieAuthenticator] {
+
+
+
+  /**
+    * Handles the Sign Up action.
+    *
+    * @return The result to display.
+    */
+  def signUpActionGet = UserAwareAction.async { implicit request =>
+    RequestHelper.isJson(request) match {
+      case true  =>
+        signUp(request, ajaxSignUpsResult)
+      case false =>
+        signUp(request, htmlSignUpsResult)
+    }
+  }
+
+  /**
+    * Sign up generic process
+    *
+    * @param request the request
+    * @param signUpsResult the implementation of authorizationResult
+    * @return The result to return
+    */
+  def signUp(request: UserAwareRequest[AnyContent], signUpsResult: SignUpsResult): Future[Result] = {
+    val req = request.asInstanceOf[signUpsResult.UserAwareRequest[AnyContent]]
+    request.identity match {
+      case Some(user) => Future.successful(signUpsResult.userIsConnected())
+      case None => Future.successful(signUpsResult.userIsNotRegistered(req))
+    }
+  }
+
+
 
   /**
    * Registers a new user.
@@ -54,19 +85,19 @@ class SignUpController @Inject() (
       case true =>
         val data: SignUpForm.Data = request.body.asInstanceOf[SignUpForm.Data]
         val loginInfo = LoginInfo(CredentialsProvider.ID, data.email)
-        signUp(loginInfo, data, ajaxAuthorizationResult)
+        signUp(loginInfo, data, ajaxSignUpsResult)
       case false =>
         SignUpForm.form.bindFromRequest.fold(
-          form => Future.successful(htmlScalaViewAuthorizationResult.badRequestSignUp(form)),
+          form => Future.successful(htmlSignUpsResult.badRequest(form)),
           data => {
             val loginInfo = LoginInfo(CredentialsProvider.ID, data.email)
-            signUp(loginInfo, data, htmlScalaViewAuthorizationResult)
+            signUp(loginInfo, data, htmlSignUpsResult)
           }
         )
     }
   }
 
-  def signUp(loginInfo: LoginInfo, data: SignUpForm.Data, authorizationResult: AuthorizationResult)(implicit request: Request[Any]): Future[Result] = {
+  def signUp(loginInfo: LoginInfo, data: SignUpForm.Data, authorizationResult: SignUpsResult)(implicit request: Request[Any]): Future[Result] = {
     val res = userService.retrieve(loginInfo).flatMap {
       case Some(user) =>
         Future.successful(authorizationResult.userAlreadyExists())
@@ -100,8 +131,12 @@ class SignUpController @Inject() (
     res.recover{
       case e: Exception => {
         Logger.error("An exception occurred", e)
-        authorizationResult.manageErrorSignUp(e)
+        authorizationResult.manageError(e)
       }
     }
+  }
+
+  def forgotPassword = Action {
+    NotImplemented
   }
 }

@@ -1,29 +1,12 @@
 package qgd.authorizationClient.controllers
 
-import java.io.File
 import java.util.UUID
-import javax.inject.Inject
 
-import com.google.inject.AbstractModule
-import com.mohiva.play.silhouette.api.{Silhouette, Environment, LoginInfo}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
-import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
-import com.mohiva.play.silhouette.test._
-import org.joda.time.DateTime
-import play.api
-import play.api.{Mode, Configuration}
-import play.api.i18n.{I18nComponents, Lang, Messages, MessagesApi}
-import net.codingwell.scalaguice.ScalaModule
+import com.mohiva.play.silhouette.api.LoginInfo
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
-import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.test.{ FakeRequest, PlaySpecification, WithApplication }
-import qgd.authorizationClient.controllers.authorization.{WithScopes, WithScope}
-import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult}
-import qgd.authorizationClient.utils.WithScopes
-import play.api.Play.current
-import play.api.i18n.Messages.Implicits._
+import play.api.test.PlaySpecification
+import qgd.authorizationClient.controllers.ScopeAuthorization.{WithScope, WithScopes}
 import qgd.resourceServer.models.Account
 
 
@@ -40,22 +23,17 @@ class ScopeSpec extends PlaySpecification with Mockito {
       */
     val identity = Account(
       id = UUID.randomUUID(),
-      loginInfo = LoginInfo("facebook", "user@facebook.com"),
+      loginInfo = Some(LoginInfo("facebook", "user@facebook.com")),
       firstName = None,
       lastName = None,
       fullName = None,
       email = None,
       scopes = List(),
       roles = List(),
-      avatarURL = None
+      avatarURL = None,
+      deleted = false
     )
 
-
-    def getInformations(scopes: List[String]): (Account, CookieAuthenticator) = {
-      val u = identity.copy(scopes = scopes)
-      val cookieAuthenticator = new CookieAuthenticator("id", identity.loginInfo, new DateTime(), new DateTime(), None, None, None)
-      (u, cookieAuthenticator)
-    }
 
     def checkAND(ok: Boolean, required_scopes: List[String], user_scopes: List[String]): Unit ={
       val res = WithScopes.isAuthorized(identity.copy(scopes = user_scopes),required_scopes: _*)

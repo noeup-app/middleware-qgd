@@ -20,7 +20,7 @@
                     <div class="main-body">
 
                         <div class="card bg-white">
-                        @helper.form(action = qgd.authorizationClient.controllers.routes.SignUpController.signUpAction()) {
+                        @helper.form(action = qgd.authorizationClient.controllers.signUp.routes.SignUps.signUpAction()) {
                             @helper.CSRF.formField
                             <div class="card-content">
 
@@ -67,7 +67,7 @@
                                     </fieldset>
                             </div>
                             <div class="card-action no-border text-right">
-                                <a href="@qgd.authorizationClient.controllers.routes.ApplicationController.signInAction()">Login</a>
+                                <a href="@qgd.authorizationClient.controllers.login.routes.Logins.loginAction()">Login</a>
                                 <input type="submit" class="color-primary" value="Sign Up">
                             </div>
                         }

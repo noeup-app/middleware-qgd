@@ -1,4 +1,4 @@
-package qgd.authorizationClient.controllers
+package qgd.authorizationClient.controllers.socialAuth
 
 import javax.inject.Inject
 
@@ -7,11 +7,10 @@ import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
-import qgd.authorizationClient.models.services.UserService
-import play.api.i18n.{Messages, MessagesApi}
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{AnyContent, Request, Result, Action}
-import qgd.authorizationClient.controllers.results.{AuthorizationResult, AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult}
+import play.api.mvc.{Action, AnyContent, Request, Result}
+import qgd.authorizationClient.models.services.UserService
 import qgd.resourceServer.models.Account
 import qgd.utils.RequestHelper
 
@@ -26,13 +25,13 @@ import scala.concurrent.Future
  * @param authInfoRepository The auth info service implementation.
  * @param socialProviderRegistry The social provider registry.
  */
-class SocialAuthController @Inject() (
+class SocialAuths @Inject()(
                                        val messagesApi: MessagesApi,
                                        val env: Environment[Account, CookieAuthenticator],
                                        userService: UserService,
                                        authInfoRepository: AuthInfoRepository,
-                                       htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
-                                       ajaxAuthorizationResult: AjaxAuthorizationResult,
+                                       htmlSocialAuthsResult: HtmlSocialAuthsResult,
+                                       ajaxSocialAuthsResult: AjaxSocialAuthsResult,
                                        socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[Account, CookieAuthenticator] with Logger {
 
@@ -45,13 +44,13 @@ class SocialAuthController @Inject() (
   def authenticateAction(provider: String) = Action.async { implicit request =>
     RequestHelper.isJson(request) match {
       case true  =>
-        authenticate(provider, ajaxAuthorizationResult)
+        authenticate(provider, ajaxSocialAuthsResult)
       case false =>
-        authenticate(provider, htmlScalaViewAuthorizationResult)
+        authenticate(provider, htmlSocialAuthsResult)
     }
   }
 
-  def authenticate(provider: String, authorizationResult: AuthorizationResult)(implicit request: Request[AnyContent]): Future[Result] = {
+  def authenticate(provider: String, authorizationResult: SocialAuthsResult)(implicit request: Request[AnyContent]): Future[Result] = {
     (socialProviderRegistry.get[SocialProvider](provider) match {
       case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
         p.authenticate().flatMap {

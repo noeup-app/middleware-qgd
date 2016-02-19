@@ -7,15 +7,16 @@ import com.mohiva.play.silhouette.api.{ Environment, LoginInfo }
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.test._
 import net.codingwell.scalaguice.ScalaModule
+import org.specs2.matcher.Scope
 import org.specs2.mock.Mockito
-import org.specs2.specification.Scope
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.test.{ FakeRequest, PlaySpecification, WithApplication }
+import qgd.authorizationClient.controllers.application.Applications
 import qgd.resourceServer.models.Account
 
 /**
- * Test case for the [[ApplicationController]] class.
+ * Test case for the [[Applications]] class.
  */
 class ApplicationControllerSpec extends PlaySpecification with Mockito {
   sequential
@@ -23,14 +24,14 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
   "The `index` action" should {
     "redirect to login page if user is unauthorized" in new Context {
       new WithApplication(application) {
-        val Some(redirectResult) = route(FakeRequest(routes.ApplicationController.index())
+        val Some(redirectResult) = route(FakeRequest(qgd.authorizationClient.controllers.application.routes.Applications.index())
           .withAuthenticator[CookieAuthenticator](LoginInfo("invalid", "invalid"))
         )
 
         status(redirectResult) must be equalTo SEE_OTHER
 
         val redirectURL = redirectLocation(redirectResult).getOrElse("")
-        redirectURL must contain(routes.ApplicationController.signInAction().toString())
+        redirectURL must contain(qgd.authorizationClient.controllers.login.routes.Logins.loginAction().toString())
 
         val Some(unauthorizedResult) = route(FakeRequest(GET, redirectURL))
 
@@ -42,9 +43,14 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
 
     "return 200 if user is authorized" in new Context {
       new WithApplication(application) {
-        val Some(result) = route(FakeRequest(routes.ApplicationController.index())
-          .withAuthenticator[CookieAuthenticator](identity.loginInfo)
-        )
+        val Some(result) =
+          identity.loginInfo match {
+            case Some(loginInfo) =>
+              route(FakeRequest(qgd.authorizationClient.controllers.application.routes.Applications.index())
+                .withAuthenticator[CookieAuthenticator](loginInfo))
+            case None => throw new RuntimeException("identity.loginInfo is None")
+          }
+
 
         status(result) must beEqualTo(OK)
       }
@@ -70,20 +76,28 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
      */
     val identity = Account(
       id = UUID.randomUUID(),
-      loginInfo = LoginInfo("facebook", "user@facebook.com"),
+      loginInfo = Some(LoginInfo("facebook", "user@facebook.com")),
       firstName = None,
       lastName = None,
       fullName = None,
       email = None,
       scopes = List(),
       roles = List(),
-      avatarURL = None
+      avatarURL = None,
+      deleted = false
     )
 
     /**
      * A Silhouette fake environment.
      */
-    implicit val env: Environment[Account, CookieAuthenticator] = new FakeEnvironment[Account, CookieAuthenticator](Seq(identity.loginInfo -> identity))
+    implicit val env: Environment[Account, CookieAuthenticator] = {
+      identity.loginInfo match {
+        case Some(li) =>
+          new FakeEnvironment[Account, CookieAuthenticator](Seq(li -> identity))
+        case None => throw new RuntimeException("identity.loginInfo is None")
+      }
+
+    }
 
     /**
      * The application.

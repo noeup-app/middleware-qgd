@@ -1,4 +1,4 @@
-package qgd.authorizationClient.controllers
+package qgd.authorizationClient.controllers.login
 
 import javax.inject.Inject
 
@@ -6,23 +6,22 @@ import com.mohiva.play.silhouette.api.Authenticator.Implicits._
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.api.util.{Clock, Credentials}
+import com.mohiva.play.silhouette.api.util.Clock
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers._
 import net.ceedubs.ficus.Ficus._
-import play.api.{Logger, Configuration}
-import play.api.i18n.{Messages, MessagesApi}
+import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Result, AnyContent, Request, Action}
+import play.api.mvc.{AnyContent, Action, Request, Result}
+import play.api.{Configuration, Logger}
 import qgd.authorizationClient.forms.SignInForm
-import qgd.authorizationClient.models.services.UserService
 import qgd.authorizationClient.models.Authenticate
-import qgd.authorizationClient.controllers.results.{AjaxAuthorizationResult, HtmlScalaViewAuthorizationResult, AuthorizationResult}
-import qgd.utils.{RequestHelper, BodyParserHelper}
-import BodyParserHelper._
 import qgd.authorizationClient.models.Authenticate.authenticateFormat
+import qgd.authorizationClient.models.services.UserService
 import qgd.resourceServer.models.Account
+import qgd.utils.BodyParserHelper._
+import qgd.utils.{BodyParserHelper, RequestHelper}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -40,18 +39,49 @@ import scala.language.postfixOps
   * @param configuration The Play configuration.
   * @param clock The clock instance.
   */
-class LoginController @Inject()(
+class Logins @Inject()(
                                             val messagesApi: MessagesApi,
                                             val env: Environment[Account, CookieAuthenticator],
                                             userService: UserService,
                                             authInfoRepository: AuthInfoRepository,
                                             credentialsProvider: CredentialsProvider,
                                             socialProviderRegistry: SocialProviderRegistry,
-                                            htmlScalaViewAuthorizationResult: HtmlScalaViewAuthorizationResult,
-                                            ajaxAuthorizationResult: AjaxAuthorizationResult,
+                                            htmlLoginsResult: HtmlLoginsResult,
+                                            ajaxLoginsResult: AjaxLoginsResult,
                                             configuration: Configuration,
                                             clock: Clock)
   extends Silhouette[Account, CookieAuthenticator] {
+
+
+  /**
+    * Handles the login action.
+    *
+    * @return The result to display.
+    */
+  def loginAction = UserAwareAction.async { implicit request =>
+    RequestHelper.isJson(request) match {
+      case true  =>
+        login(request, ajaxLoginsResult)
+      case false =>
+        login(request, htmlLoginsResult)
+    }
+  }
+
+  /**
+    * Login generic process
+    *
+    * @param request the request
+    * @param loginsResult the implementation of authorizationResult
+    * @return The result to return
+    */
+  def login(request: UserAwareRequest[AnyContent], loginsResult: LoginsResult): Future[Result] = {
+    val req = request.asInstanceOf[loginsResult.UserAwareRequest[AnyContent]]
+    request.identity match {
+      case Some(user) => Future.successful(loginsResult.userIsConnected())
+      case None => Future.successful(loginsResult.userIsNotConnected(req))
+    }
+  }
+
 
 
   /**
@@ -63,22 +93,22 @@ class LoginController @Inject()(
     RequestHelper.isJson(request) match {
       case true  =>
         val authenticateData: Authenticate = request.body.asInstanceOf[Authenticate] // TODO Ugly
-        authenticate(authenticateData, ajaxAuthorizationResult)
+        authenticate(authenticateData, ajaxLoginsResult)
       case false =>
         SignInForm.form.bindFromRequest.fold(
-          form => Future.successful(htmlScalaViewAuthorizationResult.badRequestSignIn(form)),
+          form => Future.successful(htmlLoginsResult.badRequest(form)),
           data => {
             val authenticateData = Authenticate(data.email, data.password, data.rememberMe)
-            authenticate(authenticateData, htmlScalaViewAuthorizationResult)
+            authenticate(authenticateData, htmlLoginsResult)
           }
         )
     }
 
   }
-  def authenticate(authenticate: Authenticate, authorizationResult: AuthorizationResult)(implicit request: Request[Any]): Future[Result] = {
+  def authenticate(authenticate: Authenticate, loginsResult: LoginsResult)(implicit request: Request[Any]): Future[Result] = {
     val credentials = authenticate.getCredentials
     credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
-      val result = authorizationResult.userIsAuthenticated()
+      val result = loginsResult.userIsAuthenticated()
       userService.retrieve(loginInfo).flatMap {
         case Some(user) =>
           val c = configuration.underlying
@@ -100,11 +130,30 @@ class LoginController @Inject()(
       }
     }.recover {
       case e: ProviderException =>
-        authorizationResult.invalidCredentials()
+        loginsResult.invalidCredentials()
       case e: Exception => {
         Logger.error("An exception ocurred", e)
-        authorizationResult.manageErrorSignIn(e)
+        loginsResult.manageError(e)
       }
     }
   }
+
+
+  /**
+    * Handles the logout action.
+    *
+    * @return The result to display.
+    */
+  def logOut = SecuredAction.async { implicit request =>
+    val result = RequestHelper.isJson(request) match {
+      case true =>
+        ajaxLoginsResult.userLogout()
+      case false =>
+        htmlLoginsResult.userLogout()
+    }
+    env.eventBus.publish(LogoutEvent(request.identity, request, request2Messages))
+
+    env.authenticatorService.discard(request.authenticator, result)
+  }
+
 }

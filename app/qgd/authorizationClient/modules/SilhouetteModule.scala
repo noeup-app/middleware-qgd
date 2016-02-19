@@ -27,8 +27,8 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.openid.OpenIdClient
 import play.api.libs.ws.WSClient
 import qgd.authorizationClient.models.daos._
-import qgd.authorizationClient.models.services.UserService
 import qgd.authorizationClient.controllers.results.HtmlScalaViewAuthorizationResult
+import qgd.authorizationClient.models.services.{UserServiceImpl, UserService}
 import qgd.resourceServer.models.Account
 
 /**

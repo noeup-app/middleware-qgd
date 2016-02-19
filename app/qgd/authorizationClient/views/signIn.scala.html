@@ -24,7 +24,7 @@
 
 
                             @helper.form(
-                                action = qgd.authorizationClient.controllers.routes.LoginController.authenticateAction(),
+                                action = qgd.authorizationClient.controllers.login.routes.Logins.authenticateAction(),
                                 'class -> "form-horizontal ng-pristine ng-valid") {
 
                                 @helper.CSRF.formField
@@ -69,7 +69,7 @@
 
 
                                             <div class="form-group">
-                                                <a href="@qgd.authorizationClient.controllers.routes.ApplicationController.forgotPassword()" class="text-muted text-small">Forgot your password?</a>
+                                                <a href="@qgd.authorizationClient.controllers.signUp.routes.SignUps.forgotPassword()" class="text-muted text-small">Forgot your password?</a>
                                             </div>
 
                                             <div class="divider"></div>
@@ -84,7 +84,7 @@
                                     </div>
                                 </div>
                                 <div class="card-action no-border text-right">
-                                    <a href="@qgd.authorizationClient.controllers.routes.ApplicationController.signUpAction()">@Messages("register")</a>
+                                    <a href="@qgd.authorizationClient.controllers.signUp.routes.SignUps.signUpAction()">@Messages("register")</a>
                                     <input type="submit" class="color-primary" value="@Messages("sign.in")">
                                 </div>
 
@@ -97,7 +97,7 @@
                                     <p style="color:white ;">@Messages("or.use.social")</p>
                                     <div>
                                     @for(p <- socialProviders.providers if p.id != "clef") {
-                                        <a href="@qgd.authorizationClient.controllers.routes.SocialAuthController.authenticateAction(p.id)" class="provider @p.id" title="@Messages(p.id)"><img src="@routes.Assets.at(s"images/providers/${p.id}.png")" width="64px" height="64px" alt="@Messages(p.id)"></a>
+                                        <a href="@qgd.authorizationClient.controllers.socialAuth.routes.SocialAuths.authenticateAction(p.id)" class="provider @p.id" title="@Messages(p.id)"><img src="@routes.Assets.at(s"images/providers/${p.id}.png")" width="64px" height="64px" alt="@Messages(p.id)"></a>
                                     }
                                     </div>
                                     @defining(socialProviders.get[ClefProvider]) { clef =>

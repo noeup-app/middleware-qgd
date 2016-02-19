@@ -42,7 +42,7 @@ class ErrorHandler @Inject() (
     * @return The result to send to the client.
     */
   override def onNotAuthenticated(request: RequestHeader, messages: Messages): Option[Future[Result]] = {
-    Some(Future.successful(Redirect(qgd.authorizationClient.controllers.routes.ApplicationController.signInAction())))
+    Some(Future.successful(Redirect(qgd.authorizationClient.controllers.login.routes.Logins.loginAction())))
   }
 
   /**
@@ -55,7 +55,7 @@ class ErrorHandler @Inject() (
     * @return The result to send to the client.
     */
   override def onNotAuthorized(request: RequestHeader, messages: Messages): Option[Future[Result]] = {
-    Some(Future.successful(Redirect(qgd.authorizationClient.controllers.routes.ApplicationController.signInAction()).flashing("error" -> Messages("access.denied")(messages))))
+    Some(Future.successful(Redirect(qgd.authorizationClient.controllers.login.routes.Logins.loginAction()).flashing("error" -> Messages("access.denied")(messages))))
   }
 
 
