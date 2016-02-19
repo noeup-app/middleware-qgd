@@ -27,7 +27,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.openid.OpenIdClient
 import play.api.libs.ws.WSClient
 import qgd.authorizationClient.models.daos._
-import qgd.authorizationClient.models.services.{UserServiceImpl, UserService}
+import qgd.authorizationClient.models.services.UserService
 import qgd.authorizationClient.controllers.results.HtmlScalaViewAuthorizationResult
 import qgd.resourceServer.models.Account
 
@@ -40,8 +40,6 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * Configures the module.
    */
   def configure() {
-    bind[UserService].to[UserServiceImpl]
-    bind[UserDAO].to[UserDAOImpl]
     bind[DelegableAuthInfoDAO[PasswordInfo]].to[PasswordInfoDAO]
     bind[DelegableAuthInfoDAO[OAuth1Info]].to[OAuth1InfoDAO]
     bind[DelegableAuthInfoDAO[OAuth2Info]].to[OAuth2InfoDAO]
