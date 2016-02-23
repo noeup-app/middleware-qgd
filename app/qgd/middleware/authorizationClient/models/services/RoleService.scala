@@ -9,11 +9,13 @@ import qgd.middleware.authorizationClient.models.daos.RelationUserRoleDAO
 import qgd.middleware.models.Account
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class RoleService  @Inject() (relationUserRole: RelationUserRoleDAO) {
 
-  def addUserRoles(user: Account) = DB.withTransaction({ implicit c => Future.successful {
-    user.roles.map(relationUserRole.addRoleToUser(user.id, _))
+  def addUserRoles(user: Account) = Future {
+    DB.withTransaction({ implicit c =>
+      user.roles.map(relationUserRole.addRoleToUser(user.id, _))
+    })
   }
-  })
 }

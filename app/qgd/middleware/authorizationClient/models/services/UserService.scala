@@ -1,5 +1,6 @@
 package qgd.middleware.authorizationClient.models.services
 
+import java.sql.Connection
 import java.util.UUID
 import javax.inject.Inject
 import play.api.Play.current
@@ -27,19 +28,21 @@ class UserService @Inject() (userDAO: UserDAO, roleService: RoleService) extends
     * @param loginInfo The login info to retrieve a user.
     * @return The retrieved user or None if no user could be retrieved for the given login info.
     */
-  def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = DB.withConnection({ implicit c =>
-    Logger.debug("UserService.retrieve : " + loginInfo)
-    // Cas particulier de l'utilisation de l'Expect. gérer l'erreur avec eventbus et retourner une Future
-    // TODO factoriser
-    Future(groupRolesByAccount(userDAO.find(loginInfo)) match {
-      // TODO send log to event bus
-      case None =>
-        Logger.debug("userDAO.find : no user found with " + loginInfo)
-        None
-      case Some(account) => Some(account)
+  def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = Future {
+    DB.withConnection({ implicit c =>
+      Logger.debug("UserService.retrieve : " + loginInfo)
+      // Cas particulier de l'utilisation de l'Expect. gérer l'erreur avec eventbus et retourner une Future
+      // TODO factoriser
+      groupRolesByAccount(userDAO.find(loginInfo)) match {
+        // TODO send log to event bus
+        case None =>
+          Logger.debug("userDAO.find : no user found with " + loginInfo)
+          None
+        case Some(account) => Some(account)
+      }
+      // TODO Case Future fails -> dans la factorisation ?
     })
-    // TODO Case Future fails -> dans la factorisation ?
-  })
+  }
 
   /**
     * group DAO find account result by role
@@ -60,28 +63,31 @@ class UserService @Inject() (userDAO: UserDAO, roleService: RoleService) extends
   }
 
 
-    /**
-      * Saves a user.
-      *
-      * @param user The user to save.
-      * @return The saved user.
-      */
-    def save(user: Account): Future[Account] = DB.withTransaction({ implicit c => Future.successful {
-      // Add user
-      userDAO.add(user)
+  /**
+    * Saves a user.
+    *
+    * @param user The user to save.
+    * @return The saved user.
+    */
+  def save(user: Account): Future[Account] = Future { DB.withTransaction({ implicit c =>
+    save(user)
+  })}
 
-      // Add user login info
-      userDAO.addLoginInfo(user)
+  private def save(user: Account)(implicit c: Connection): Account = {
+    // Add user
+    userDAO.add(user)
 
-      // Add relation between user and login info
-      userDAO.addRelationWithUser(user)
+    // Add user login info
+    userDAO.addLoginInfo(user)
 
-      // Add user roles
-      roleService.addUserRoles(user)
+    // Add relation between user and login info
+    userDAO.addRelationWithUser(user)
 
-      user
-    }
-    })
+    // Add user roles
+    roleService.addUserRoles(user)
+
+    user
+  }
 
   /**
     * Saves the social profile for a user.
@@ -91,7 +97,7 @@ class UserService @Inject() (userDAO: UserDAO, roleService: RoleService) extends
     * @param profile The social profile to save.
     * @return The user for whom the profile was saved.
     */
-  def save(profile: CommonSocialProfile): Future[Account] = DB.withTransaction({ implicit c => /*Future.successful*/ {
+  def save(profile: CommonSocialProfile): Future[Account] = Future { DB.withTransaction({ implicit c =>
     Logger.debug("UserService.save.profile : " + profile)
     groupRolesByAccount(userDAO.find(profile.loginInfo)) match {
       case Some(user) => // Update user with profile
@@ -116,6 +122,5 @@ class UserService @Inject() (userDAO: UserDAO, roleService: RoleService) extends
           deleted = false
         ))
     }
-  }
-  })
+  })}
 }
