@@ -35,7 +35,7 @@ class Applications @Inject()(
    *
    * @return The result to display.
    */
-  def index = SecuredAction(ScopeAndRoleAuthorization(WithScope(), WithRole("admin"))).async { implicit request =>
+  def index = SecuredAction(ScopeAndRoleAuthorization(WithScope(), WithRole("all"))).async { implicit request =>
     RequestHelper.isJson(request) match {
       case true =>
         val req = request.asInstanceOf[Applications.this.ajaxApplicationsResult.SecuredRequest[AnyContent]]
