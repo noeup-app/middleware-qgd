@@ -58,7 +58,7 @@ object RoleAuthorization {
   }
   object WithRole {
     def isAuthorized(user: Account, anyOf: String*): Boolean =
-      anyOf.intersect(user.scopes).nonEmpty
+      anyOf.intersect(user.roles).nonEmpty
   }
 
   /**
@@ -72,7 +72,7 @@ object RoleAuthorization {
   }
   object WithRoles {
     def isAuthorized(user: Account, allOf: String*): Boolean =
-      allOf.intersect(user.scopes).size == allOf.size
+      allOf.intersect(user.roles).size == allOf.size
   }
 }
 
