@@ -2,29 +2,34 @@
 # This file defines all application middleware.routes (Higher priority middleware.routes first)
 # ~~~~
 
-# Home page
-GET         /                                qgd.middleware.authorizationClient.controllers.application.Applications.index
-GET         /login                           qgd.middleware.authorizationClient.controllers.login.Logins.loginAction
-GET         /signUp                          qgd.middleware.authorizationClient.controllers.signUp.SignUps.signUpActionGet
-GET         /logout                         qgd.middleware.authorizationClient.controllers.login.Logins.logOut
-GET         /forgotPassword                  qgd.middleware.authorizationClient.controllers.signUp.SignUps.forgotPassword
-GET         /authenticate/:provider          qgd.middleware.authorizationClient.controllers.socialAuth.SocialAuths.authenticateAction(provider)
-POST        /authenticate/credentials        qgd.middleware.authorizationClient.controllers.login.Logins.authenticateAction
-POST        /signUp                          qgd.middleware.authorizationClient.controllers.signUp.SignUps.signUpAction
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file         qgd.middleware.controllers.Assets.at(path="/public/lib/middleware-qgd", file)
-GET         /webjars/*file                   controllers.WebJarAssets.at(file)
 GET         /assets/*file                        qgd.middleware.controllers.Assets.versioned(path="/public/lib/middleware-qgd", file)
+GET         /webjars/*file                       controllers.WebJarAssets.at(file)
+
+
+# Home page
+GET         /                                    qgd.middleware.authorizationClient.controllers.application.Applications.index
+GET         /login                               qgd.middleware.authorizationClient.controllers.login.Logins.loginAction
+
+GET         /signUp                              qgd.middleware.authorizationClient.controllers.signUp.SignUps.signUpActionGet
+POST        /signUp                              qgd.middleware.authorizationClient.controllers.signUp.SignUps.signUpAction
+
+GET         /logout                              qgd.middleware.authorizationClient.controllers.login.Logins.logOut
+GET         /forgotPassword                      qgd.middleware.authorizationClient.controllers.signUp.SignUps.forgotPassword
+
+
+GET         /authenticate/:provider              qgd.middleware.authorizationClient.controllers.socialAuth.SocialAuths.authenticateAction(provider)
+POST        /authenticate/credentials            qgd.middleware.authorizationClient.controllers.login.Logins.authenticateAction
 
 # Clients management
-GET      /clients                          qgd.middleware.authorizationServer.controllers.Clients.list
-GET      /client/new                       qgd.middleware.authorizationServer.controllers.Clients.create
-POST     /client/add                       qgd.middleware.authorizationServer.controllers.Clients.add
-POST     /client/update                    qgd.middleware.authorizationServer.controllers.Clients.update
-GET      /client/edit/:id                  qgd.middleware.authorizationServer.controllers.Clients.edit(id: String)
-PUT      /client                           qgd.middleware.authorizationServer.controllers.Clients.update
-GET      /client/:id                       qgd.middleware.authorizationServer.controllers.Clients.get(id: String)
-DELETE   /client/:id                       qgd.middleware.authorizationServer.controllers.Clients.delete(id: String)
+GET         /admin/clients                       qgd.middleware.authorizationServer.controllers.Clients.list
+GET         /admin/client/new                    qgd.middleware.authorizationServer.controllers.Clients.create
+POST        /admin/client/add                    qgd.middleware.authorizationServer.controllers.Clients.add
+POST        /admin/client/update                 qgd.middleware.authorizationServer.controllers.Clients.update
+GET         /admin/client/edit/:id               qgd.middleware.authorizationServer.controllers.Clients.edit(id: String)
+PUT         /admin/client                        qgd.middleware.authorizationServer.controllers.Clients.update
+GET         /admin/client/:id                    qgd.middleware.authorizationServer.controllers.Clients.get(id: String)
+DELETE      /admin/client/:id                    qgd.middleware.authorizationServer.controllers.Clients.delete(id: String)
 
 # page that allow user to authorize client
 #GET      /apps/authorize/                  qgd.middleware.authorizationServer.controllers.Apps.authorize
