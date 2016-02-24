@@ -14,6 +14,7 @@ POST        /signUp                          qgd.middleware.authorizationClient.
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file         qgd.middleware.controllers.Assets.at(path="/public/lib/middleware-qgd", file)
 GET         /webjars/*file                   controllers.WebJarAssets.at(file)
+GET         /assets/*file                        qgd.middleware.controllers.Assets.versioned(path="/public/lib/middleware-qgd", file)
 
 # Clients management
 GET      /clients                          qgd.middleware.authorizationServer.controllers.Clients.list
