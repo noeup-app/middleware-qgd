@@ -58,7 +58,7 @@ object RoleAuthorization {
   }
   object WithRole {
     def isAuthorized(user: Account, anyOf: String*): Boolean =
-      anyOf.intersect(user.roles).nonEmpty
+      anyOf.intersect(user.roles).nonEmpty || anyOf.isEmpty
   }
 
   /**
