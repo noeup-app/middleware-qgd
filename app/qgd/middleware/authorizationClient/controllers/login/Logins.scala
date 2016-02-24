@@ -130,6 +130,7 @@ class Logins @Inject()(
       }
     }.recover {
       case e: ProviderException =>
+        Logger.warn("Logins.authenticate failed : " + authenticate + " -> " + e.getMessage)
         loginsResult.invalidCredentials()
       case e: Exception => {
         Logger.error("An exception ocurred", e)
