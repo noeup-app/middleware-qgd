@@ -82,7 +82,7 @@ class Authorize @Inject()(val messagesApi: MessagesApi,
             Logger.info(s"Auth : $aaInfoForm")
             Ok(views.html.apps.authorize(user, aaInfoForm))
           case None => // User is not connected, let's redirect him to login page
-            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(client_id.toString, redirect_uri, state, scope))
+            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(client_id, redirect_uri, state, scope))
         }
     }
   }
@@ -136,10 +136,10 @@ class Authorize @Inject()(val messagesApi: MessagesApi,
   def login(client_id: String, redirect_uri: String, state: String, scope: String) = Action { implicit request =>
     // Bind data to form for hidden inputs
     val form = SignInProviderForm.form.bind(Map(
-      "clientId"    -> client_id,
-      "redirectUri" -> redirect_uri,
-      "state"       -> state,
-      "scope"       -> scope
+      "client_id"    -> client_id,
+      "redirect_uri" -> redirect_uri,
+      "state"        -> state,
+      "scope"        -> scope
     ))
     Ok(qgd.middleware.authorizationServer.views.html.apps.signIn(form, SocialProviderRegistry(Seq())))
   }
@@ -156,7 +156,7 @@ class Authorize @Inject()(val messagesApi: MessagesApi,
         credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
           Logger.info("Form data : " + data)
           val result =
-            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.authorize(data.clientId.toString, data.redirectUri, data.state, data.scope))
+            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.authorize(data.client_id.toString, data.redirect_uri, data.state, data.scope))
           userService.retrieve(loginInfo).flatMap {
             case Some(user) =>
               val c = configuration.underlying
@@ -180,11 +180,11 @@ class Authorize @Inject()(val messagesApi: MessagesApi,
         }.recover {
           case e: ProviderException =>
             Logger.warn("Logins.authenticate failed : " + authenticate + " -> " + e.getMessage)
-            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(data.clientId.toString, data.redirectUri, data.state, data.scope))
+            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
               .flashing("error" -> Messages("invalid.credentials"))
           case e: Exception => {
             Logger.error("An exception ocurred", e)
-            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(data.clientId.toString, data.redirectUri, data.state, data.scope))
+            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
               .flashing("error" -> Messages("internal.server.error"))
           }
         }
