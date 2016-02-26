@@ -1,12 +1,24 @@
 package qgd.middleware.authorizationServer
 package controllers
 
+import java.util.UUID
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{Environment, Silhouette}
+import com.mohiva.play.silhouette.api.exceptions.ProviderException
+import com.mohiva.play.silhouette.api.{LoginEvent, Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
+import com.mohiva.play.silhouette.impl.providers.{OAuth1Info, CredentialsProvider, SocialProviderRegistry}
+import play.api.{Configuration, Logger}
 import play.api.db.DB
-import play.api.i18n.MessagesApi
+import play.api.i18n.{Messages, MessagesApi}
+import play.api.mvc.Action
+import qgd.middleware.authorizationClient.models.Authenticate
+import qgd.middleware.authorizationClient.models.services.UserService
+
+import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
+
 //import models.oauth2.Client
 //import play.api.db.slick.DBAction
 //import play.api.data._
@@ -14,11 +26,16 @@ import play.api.i18n.MessagesApi
 import play.api.Play.current
 //import oauth2.OAuthDataHandler
 //import qgd.middleware.authorizationServer.models
-import qgd.middleware.authorizationServer.forms.AuthorizeForm
+import qgd.middleware.authorizationServer.forms.{SignInProviderForm, AuthorizeForm}
 import qgd.middleware.models.Account
+import scala.concurrent.ExecutionContext.Implicits.global
+
 
 class Authorize @Inject()(val messagesApi: MessagesApi,
-                          val env: Environment[Account, CookieAuthenticator])
+                          val env: Environment[Account, CookieAuthenticator],
+                          userService: UserService,
+                          configuration: Configuration,
+                          credentialsProvider: CredentialsProvider)
     extends Silhouette[Account, CookieAuthenticator] {
 
 
@@ -35,67 +52,143 @@ class Authorize @Inject()(val messagesApi: MessagesApi,
 
   // TODO comments
 
-  def authorize = SecuredAction { implicit request =>
-    // read URL parameters
-    val params = List("client_id", "redirect_uri", "state", "scope")
-    val data = params.map(k =>
-        k -> request.queryString.getOrElse(k, Seq("")).head).toMap
+  def authorize(client_id: String, redirect_uri: String, state: String, scope: String) = UserAwareAction { implicit request =>
 
-    val clientId = data("client_id")
+    Logger.info("Authorize.authorize clientId : " + (client_id, redirect_uri, state, scope).toString())
 
-    val clientOpt = models.Client.findByClientId(clientId)
     // check if such a client exists
-    clientOpt match {
+    models.Client.findByClientId(client_id) match {
 
       case None => // doesn't exist
         BadRequest("No such client exists.")
 
       case Some(client) =>
-        val aaInfoForm = AuthorizeForm.form.bind(data)
-        log.debug(aaInfoForm.data.toString)
-        data.keys.foreach { k =>
-          log.debug(k)
-          log.debug(aaInfoForm(k).value.toString)
+        Logger.info("Authorize.authorize")
+        // read URL parameters
+        val params = List("client_id", "redirect_uri", "state", "scope")
+        val data = params.map(k =>
+          k -> request.queryString.getOrElse(k, Seq("")).head).toMap
+
+        Logger.debug("Authorize.authorize, data = " + data)
+
+
+
+        //val clientId = data("client_id")
+
+        // User is connected ?
+        request.identity match {
+          case Some(user) => // User is connected, let's show him the authorize view
+            val aaInfoForm = AuthorizeForm.form.bind(data)
+            Logger.info(s"Auth : $aaInfoForm")
+            Ok(views.html.apps.authorize(user, aaInfoForm))
+          case None => // User is not connected, let's redirect him to login page
+            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(client_id.toString, redirect_uri, state, scope))
         }
-        Ok(views.html.apps.authorize(request.identity, aaInfoForm))
     }
   }
 
   // TODO comments
-  def send_auth = SecuredAction { implicit request =>
-      val boundForm = AuthorizeForm.form.bindFromRequest
-      boundForm.fold(
-        formWithErrors => {
-          log.debug(formWithErrors.toString)
-          Ok(views.html.apps.authorize(request.identity, formWithErrors))
-        },
-        aaInfo => {
-          aaInfo.accepted match {
-            case "Y" =>
-              val expiresIn = Int.MaxValue
-              val acOpt =
-                DB.withTransaction { implicit session =>
-                  models.AuthCode.generateAuthCodeForClient(
-                    aaInfo.clientId, aaInfo.redirectUri, aaInfo.scope,
-                    request.identity.id, expiresIn)
+  // TODO secured action
+  def send_auth = UserAwareAction { implicit request =>
+    request.identity match {
+      case Some(user) =>
+        val boundForm = AuthorizeForm.form.bindFromRequest
+        boundForm.fold(
+          formWithErrors => {
+            log.debug("Authorize.send_auth : form ko -> " + formWithErrors.errors.toString)
+            Ok(views.html.apps.authorize(user, formWithErrors))
+          },
+          aaInfo => {
+            Logger.debug("Authorize.send_auth form ok")
+            aaInfo.accepted match {
+              case "Y" =>
+                val expiresIn = Int.MaxValue
+                val acOpt =
+                  DB.withTransaction { implicit session =>
+                    models.AuthCode.generateAuthCodeForClient(
+                      aaInfo.clientId, aaInfo.redirectUri, aaInfo.scope,
+                      user.id, expiresIn)
+                  }
+                acOpt match {
+                  case Some(ac) =>
+                    val authCode = ac.authorizationCode
+                    val state = aaInfo.state
+                    Redirect(s"${aaInfo.redirectUri}?code=$authCode&state=$state")
+                  case None =>
+                    val errorCode = "server_error"
+                    Redirect(s"${aaInfo.redirectUri}?error=$errorCode")
                 }
-              acOpt match {
-                case Some(ac) =>
-                  val authCode = ac.authorizationCode
-                  val state = aaInfo.state
-                  Redirect(s"${aaInfo.redirectUri}?code=${authCode}&state=${state}")
-                case None =>
-                  val errorCode = "server_error"
-                  Redirect(s"${aaInfo.redirectUri}?error=${errorCode}")
-              }
 
-            case "N" =>
-              val errorCode = "access_denied"
-              Redirect(s"${aaInfo.redirectUri}?error=${errorCode}")
-            case _ =>
-              val errorCode = "invalid_request"
-              Redirect(s"${aaInfo.redirectUri}?error=${errorCode}")
+              case "N" =>
+                val errorCode = "access_denied"
+                Redirect(s"${aaInfo.redirectUri}?error=$errorCode")
+              case _ =>
+                val errorCode = "invalid_request"
+                Redirect(s"${aaInfo.redirectUri}?error=$errorCode")
+            }
+          })
+      case None       =>
+        Logger.info("Authorize.send_auth : Not connected")
+        Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.authenticate()) // TODO add flash message
+    }
+  }
+
+  def login(client_id: String, redirect_uri: String, state: String, scope: String) = Action { implicit request =>
+    // Bind data to form for hidden inputs
+    val form = SignInProviderForm.form.bind(Map(
+      "clientId"    -> client_id,
+      "redirectUri" -> redirect_uri,
+      "state"       -> state,
+      "scope"       -> scope
+    ))
+    Ok(qgd.middleware.authorizationServer.views.html.apps.signIn(form, SocialProviderRegistry(Seq())))
+  }
+
+  def authenticate() = Action.async { implicit request =>
+    SignInProviderForm.form.bindFromRequest.fold(
+      form => {
+        Logger.warn("Authorize.authenticate form ko : " + form.errors)
+        Future.successful(BadRequest(qgd.middleware.authorizationServer.views.html.apps.signIn(form, SocialProviderRegistry(Seq()))))
+      },
+      data => {
+        val authenticate = Authenticate(data.email, data.password, data.rememberMe)
+        val credentials = authenticate.getCredentials
+        credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
+          Logger.info("Form data : " + data)
+          val result =
+            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.authorize(data.clientId.toString, data.redirectUri, data.state, data.scope))
+          userService.retrieve(loginInfo).flatMap {
+            case Some(user) =>
+              val c = configuration.underlying
+              env.authenticatorService.create(loginInfo).map {
+                case authenticator if authenticate.rememberMe =>
+//                  authenticator.copy(
+//                    expirationDateTime = clock.now + c.as[FiniteDuration]("silhouette.authenticator.rememberMe.authenticatorExpiry"),
+//                    idleTimeout = c.getAs[FiniteDuration]("silhouette.authenticator.rememberMe.authenticatorIdleTimeout"),
+//                    cookieMaxAge = c.getAs[FiniteDuration]("silhouette.authenticator.rememberMe.cookieMaxAge")
+//                  )
+                  authenticator
+                case authenticator => authenticator
+              }.flatMap { authenticator =>
+                env.eventBus.publish(LoginEvent(user, request, request2Messages))
+                env.authenticatorService.init(authenticator).flatMap { v =>
+                  env.authenticatorService.embed(v, result)
+                }
+              }
+            case None => Future.failed(new IdentityNotFoundException("Couldn't find user"))
           }
-        })
+        }.recover {
+          case e: ProviderException =>
+            Logger.warn("Logins.authenticate failed : " + authenticate + " -> " + e.getMessage)
+            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(data.clientId.toString, data.redirectUri, data.state, data.scope))
+              .flashing("error" -> Messages("invalid.credentials"))
+          case e: Exception => {
+            Logger.error("An exception ocurred", e)
+            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(data.clientId.toString, data.redirectUri, data.state, data.scope))
+              .flashing("error" -> Messages("internal.server.error"))
+          }
+        }
+      }
+    )
   }
 }
