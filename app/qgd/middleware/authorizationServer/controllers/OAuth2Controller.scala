@@ -8,7 +8,7 @@ import scalaoauth2.provider.OAuth2Provider
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-object OAuth2Controller extends Controller with OAuth2Provider {
+class OAuth2Controller extends Controller with OAuth2Provider {
   override val tokenEndpoint = new OAuth2TokenEndpoint()
 
   def accessToken = Action.async { implicit request =>
