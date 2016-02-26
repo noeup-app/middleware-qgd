@@ -57,7 +57,6 @@ object AuthCode {
             expires_in,
             created_at,
             client_id,
-            scope,
             redirect_uri,
             user_uuid,
             used
@@ -67,7 +66,6 @@ object AuthCode {
             {expires_in},
             {created_at},
             {client_id},
-            {scope},
             {redirect_uri},
             {user_uuid}::uuid,
             {used}
@@ -78,7 +76,7 @@ object AuthCode {
           "expires_in"         -> code.expiresIn,
           "created_at"         -> code.createdAt,
           "client_id"          -> code.clientId,
-          "scope"              -> code.scope,
+          //"scope"              -> code.scope,
           "redirect_uri"       -> code.redirectUri,
           "user_uuid"          -> code.userId,
           "used"               -> false
