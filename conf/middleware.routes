@@ -32,9 +32,9 @@ GET         /admin/client/:id                    qgd.middleware.authorizationSer
 DELETE      /admin/client/:id                    qgd.middleware.authorizationServer.controllers.Clients.delete(id: String)
 
 # page that allow user to authorize client
-#GET      /apps/authorize/                  qgd.middleware.authorizationServer.controllers.Apps.authorize
-#POST     /apps/send_auth/                  qgd.middleware.authorizationServer.controllers.Apps.send_auth
+GET         /oauth2/authorize/                   qgd.middleware.authorizationServer.controllers.Authorize.authorize
+#POST       /oauth2/send_auth/                  qgd.middleware.authorizationServer.controllers.Apps.send_auth
 
 
 # OAuth2 Routes
-#POST     /oauth2/access_token               qgd.middleware.authorizationServer.controllers.
+POST        /oauth2/access_token                 qgd.middleware.authorizationServer.controllers.OAuth2Controller.accessToken
