@@ -28,6 +28,7 @@ import play.api.libs.openid.OpenIdClient
 import play.api.libs.ws.WSClient
 import qgd.middleware.authorizationClient.models.daos._
 import qgd.middleware.authorizationClient.models.services.UserService
+import qgd.middleware.authorizationClient.provider.QGDProvider
 import qgd.middleware.models.Account
 
 /**
@@ -88,8 +89,8 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
    * @return The Silhouette environment.
    */
   @Provides
-  def provideSocialProviderRegistry(googleProvider: GoogleProvider): SocialProviderRegistry = {
-    SocialProviderRegistry(Seq(googleProvider))
+  def provideSocialProviderRegistry(googleProvider: GoogleProvider, qgdProvider: QGDProvider): SocialProviderRegistry = {
+    SocialProviderRegistry(Seq(googleProvider, qgdProvider))
   }
 
   /**
@@ -214,6 +215,23 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     configuration: Configuration): GoogleProvider = {
 
     new GoogleProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.google"))
+  }
+
+  /**
+   * Provides **THE** QGD provider.
+   *
+   * @param httpLayer The HTTP layer implementation.
+   * @param stateProvider The OAuth2 state provider implementation.
+   * @param configuration The Play configuration.
+   * @return The QGD provider.
+   */
+  @Provides
+  def provideQGDProvider(
+    httpLayer: HTTPLayer,
+    stateProvider: OAuth2StateProvider,
+    configuration: Configuration): QGDProvider = {
+
+    new QGDProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.qgd"))
   }
 //
 //  /**

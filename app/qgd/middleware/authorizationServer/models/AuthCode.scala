@@ -52,12 +52,11 @@ object AuthCode {
     DB.withConnection({ implicit c =>
       SQL(
         """
-          INSERT INTO oauth_auth_codes (
+          INSERT INTO auth_auth_codes (
             authorization_code,
             expires_in,
             created_at,
             client_id,
-            scope,
             redirect_uri,
             user_uuid,
             used
@@ -67,7 +66,6 @@ object AuthCode {
             {expires_in},
             {created_at},
             {client_id},
-            {scope},
             {redirect_uri},
             {user_uuid}::uuid,
             {used}
@@ -78,7 +76,7 @@ object AuthCode {
           "expires_in"         -> code.expiresIn,
           "created_at"         -> code.createdAt,
           "client_id"          -> code.clientId,
-          "scope"              -> code.scope,
+          //"scope"              -> code.scope,
           "redirect_uri"       -> code.redirectUri,
           "user_uuid"          -> code.userId,
           "used"               -> false
@@ -89,7 +87,7 @@ object AuthCode {
   def setAuthCodeAsUsed(code: String, used: Boolean = true) = DB.withConnection(implicit c =>
     SQL(
       """
-         UPDATE oauth_auth_codes
+         UPDATE auth_auth_codes
          SET
            used = {used}
          WHERE
@@ -106,7 +104,7 @@ object AuthCode {
       SQL(
         """
            SELECT *
-           FROM oauth_auth_codes
+           FROM auth_auth_codes
            WHERE
             authorization_code = {code}
             used = false

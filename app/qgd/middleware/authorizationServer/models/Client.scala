@@ -38,12 +38,11 @@ object Client {
     get[String]("client_id") ~
     get[String]("client_name") ~
     get[String]("client_secret") ~
-    get[Option[String]]("authorized_grant_types") ~
+    //get[Option[String]]("authorized_grant_types") ~
     get[String]("description") ~
-    get[String]("redirect_uri") ~
-    get[Option[String]]("default_scope") map {
-      case id ~ name ~ secret ~ authorizedGrantTypes ~ description ~ redirectUri ~ defaultScope =>
-        Client(id, name, secret, authorizedGrantTypes, description, redirectUri, defaultScope)
+    get[String]("redirect_uri") /*~ get[Option[String]]("default_scope")*/ map {
+      case id ~ name ~ secret /*~ authorizedGrantTypes*/ ~ description ~ redirectUri /*~ defaultScope*/ =>
+        Client(id, name, secret, None, description, redirectUri)
     }
 
 
