@@ -52,7 +52,7 @@ object AuthCode {
     DB.withConnection({ implicit c =>
       SQL(
         """
-          INSERT INTO oauth_auth_codes (
+          INSERT INTO auth_auth_codes (
             authorization_code,
             expires_in,
             created_at,
@@ -89,7 +89,7 @@ object AuthCode {
   def setAuthCodeAsUsed(code: String, used: Boolean = true) = DB.withConnection(implicit c =>
     SQL(
       """
-         UPDATE oauth_auth_codes
+         UPDATE auth_auth_codes
          SET
            used = {used}
          WHERE
@@ -106,7 +106,7 @@ object AuthCode {
       SQL(
         """
            SELECT *
-           FROM oauth_auth_codes
+           FROM auth_auth_codes
            WHERE
             authorization_code = {code}
             used = false
