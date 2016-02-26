@@ -2,6 +2,7 @@ package qgd.middleware.authorizationServer.forms
 
 import play.api.data.Form
 import play.api.data.Forms._
+import qgd.middleware.authorizationServer.models.RequestAuthInfo
 
 object AuthorizeForm {
 

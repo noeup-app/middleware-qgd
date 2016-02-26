@@ -1,4 +1,5 @@
-package qgd.middleware.authorizationServer.controllers
+package qgd.middleware.authorizationServer
+package controllers
 
 import javax.inject.Inject
 
@@ -13,6 +14,7 @@ import play.api.i18n.MessagesApi
 //import play.api.db.slick.DB
 //import oauth2.OAuthDataHandler
 //import qgd.middleware.authorizationServer.models
+import qgd.middleware.authorizationServer.forms.AuthorizeForm
 import qgd.middleware.models.Account
 
 class Authorize @Inject()(val messagesApi: MessagesApi,
