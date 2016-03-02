@@ -7,8 +7,6 @@ CREATE TABLE entity_users
   last_name         TEXT,
   email             TEXT,
   avatar_url        TEXT,
-  pin               INTEGER,
-  base_node         UUID            NOT NULL,
   active            BOOLEAN         DEFAULT FALSE,
   deleted           BOOLEAN         DEFAULT FALSE
 );
