@@ -24,14 +24,14 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
   "The `index` action" should {
     "redirect to login page if user is unauthorized" in new Context {
       new WithApplication(application) {
-        val Some(redirectResult) = route(FakeRequest(qgd.authorizationClient.controllers.application.routes.Applications.index())
+        val Some(redirectResult) = route(FakeRequest(qgd.middleware.authorizationClient.controllers.application.routes.Applications.index())
           .withAuthenticator[CookieAuthenticator](LoginInfo("invalid", "invalid"))
         )
 
         status(redirectResult) must be equalTo SEE_OTHER
 
         val redirectURL = redirectLocation(redirectResult).getOrElse("")
-        redirectURL must contain(qgd.authorizationClient.controllers.login.routes.Logins.loginAction().toString())
+        redirectURL must contain(qgd.middleware.authorizationClient.controllers.login.routes.Logins.loginAction().toString)
 
         val Some(unauthorizedResult) = route(FakeRequest(GET, redirectURL))
 
@@ -46,7 +46,7 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
         val Some(result) =
           identity.loginInfo match {
             case Some(loginInfo) =>
-              route(FakeRequest(qgd.authorizationClient.controllers.application.routes.Applications.index())
+              route(FakeRequest(qgd.middleware.authorizationClient.controllers.application.routes.Applications.index())
                 .withAuthenticator[CookieAuthenticator](loginInfo))
             case None => throw new RuntimeException("identity.loginInfo is None")
           }
