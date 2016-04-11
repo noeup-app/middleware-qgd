@@ -3,7 +3,7 @@ package qgd.middleware.authorizationClient.controllers.application
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, LogoutEvent, Silhouette}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.{BearerTokenAuthenticator, CookieAuthenticator}
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, AnyContent, Result}
@@ -23,11 +23,12 @@ import scala.concurrent.Future
  * @param socialProviderRegistry The social provider registry.
  */
 class Applications @Inject()(
-                                        val messagesApi: MessagesApi,
-                                        val env: Environment[Account, CookieAuthenticator],
-                                        socialProviderRegistry: SocialProviderRegistry,
-                                        htmlApplicationsResult: HtmlApplicationsResult,
-                                        ajaxApplicationsResult: AjaxApplicationsResult)
+                              val messagesApi: MessagesApi,
+                              val env: Environment[Account, CookieAuthenticator],
+                              socialProviderRegistry: SocialProviderRegistry,
+                              htmlApplicationsResult: HtmlApplicationsResult,
+                              ajaxApplicationsResult: AjaxApplicationsResult,
+                              scopeAndRoleAuthorization: ScopeAndRoleAuthorization)
   extends Silhouette[Account, CookieAuthenticator] {
 
   /**
@@ -35,7 +36,8 @@ class Applications @Inject()(
    *
    * @return The result to display.
    */
-  def index = SecuredAction(ScopeAndRoleAuthorization(WithScope(), WithRole("all"))).async { implicit request =>
+//  def index = SecuredAction.async { implicit request =>
+  def index = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("all"))).async { implicit request =>
     RequestHelper.isJson(request) match {
       case true =>
         val req = request.asInstanceOf[Applications.this.ajaxApplicationsResult.SecuredRequest[AnyContent]]
