@@ -26,6 +26,7 @@ import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.openid.OpenIdClient
 import play.api.libs.ws.WSClient
+import qgd.middleware.authorizationClient.controllers.{ScopeAndRoleAuthorization, ScopeAndRoleAuthorizationImpl}
 import qgd.middleware.authorizationClient.models.daos._
 import qgd.middleware.authorizationClient.models.services.UserService
 import qgd.middleware.authorizationClient.provider.QGDProvider
@@ -50,6 +51,7 @@ class SilhouetteModule extends AbstractModule with ScalaModule {
     bind[FingerprintGenerator].toInstance(new DefaultFingerprintGenerator(false))
     bind[EventBus].toInstance(EventBus())
     bind[Clock].toInstance(Clock())
+    bind[ScopeAndRoleAuthorization].to[ScopeAndRoleAuthorizationImpl]
   }
 
   /**

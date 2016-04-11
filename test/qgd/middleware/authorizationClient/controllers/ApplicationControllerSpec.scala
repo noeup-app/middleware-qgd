@@ -68,6 +68,7 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
     class FakeModule extends AbstractModule with ScalaModule {
       def configure() = {
         bind[Environment[Account, CookieAuthenticator]].toInstance(env)
+        bind[ScopeAndRoleAuthorization].to[FakeScopeAndRoleAuthorization]
       }
     }
 
