@@ -1,5 +1,6 @@
 package qgd.middleware.authorizationClient.controllers
 
+import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import play.api.i18n.Messages
@@ -11,6 +12,38 @@ import qgd.middleware.models.Account
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+trait ScopeAndRoleAuthorization {
+  def apply(scopeRoleAuthorization: WithScopeAuthorization,
+            roleAuthorization: WithRoleAuthorization): Authorization[Account, CookieAuthenticator]
+}
+
+class ScopeAndRoleAuthorizationImpl @Inject() () extends ScopeAndRoleAuthorization {
+
+  override def apply(scopeRoleAuthorization: WithScopeAuthorization,
+            roleAuthorization: WithRoleAuthorization): Authorization[Account, CookieAuthenticator] = {
+    ScopeAndRoleAuthorizationService(scopeRoleAuthorization, roleAuthorization)
+  }
+
+}
+
+class FakeScopeAndRoleAuthorization @Inject() () extends ScopeAndRoleAuthorization {
+
+  override def apply(scopeRoleAuthorization: WithScopeAuthorization,
+            roleAuthorization: WithRoleAuthorization): Authorization[Account, CookieAuthenticator] = {
+    new Authorization[Account, CookieAuthenticator] {
+      override def isAuthorized[B](identity: Account,
+                                   authenticator: CookieAuthenticator)
+                                  (implicit request: Request[B],
+                                   messages: Messages): Future[Boolean] =
+        Future.successful(true)
+    }
+  }
+
+}
+
+
+
+
 
 /**
   * Manage scope and role authorization
@@ -18,15 +51,15 @@ import scala.concurrent.Future
   * @param scopeRoleAuthorization expected scope
   * @param roleAuthorization expected scope
   */
-case class ScopeAndRoleAuthorization(
-                                   scopeRoleAuthorization: WithScopeAuthorization,
-                                   roleAuthorization: WithRoleAuthorization)
+case class ScopeAndRoleAuthorizationService(
+                                             scopeRoleAuthorization: WithScopeAuthorization,
+                                             roleAuthorization: WithRoleAuthorization)
   extends Authorization[Account, CookieAuthenticator] {
 
 
   /**
     * The account (identity) must be authorized on scope AND on scopes to access API
- *
+    *
     * @param identity the user who want to access API
     * @param authenticator the object that stores information about the cookie (data, expiration date, etc.)
     * @param request the request sent by user

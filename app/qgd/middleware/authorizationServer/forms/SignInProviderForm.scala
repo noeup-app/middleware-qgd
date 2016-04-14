@@ -18,8 +18,8 @@ object SignInProviderForm {
       "email"       -> email,
       "password"    -> nonEmptyText,
       "rememberMe"  -> boolean,
-      "clientId"    -> text,
-      "redirectUri" -> text,
+      "client_id"    -> text,
+      "redirect_uri" -> text,
       "state"       -> text,
       "scope"       -> text
     )(Data.apply)(Data.unapply)
@@ -33,8 +33,8 @@ object SignInProviderForm {
     * @param rememberMe Indicates if the user should stay logged in on the next visit.
     *
     * Data from client that wants to use the provider
-    * @param clientId the client id
-    * @param redirectUri the client redirect url
+    * @param client_id the client id
+    * @param redirect_uri the client redirect url
     * @param state the state, free value of the client
     * @param scope the scope wanted
     */
@@ -42,8 +42,8 @@ object SignInProviderForm {
     email: String,
     password: String,
     rememberMe: Boolean,
-    clientId: String,
-    redirectUri: String,
+    client_id: String,
+    redirect_uri: String,
     state: String,
     scope: String)
 }
