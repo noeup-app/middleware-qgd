@@ -1,8 +1,8 @@
-name := "middleware-qgd"
+name := "middleware-noeupapp"
 
 version := "1.0"
 
-lazy val `middleware-qgd` = (project in file(".")).enablePlugins(PlayScala)
+lazy val `middleware-noeupapp` = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.7"
 

@@ -12,7 +12,7 @@ import org.specs2.mock.Mockito
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.test.{ FakeRequest, PlaySpecification, WithApplication }
-import qgd.middleware.authorizationClient.controllers.application.Applications
+import qgd.middleware.authorizationClient.application.Applications
 import qgd.middleware.models.Account
 
 /**
