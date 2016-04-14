@@ -1,4 +1,4 @@
-package qgd.middleware.authorizationClient.controllers.socialAuth
+package qgd.middleware.authorizationClient.socialAuth
 
 import javax.inject.Inject
 

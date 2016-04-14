@@ -1,4 +1,4 @@
-package qgd.middleware.authorizationClient.controllers.signUp
+package qgd.middleware.authorizationClient.signUp
 
 import javax.inject.Inject
 

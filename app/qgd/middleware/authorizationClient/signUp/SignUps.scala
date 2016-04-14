@@ -1,4 +1,4 @@
-package qgd.middleware.authorizationClient.controllers.signUp
+package qgd.middleware.authorizationClient.signUp
 
 import java.util.UUID
 import javax.inject.Inject
