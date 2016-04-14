@@ -1,4 +1,4 @@
-package qgd.middleware.authorizationClient.socialAuth
+package com.noeupapp.middleware.authorizationClient.socialAuth
 
 import javax.inject.Inject
 
@@ -7,12 +7,12 @@ import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
+import com.noeupapp.middleware.entities.entity.Account
+import com.noeupapp.middleware.entities.user.UserService
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
-import qgd.middleware.authorizationClient.models.services.UserService
-import qgd.middleware.models.Account
-import qgd.middleware.utils.RequestHelper
+import com.noeupapp.middleware.utils.RequestHelper
 
 import scala.concurrent.Future
 

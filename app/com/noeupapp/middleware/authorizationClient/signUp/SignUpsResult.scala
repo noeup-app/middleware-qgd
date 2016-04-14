@@ -1,16 +1,15 @@
-package qgd.middleware.authorizationClient.signUp
+package com.noeupapp.middleware.authorizationClient.signUp
 
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.noeupapp.middleware.authorizationClient.AuthorizationResult
 import play.api.data.Form
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.{AnyContent, Request, Result}
-import qgd.middleware.authorizationClient.controllers.AuthorizationResult
-import qgd.middleware.authorizationClient.forms.SignUpForm
-import qgd.middleware.authorizationClient.forms.SignUpForm.Data
-import qgd.middleware.models.Account
+import SignUpForm.Data
+import com.noeupapp.middleware.entities.entity.Account
 
 /**
   * Define all HTTP results (Json/Html)
@@ -37,24 +36,24 @@ class HtmlSignUpsResult @Inject() (
   extends SignUpsResult {
 
   override def badRequest(form: Form[Data])(implicit request: Request[Any]): Result =
-    BadRequest(qgd.middleware.authorizationClient.views.html.signUp(form))
+    BadRequest(com.noeupapp.middleware.authorizationClient.signUp.html.signUp(form))
 
   override def userSuccessfullyCreated(): Result =
-    Redirect(qgd.middleware.authorizationClient.controllers.application.routes.Applications.index())
+    Redirect(com.noeupapp.middleware.application.routes.Applications.index())
 
   override def manageError(e: Exception): Result =
-    Redirect(qgd.middleware.authorizationClient.controllers.signUp.routes.SignUps.signUpAction())
+    Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.signUpAction())
       .flashing("error" -> Messages("internal.server.error"))
 
   override def userAlreadyExists(): Result =
-    Redirect(qgd.middleware.authorizationClient.controllers.signUp.routes.SignUps.signUpAction())
+    Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.signUpAction())
       .flashing("error" -> Messages("user.exists"))
 
   override def userIsConnected(): Result =
-    Redirect(qgd.middleware.authorizationClient.controllers.application.routes.Applications.index())
+    Redirect(com.noeupapp.middleware.application.routes.Applications.index())
 
   override def userIsNotRegistered(implicit request: UserAwareRequest[AnyContent]): Result =
-    Ok(qgd.middleware.authorizationClient.views.html.signUp(SignUpForm.form))
+    Ok(com.noeupapp.middleware.authorizationClient.signUp.html.signUp(SignUpForm.form))
 }
 
 

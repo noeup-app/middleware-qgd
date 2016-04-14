@@ -1,13 +1,14 @@
-package qgd.middleware.authorizationClient.controllers
+package com.noeupapp.middleware.authorizationClient.controllers
 
 import java.util.UUID
 
 import com.mohiva.play.silhouette.api.LoginInfo
+import com.noeupapp.middleware.authorizationClient.ScopeAuthorization
 import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.test.PlaySpecification
-import qgd.middleware.authorizationClient.controllers.ScopeAuthorization.{WithScope, WithScopes}
-import qgd.middleware.models.Account
+import ScopeAuthorization.{WithScope, WithScopes}
+import com.noeupapp.middleware.entities.entity.Account
 
 
 class ScopeSpec extends PlaySpecification with Mockito {

@@ -1,4 +1,4 @@
-package qgd.middleware.controllers
+package com.noeupapp.middleware.controllers
 
 import play.api.http.LazyHttpErrorHandler
 

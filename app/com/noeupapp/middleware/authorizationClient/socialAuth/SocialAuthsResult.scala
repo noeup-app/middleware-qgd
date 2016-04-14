@@ -1,14 +1,14 @@
-package qgd.middleware.authorizationClient.socialAuth
+package com.noeupapp.middleware.authorizationClient.socialAuth
 
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
+import com.noeupapp.middleware.authorizationClient.AuthorizationResult
+import com.noeupapp.middleware.entities.entity.Account
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.Result
-import qgd.middleware.authorizationClient.controllers.AuthorizationResult
-import qgd.middleware.models.Account
 
 /**
   * Define results for SocialAuths
@@ -30,10 +30,10 @@ class HtmlSocialAuthsResult @Inject() (
   extends SocialAuthsResult {
 
   override def userSuccessfullyAuthenticated(): Result =
-    Redirect(qgd.middleware.authorizationClient.controllers.application.routes.Applications.index())
+    Redirect(com.noeupapp.middleware.application.routes.Applications.index())
 
   override def unexpectedProviderError(): Result =
-    Redirect(qgd.middleware.authorizationClient.controllers.login.routes.Logins.loginAction())
+    Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
       .flashing("error" -> Messages("could.not.authenticate"))
 }
 

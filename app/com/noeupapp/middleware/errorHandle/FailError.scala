@@ -1,10 +1,10 @@
-package qgd.middleware.errorHandle
+package com.noeupapp.middleware.errorHandle
 
 import play.api.Play.current
 import play.api.libs.json.Json
 import play.api.libs.mailer._
 import play.api.mvc.Results._
-import qgd.middleware.errorHandle.ExceptionEither._
+import com.noeupapp.middleware.errorHandle.ExceptionEither._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz._

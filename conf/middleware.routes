@@ -3,41 +3,41 @@
 # ~~~~
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                        qgd.middleware.controllers.Assets.versioned(path="/public/lib/middleware-qgd", file)
+GET         /assets/*file                        com.noeupapp.middleware.controllers.Assets.versioned(path="/public/lib/middleware-qgd", file)
 GET         /webjars/*file                       controllers.WebJarAssets.at(file)
 
 
 # Home page
-GET         /                                    qgd.middleware.authorizationClient.controllers.application.Applications.index
-GET         /login                               qgd.middleware.authorizationClient.controllers.login.Logins.loginAction
+GET         /                                    com.noeupapp.middleware.application.Applications.index
+GET         /login                               com.noeupapp.middleware.authorizationClient.login.Logins.loginAction
 
-GET         /signUp                              qgd.middleware.authorizationClient.controllers.signUp.SignUps.signUpActionGet
-POST        /signUp                              qgd.middleware.authorizationClient.controllers.signUp.SignUps.signUpAction
+GET         /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.signUpActionGet
+POST        /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.signUpAction
 
-GET         /logout                              qgd.middleware.authorizationClient.controllers.login.Logins.logOut
-GET         /forgotPassword                      qgd.middleware.authorizationClient.controllers.signUp.SignUps.forgotPassword
+GET         /logout                              com.noeupapp.middleware.authorizationClient.login.Logins.logOut
+GET         /forgotPassword                      com.noeupapp.middleware.authorizationClient.signUp.SignUps.forgotPassword
 
 
-GET         /authenticate/:provider              qgd.middleware.authorizationClient.controllers.socialAuth.SocialAuths.authenticateAction(provider)
-POST        /authenticate/credentials            qgd.middleware.authorizationClient.controllers.login.Logins.authenticateAction
+GET         /authenticate/:provider              com.noeupapp.middleware.authorizationClient.socialAuth.SocialAuths.authenticateAction(provider)
+POST        /authenticate/credentials            com.noeupapp.middleware.authorizationClient.login.Logins.authenticateAction
 
 # Clients management
-GET         /admin/clients                       qgd.middleware.authorizationServer.controllers.Clients.list
-GET         /admin/client/new                    qgd.middleware.authorizationServer.controllers.Clients.create
-POST        /admin/client/add                    qgd.middleware.authorizationServer.controllers.Clients.add
-POST        /admin/client/update                 qgd.middleware.authorizationServer.controllers.Clients.update
-GET         /admin/client/edit/:id               qgd.middleware.authorizationServer.controllers.Clients.edit(id: String)
-PUT         /admin/client                        qgd.middleware.authorizationServer.controllers.Clients.update
-GET         /admin/client/:id                    qgd.middleware.authorizationServer.controllers.Clients.get(id: String)
-DELETE      /admin/client/:id                    qgd.middleware.authorizationServer.controllers.Clients.delete(id: String)
+GET         /admin/clients                       com.noeupapp.middleware.authorizationServer.client.Clients.list
+GET         /admin/client/new                    com.noeupapp.middleware.authorizationServer.client.Clients.create
+POST        /admin/client/add                    com.noeupapp.middleware.authorizationServer.client.Clients.add
+POST        /admin/client/update                 com.noeupapp.middleware.authorizationServer.client.Clients.update
+GET         /admin/client/edit/:id               com.noeupapp.middleware.authorizationServer.client.Clients.edit(id: String)
+PUT         /admin/client                        com.noeupapp.middleware.authorizationServer.client.Clients.update
+GET         /admin/client/:id                    com.noeupapp.middleware.authorizationServer.client.Clients.get(id: String)
+DELETE      /admin/client/:id                    com.noeupapp.middleware.authorizationServer.client.Clients.delete(id: String)
 
 # page that allow user to authorize client
-GET         /oauth2/authorize                   qgd.middleware.authorizationServer.controllers.Authorize.authorize(client_id ?= "", redirect_uri ?= "", state ?= "", scope ?= "")
-POST        /oauth2/send_auth                   qgd.middleware.authorizationServer.controllers.Authorize.send_auth
-GET         /oauth2/login                       qgd.middleware.authorizationServer.controllers.Authorize.login(client_id ?=  "", redirect_uri ?= "", state ?= "", scope ?= "")
-POST        /oauth2/authenticate                qgd.middleware.authorizationServer.controllers.Authorize.authenticate
-#POST       /oauth2/send_auth/                  qgd.middleware.authorizationServer.controllers.Apps.send_auth
+GET         /oauth2/authorize                   com.noeupapp.middleware.authorizationServer.authorize.Authorizations.authorize(client_id ?= "", redirect_uri ?= "", state ?= "", scope ?= "")
+POST        /oauth2/send_auth                   com.noeupapp.middleware.authorizationServer.authorize.Authorizations.send_auth
+GET         /oauth2/login                       com.noeupapp.middleware.authorizationServer.authorize.Authorizations.login(client_id ?=  "", redirect_uri ?= "", state ?= "", scope ?= "")
+POST        /oauth2/authenticate                com.noeupapp.middleware.authorizationServer.authorize.Authorizations.authenticate
+#POST       /oauth2/send_auth/                  com.noeupapp.middleware.authorizationServer.controllers.Apps.send_auth
 
 
 # OAuth2 Routes
-POST        /oauth2/access_token                 qgd.middleware.authorizationServer.controllers.OAuth2Controller.accessToken
+POST        /oauth2/access_token                 com.noeupapp.middleware.authorizationServer.oauth2.OAuth2s.accessToken

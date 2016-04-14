@@ -1,4 +1,4 @@
-package qgd.middleware.authorizationServer.errors
+package com.noeupapp.middleware.authorizationServer.errors
 
 import scalaoauth2.provider.OAuthError
 

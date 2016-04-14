@@ -1,4 +1,4 @@
-package qgd.middleware.authorizationClient.provider
+package com.noeupapp.middleware.authorizationClient.provider
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer

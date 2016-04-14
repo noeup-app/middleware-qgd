@@ -1,4 +1,4 @@
-package qgd.middleware.authorizationServer.endpoints
+package com.noeupapp.middleware.authorizationServer.endpoints
 
 import scalaoauth2.provider._
 

@@ -1,4 +1,4 @@
-package qgd.middleware.authorizationClient.login
+package com.noeupapp.middleware.authorizationClient.login
 
 import javax.inject.Inject
 
@@ -13,15 +13,13 @@ import com.mohiva.play.silhouette.impl.providers._
 import net.ceedubs.ficus.Ficus._
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{AnyContent, Action, Request, Result}
+import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
-import qgd.middleware.authorizationClient.forms.SignInForm
-import qgd.middleware.authorizationClient.models.Authenticate
-import qgd.middleware.authorizationClient.models.Authenticate.authenticateFormat
-import qgd.middleware.authorizationClient.models.services.UserService
-import qgd.middleware.models.Account
-import qgd.middleware.utils.BodyParserHelper._
-import qgd.middleware.utils.{BodyParserHelper, RequestHelper}
+import Authenticate.authenticateFormat
+import com.noeupapp.middleware.entities.entity.Account
+import com.noeupapp.middleware.entities.user.UserService
+import com.noeupapp.middleware.utils.BodyParserHelper._
+import com.noeupapp.middleware.utils.{BodyParserHelper, RequestHelper}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -95,7 +93,7 @@ class Logins @Inject()(
         val authenticateData: Authenticate = request.body.asInstanceOf[Authenticate] // TODO Ugly
         authenticate(authenticateData, ajaxLoginsResult)
       case false =>
-        SignInForm.form.bindFromRequest.fold(
+        LoginForm.form.bindFromRequest.fold(
           form => Future.successful(htmlLoginsResult.badRequest(form)),
           data => {
             val authenticateData = Authenticate(data.email, data.password, data.rememberMe)

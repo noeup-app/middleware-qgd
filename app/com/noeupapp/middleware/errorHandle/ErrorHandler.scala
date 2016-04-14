@@ -1,4 +1,4 @@
-package qgd.middleware.errorHandle
+package com.noeupapp.middleware.errorHandle
 
 import java.util.Locale
 import javax.inject.Inject
@@ -42,7 +42,7 @@ class ErrorHandler @Inject() (
     * @return The result to send to the client.
     */
   override def onNotAuthenticated(request: RequestHeader, messages: Messages): Option[Future[Result]] = {
-    Some(Future.successful(Redirect(qgd.middleware.authorizationClient.controllers.login.routes.Logins.loginAction())))
+    Some(Future.successful(Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())))
   }
 
   /**
@@ -55,7 +55,7 @@ class ErrorHandler @Inject() (
     * @return The result to send to the client.
     */
   override def onNotAuthorized(request: RequestHeader, messages: Messages): Option[Future[Result]] = {
-    //Some(Future.successful(Redirect(qgd.middleware.authorizationClient.controllers.login.middleware.routes.Logins.loginAction()).flashing("error" -> Messages("access.denied")(messages))))
+    //Some(Future.successful(Redirect(com.noeupapp.middleware.authorizationClient.controllers.login.middleware.routes.Logins.loginAction()).flashing("error" -> Messages("access.denied")(messages))))
     Some(Future.successful(Forbidden("You are not authorized to access this resource !")))
   }
 

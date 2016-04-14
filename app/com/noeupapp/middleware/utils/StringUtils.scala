@@ -1,4 +1,4 @@
-package qgd.middleware.utils
+package com.noeupapp.middleware.utils
 
 object StringUtils {
 

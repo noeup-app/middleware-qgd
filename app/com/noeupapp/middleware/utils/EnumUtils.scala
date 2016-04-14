@@ -1,4 +1,4 @@
-package qgd.middleware.utils
+package com.noeupapp.middleware.utils
 
 import anorm.{TypeDoesNotMatch, MetaDataItem, Column, ToStatement}
 import org.postgresql.util.PGobject

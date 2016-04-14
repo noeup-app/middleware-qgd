@@ -1,4 +1,4 @@
-package qgd.middleware.authorizationClient.signUp
+package com.noeupapp.middleware.authorizationClient.signUp
 
 import java.util.UUID
 import javax.inject.Inject
@@ -12,13 +12,12 @@ import com.mohiva.play.silhouette.impl.providers._
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{AnyContent, Action, Request, Result}
-import qgd.middleware.authorizationClient.forms.SignUpForm
-import qgd.middleware.authorizationClient.forms.SignUpForm.signUpFormDataFormat
-import qgd.middleware.authorizationClient.models.services.UserService
-import qgd.middleware.models.Account
-import qgd.middleware.utils.BodyParserHelper._
-import qgd.middleware.utils.{BodyParserHelper, RequestHelper}
+import play.api.mvc.{Action, AnyContent, Request, Result}
+import SignUpForm.signUpFormDataFormat
+import com.noeupapp.middleware.entities.entity.Account
+import com.noeupapp.middleware.entities.user.UserService
+import com.noeupapp.middleware.utils.BodyParserHelper._
+import com.noeupapp.middleware.utils.{BodyParserHelper, RequestHelper}
 
 import scala.concurrent.Future
 

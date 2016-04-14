@@ -1,8 +1,8 @@
-package qgd.middleware.errorHandle
+package com.noeupapp.middleware.errorHandle
 
 import play.api.mvc.Results._
 import play.api.mvc._
-import qgd.middleware.errorHandle.FailError.Expect
+import com.noeupapp.middleware.errorHandle.FailError.Expect
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz._

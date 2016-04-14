@@ -1,4 +1,4 @@
-package qgd.middleware.utils
+package com.noeupapp.middleware.utils
 
 import play.api.libs.json.{Json, Reads, Writes}
 

@@ -1,0 +1,87 @@
+@import com.noeupapp.middleware.authorizationClient.signUp.SignUpForm
+@(signInForm: Form[SignUpForm.Data])(implicit request: RequestHeader, messages: Messages)
+
+@import b3.inline.fieldConstructor
+
+@qgd.middleware.views.html.main(Messages("sign.up.title")) {
+
+    <body id="app" class="app body-auth body-wide">
+
+        <div class="main-container">
+            <div id="content" class="content-container">
+                    <!-- uiView:  --><section data-ui-view="" class="view-container animate-fade-up" style=""><div class="page-signin ng-scope" ng-controller="authCtrl">
+
+                <div class="signin-header">
+                    <section class="logo text-center">
+                        <h1><a href="/" class="ng-binding"><img class="logo_qgd" src="@qgd.middleware.controllers.routes.Assets.versioned("../../../../../../public/images/qgd.png")" alt="Logo qgd"></a></h1>
+                    </section>
+                </div>
+
+                <div class="wrapper">
+                    <div class="main-body">
+
+                        <div class="card bg-white">
+                        @helper.form(action = qgd.middleware.authorizationClient.controllers.signUp.routes.SignUps.signUpAction()) {
+                            @helper.CSRF.formField
+                            <div class="card-content">
+
+                                    @request.flash.get("error").map { msg =>
+                                        <div class="alert ng-isolate-scope alert-danger alert-dismissible">
+                                            <a href="#" class="close" data-dismiss="alert">&times;</a>
+                                            @msg
+                                        </div>
+                                    }
+
+                                    <fieldset>
+                                        <div class="form-group">
+                                            <div class="ui-input-group">
+                                                <input type="text" required="" id="firstName" name="firstName" class="form-control">
+                                                <span class="input-bar"></span>
+                                                <label for="firstName">First name</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="ui-input-group">
+                                                <input type="text" required="" id="lastName" name="lastName" class="form-control">
+                                                <span class="input-bar"></span>
+                                                <label for="lastName">Last name</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="ui-input-group">
+                                                <input type="text" required="" id="email" name="email"  class="form-control">
+                                                <span class="input-bar"></span>
+                                                <label for="email">Email</label>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="ui-input-group">
+                                                <input type="password" required="" id="password" name="password" class="form-control">
+                                                <span class="input-bar"></span>
+                                                <label for="password">Password</label>
+                                            </div>
+                                        </div>
+                                        <div class="divider"></div>
+                                        <div class="form-group">
+                                            <p class="additional-info text-small">By clicking on sign up, you agree to <a href="javascript:;"><i>terms</i></a> and <a href="javascript:;"><i>privacy policy</i></a></p>
+                                        </div>
+                                    </fieldset>
+                            </div>
+                            <div class="card-action no-border text-right">
+                                <a href="@qgd.middleware.authorizationClient.controllers.login.routes.Logins.loginAction()">Login</a>
+                                <input type="submit" class="color-primary" value="Sign Up">
+                            </div>
+                        }
+                        </div>
+                    </div>
+                </div>
+
+            </div></section>
+            </div>
+        </div>
+
+    </body>
+
+
+
+}

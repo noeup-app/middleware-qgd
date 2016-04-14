@@ -1,4 +1,4 @@
-package qgd.middleware.utils
+package com.noeupapp.middleware.utils
 
 import play.api.libs.json.Reads
 import play.api.mvc.BodyParsers.parse
