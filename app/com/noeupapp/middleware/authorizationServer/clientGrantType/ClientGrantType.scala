@@ -7,8 +7,7 @@ import anorm._
 import play.api.Play.current
 import play.api.db.DB
 import play.api.libs.json.Json
-import qgd.middleware.authorizationServer.models.GrantType
-import qgd.middleware.authorizationServer.models.GrantType.GrantType
+import GrantType.GrantType
 
 import scala.language.postfixOps
 

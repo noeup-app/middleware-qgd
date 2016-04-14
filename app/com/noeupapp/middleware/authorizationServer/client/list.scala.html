@@ -2,12 +2,12 @@
 @import com.noeupapp.middleware.entities.entity.Account
 @(clients: List[Client], userOpt: Option[Account])(implicit messages: Messages)
 
-@qgd.middleware.views.html.home("List of Clients", userOpt) {
+@com.noeupapp.middleware.views.html.home("List of Clients", userOpt) {
 
     <div class="container">
 
         <div class="row ">
-            <p class="text-right"><a href="@qgd.middleware.authorizationServer.controllers.routes.Clients.create" class="btn btn-primary">Add a new App / Client</a></p>
+            <p class="text-right"><a href="@com.noeupapp.middleware.authorizationServer.client.routes.Clients.create" class="btn btn-primary">Add a new App / Client</a></p>
             <h2>List of Clients</h2>
             <table class="table table-striped table-hover table-bordered">
                 <thead>
@@ -28,8 +28,8 @@
                         <td style="max-width:350px">@client.description</td>
                         <td>@client.redirect_uri</td>
                         <td>@client.defaultScope</td>
-                        <td><a href="@qgd.middleware.authorizationServer.controllers.routes.Clients.edit(client.clientId)">Edit</a></td>
-                        <td><a href="@qgd.middleware.authorizationServer.controllers.routes.Clients.delete(client.clientId)">Delete</a></td>
+                        <td><a href="@com.noeupapp.middleware.authorizationServer.client.routes.Clients.edit(client.clientId)">Edit</a></td>
+                        <td><a href="@com.noeupapp.middleware.authorizationServer.client.routes.Clients.delete(client.clientId)">Delete</a></td>
                     </tr>
                 }
                 </tbody>

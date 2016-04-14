@@ -2,7 +2,6 @@ package com.noeupapp.middleware.authorizationServer.authorize
 
 import play.api.data.Form
 import play.api.data.Forms._
-import qgd.middleware.authorizationServer.models.RequestAuthInfo
 
 object AuthorizeForm {
 

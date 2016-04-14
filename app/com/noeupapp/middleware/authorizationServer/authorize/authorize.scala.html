@@ -1,16 +1,16 @@
 
 @* authorize Template File *@
-@import com.noeupapp.middleware.authorizationServer.authorize.{AuthorizeForm, RequestAuthInfo}
 @import com.noeupapp.middleware.entities.entity.Account
 
+@import com.noeupapp.middleware.authorizationServer.authorize.RequestAuthInfo
 @(userOpt: Account, AuthForm: Form[RequestAuthInfo])(implicit request: RequestHeader, messages: Messages)
 
 
-@qgd.middleware.views.html.main("Authorize App", Option(userOpt)) {
+@com.noeupapp.middleware.views.html.main("Authorize App", Option(userOpt)) {
 
 
     @helper.form(
-        action = qgd.middleware.authorizationServer.controllers.routes.Authorize.send_auth(),
+        action = com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.send_auth(),
         'class -> "form-horizontal ng-pristine ng-valid") {
 
         @helper.CSRF.formField

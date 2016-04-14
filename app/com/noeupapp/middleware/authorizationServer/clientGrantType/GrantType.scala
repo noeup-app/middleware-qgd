@@ -2,7 +2,7 @@ package com.noeupapp.middleware.authorizationServer.clientGrantType
 
 import anorm.ToStatement
 import play.api.libs.json.Format
-import qgd.middleware.utils.EnumUtils
+import com.noeupapp.middleware.utils.EnumUtils
 
 import scala.collection.breakOut
 

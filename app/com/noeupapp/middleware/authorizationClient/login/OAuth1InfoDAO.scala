@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.impl.providers.OAuth1Info
 import org.sedis.Pool
 import play.api.libs.json.Json
+import com.noeupapp.middleware.authorizationClient.login.OAuth1InfoDAO.oAuth1InfoFormat
 
 object OAuth1InfoDAO {
   implicit val oAuth1InfoFormat = Json.format[OAuth1Info]

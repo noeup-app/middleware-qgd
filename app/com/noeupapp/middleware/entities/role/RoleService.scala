@@ -2,10 +2,10 @@ package com.noeupapp.middleware.entities.role
 
 import javax.inject.Inject
 
+import com.noeupapp.middleware.entities.entity.Account
 import com.noeupapp.middleware.entities.relationUserRole.RelationUserRoleDAO
 import play.api.Play.current
 import play.api.db.DB
-import qgd.middleware.models.Account
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

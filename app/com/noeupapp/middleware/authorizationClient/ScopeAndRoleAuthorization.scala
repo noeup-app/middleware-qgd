@@ -3,9 +3,12 @@ package com.noeupapp.middleware.authorizationClient
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.noeupapp.middleware.authorizationClient.RoleAuthorization.WithRoleAuthorization
+import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScopeAuthorization
+import com.noeupapp.middleware.entities.entity.Account
 import play.api.i18n.Messages
 import play.api.mvc.Request
-import qgd.middleware.models.Account
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import scala.concurrent.Future
 

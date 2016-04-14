@@ -6,8 +6,8 @@ import com.noeupapp.middleware.authorizationServer.authCode.AuthCode
 import com.noeupapp.middleware.authorizationServer.client.Client
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OauthAccessToken
 import com.noeupapp.middleware.entities.entity.Account
-import qgd.middleware.authorizationServer.utils.{BearerTokenGenerator, Config}
-import qgd.middleware.utils.NamedLogger
+import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config}
+import com.noeupapp.middleware.utils.NamedLogger
 
 import scala.concurrent.Future
 import scala.language.implicitConversions

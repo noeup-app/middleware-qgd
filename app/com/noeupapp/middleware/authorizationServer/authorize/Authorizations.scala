@@ -8,13 +8,14 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.{CredentialsProvider, SocialProviderRegistry}
 import com.noeupapp.middleware.authorizationClient.login.Authenticate
+import com.noeupapp.middleware.authorizationServer.authCode.AuthCode
+import com.noeupapp.middleware.authorizationServer.client.Client
 import com.noeupapp.middleware.entities.entity.Account
 import com.noeupapp.middleware.entities.user.UserService
 import play.api.db.DB
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.Action
 import play.api.{Configuration, Logger}
-import qgd.middleware.authorizationServer.models
 
 import scala.concurrent.Future
 
@@ -24,8 +25,7 @@ import scala.concurrent.Future
 //import play.api.data.Forms._
 import play.api.Play.current
 //import oauth2.OAuthDataHandler
-//import qgd.middleware.authorizationServer.models
-import qgd.middleware.authorizationServer.forms.{AuthorizeForm, SignInProviderForm}
+//import com.noeupapp.middleware.authorizationServer.models
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -56,7 +56,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
     Logger.info("Authorize.authorize clientId : " + (client_id, redirect_uri, state, scope).toString())
 
     // check if such a client exists
-    models.Client.findByClientId(client_id) match {
+    Client.findByClientId(client_id) match {
 
       case None => // doesn't exist
         BadRequest("No such client exists.")
@@ -79,9 +79,9 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
           case Some(user) => // User is connected, let's show him the authorize view
             val aaInfoForm = AuthorizeForm.form.bind(data)
             Logger.info(s"Auth : $aaInfoForm")
-            Ok(views.html.apps.authorize(user, aaInfoForm))
+            Ok(com.noeupapp.middleware.authorizationServer.authorize.html.authorize(user, aaInfoForm))
           case None => // User is not connected, let's redirect him to login page
-            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(client_id, redirect_uri, state, scope))
+            Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(client_id, redirect_uri, state, scope))
         }
     }
   }
@@ -95,7 +95,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
         boundForm.fold(
           formWithErrors => {
             log.debug("Authorize.send_auth : form ko -> " + formWithErrors.errors.toString)
-            Ok(views.html.apps.authorize(user, formWithErrors))
+            Ok(com.noeupapp.middleware.authorizationServer.authorize.html.authorize(user, formWithErrors))
           },
           aaInfo => {
             Logger.debug("Authorize.send_auth form ok")
@@ -104,7 +104,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
                 val expiresIn = Int.MaxValue
                 val acOpt =
                   DB.withTransaction { implicit session =>
-                    models.AuthCode.generateAuthCodeForClient(
+                    AuthCode.generateAuthCodeForClient(
                       aaInfo.clientId, aaInfo.redirectUri, aaInfo.scope,
                       user.id, expiresIn)
                   }
@@ -128,7 +128,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
           })
       case None       =>
         Logger.info("Authorize.send_auth : Not connected")
-        Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.authenticate()) // TODO add flash message
+        Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.authenticate()) // TODO add flash message
     }
   }
 
@@ -140,14 +140,14 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
       "state"        -> state,
       "scope"        -> scope
     ))
-    Ok(qgd.middleware.authorizationServer.views.html.apps.signIn(form, SocialProviderRegistry(Seq())))
+    Ok(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq())))
   }
 
   def authenticate() = Action.async { implicit request =>
     SignInProviderForm.form.bindFromRequest.fold(
       form => {
         Logger.warn("Authorize.authenticate form ko : " + form.errors)
-        Future.successful(BadRequest(qgd.middleware.authorizationServer.views.html.apps.signIn(form, SocialProviderRegistry(Seq()))))
+        Future.successful(BadRequest(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq()))))
       },
       data => {
         val authenticate = Authenticate(data.email, data.password, data.rememberMe)
@@ -155,7 +155,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
         credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
           Logger.info("Form data : " + data)
           val result =
-            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.authorize(data.client_id.toString, data.redirect_uri, data.state, data.scope))
+            Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.authorize(data.client_id.toString, data.redirect_uri, data.state, data.scope))
           userService.retrieve(loginInfo).flatMap {
             case Some(user) =>
               val c = configuration.underlying
@@ -179,11 +179,11 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
         }.recover {
           case e: ProviderException =>
             Logger.warn("Logins.authenticate failed : " + authenticate + " -> " + e.getMessage)
-            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
+            Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
               .flashing("error" -> Messages("invalid.credentials"))
           case e: Exception => {
             Logger.error("An exception ocurred", e)
-            Redirect(qgd.middleware.authorizationServer.controllers.routes.Authorize.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
+            Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
               .flashing("error" -> Messages("internal.server.error"))
           }
         }

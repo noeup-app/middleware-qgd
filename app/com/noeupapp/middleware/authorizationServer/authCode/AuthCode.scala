@@ -6,10 +6,10 @@ import java.util.{Date, UUID}
 import anorm.SqlParser._
 import anorm._
 import com.noeupapp.middleware.authorizationServer.client.Client
+import com.noeupapp.middleware.utils.AuthCodeGenerator
 import play.api.Play.current
 import play.api.db.DB
 import play.api.libs.json.Json
-import qgd.middleware.authorizationServer.utils
 
 import scala.language.postfixOps
 
@@ -132,7 +132,7 @@ object AuthCode {
 
     Client.findByClientId(clientId).map {
       client =>
-        val code = utils.AuthCodeGenerator.generateAuthCode()
+        val code = AuthCodeGenerator.generateAuthCode()
         val createdAt = new Timestamp(new Date().getTime)
         val authCode = AuthCode(
                                 code,

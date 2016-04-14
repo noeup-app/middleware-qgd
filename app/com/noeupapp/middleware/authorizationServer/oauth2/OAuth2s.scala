@@ -1,7 +1,7 @@
 package com.noeupapp.middleware.authorizationServer.oauth2
 
 import play.api.mvc.{Action, Controller}
-import qgd.middleware.authorizationServer.endpoints.OAuth2TokenEndpoint
+import com.noeupapp.middleware.authorizationServer.endpoints.OAuth2TokenEndpoint
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaoauth2.provider.OAuth2Provider

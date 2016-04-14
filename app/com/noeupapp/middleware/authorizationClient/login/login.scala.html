@@ -4,7 +4,7 @@
 @import com.mohiva.play.silhouette.impl.providers.oauth2.ClefProvider
 @import b3.inline.fieldConstructor
 
-@qgd.middleware.views.html.main(Messages("sign.in.title")) {
+@com.noeupapp.middleware.views.html.main(Messages("sign.in.title")) {
 
 
     <body id="app" class="app body-auth body-wide">
@@ -15,7 +15,7 @@
 
                 <div class="signin-header">
                     <section class="logo text-center">
-                        <h1><a href="/" class="ng-binding"><img class="logo_qgd" src="@qgd.middleware.controllers.routes.Assets.versioned("../../../../../../public/images/qgd.png")" alt=""></a></h1>
+                        <h1><a href="/" class="ng-binding"><img class="logo_qgd" src="@com.noeupapp.middleware.controllers.routes.Assets.versioned("../../../../../../public/images/qgd.png")" alt=""></a></h1>
                     </section>
                 </div>
 
@@ -25,7 +25,7 @@
 
 
                             @helper.form(
-                                action = qgd.middleware.authorizationClient.controllers.login.routes.Logins.authenticateAction(),
+                                action = com.noeupapp.middleware.authorizationClient.login.routes.Logins.authenticateAction(),
                                 'class -> "form-horizontal ng-pristine ng-valid") {
 
                                 @helper.CSRF.formField
@@ -70,7 +70,7 @@
 
 
                                             <div class="form-group">
-                                                <a href="@qgd.middleware.authorizationClient.controllers.signUp.routes.SignUps.forgotPassword()" class="text-muted text-small">Forgot your password?</a>
+                                                <a href="@com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.forgotPassword()" class="text-muted text-small">Forgot your password?</a>
                                             </div>
 
                                             <div class="divider"></div>
@@ -85,7 +85,7 @@
                                     </div>
                                 </div>
                                 <div class="card-action no-border text-right">
-                                    <a href="@qgd.middleware.authorizationClient.controllers.signUp.routes.SignUps.signUpAction()">@Messages("register")</a>
+                                    <a href="@com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.signUpAction()">@Messages("register")</a>
                                     <input type="submit" class="color-primary" value="@Messages("sign.in")">
                                 </div>
 
@@ -98,7 +98,7 @@
                                     <p style="color:white ;">@Messages("or.use.social")</p>
                                     <div>
                                     @for(p <- socialProviders.providers if p.id != "clef") {
-                                        <a href="@qgd.middleware.authorizationClient.controllers.socialAuth.routes.SocialAuths.authenticateAction(p.id)" class="provider @p.id" title="@Messages(p.id)"><img src="@qgd.middleware.controllers.routes.Assets.versioned(s"images/providers/${p.id}.png")" width="64px" height="64px" alt="@Messages(p.id)"></a>
+                                        <a href="@com.noeupapp.middleware.authorizationClient.socialAuth.routes.SocialAuths.authenticateAction(p.id)" class="provider @p.id" title="@Messages(p.id)"><img src="@com.noeupapp.middleware.controllers.routes.Assets.versioned(s"images/providers/${p.id}.png")" width="64px" height="64px" alt="@Messages(p.id)"></a>
                                     }
                                     </div>
                                     @defining(socialProviders.get[ClefProvider]) { clef =>

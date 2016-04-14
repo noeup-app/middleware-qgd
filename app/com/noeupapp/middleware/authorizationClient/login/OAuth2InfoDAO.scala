@@ -6,6 +6,8 @@ import com.mohiva.play.silhouette.impl.providers.OAuth2Info
 import org.sedis.Pool
 import play.api.libs.json.Json
 
+import com.noeupapp.middleware.authorizationClient.login.OAuth2InfoDAO.oAuth2InfoFormat
+
 object OAuth2InfoDAO {
   implicit val oAuth2InfoFormat = Json.format[OAuth2Info]
 }

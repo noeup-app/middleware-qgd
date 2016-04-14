@@ -7,11 +7,11 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
+import com.noeupapp.middleware.entities.entity.Account
 import com.noeupapp.middleware.entities.role.RoleService
 import play.api.Logger
 import play.api.Play.current
 import play.api.db.DB
-import qgd.middleware.models.Account
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

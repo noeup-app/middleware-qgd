@@ -2,7 +2,6 @@ package com.noeupapp.middleware.authorizationServer.client
 
 import play.api.data.Form
 import play.api.data.Forms._
-import qgd.middleware.authorizationServer.models.Client
 
 
 /**

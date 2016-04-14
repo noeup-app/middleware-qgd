@@ -8,8 +8,8 @@ import play.api.Logger
 import play.api.Play.current
 import play.api.db.DB
 import play.api.libs.json.Json
-import qgd.middleware.errorHandle.FailError
-import qgd.middleware.errorHandle.FailError.Expect
+import com.noeupapp.middleware.errorHandle.FailError
+import com.noeupapp.middleware.errorHandle.FailError.Expect
 //import scalaoauth2.provider.AccessToken
 import scala.language.postfixOps
 import scalaz._

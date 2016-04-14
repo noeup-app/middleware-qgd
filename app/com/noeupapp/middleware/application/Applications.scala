@@ -1,4 +1,4 @@
-package qgd.middleware.authorizationClient.application
+package com.noeupapp.middleware.application
 
 import javax.inject.Inject
 
@@ -10,8 +10,8 @@ import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, AnyContent, Result}
 import RoleAuthorization.WithRole
 import ScopeAuthorization.WithScope
-import qgd.middleware.models.Account
-import qgd.middleware.utils.RequestHelper
+import com.noeupapp.middleware.entities.entity.Account
+import com.noeupapp.middleware.utils.RequestHelper
 
 import scala.concurrent.Future
 
@@ -26,8 +26,6 @@ class Applications @Inject()(
                               val messagesApi: MessagesApi,
                               val env: Environment[Account, CookieAuthenticator],
                               socialProviderRegistry: SocialProviderRegistry,
-                              htmlApplicationsResult: HtmlApplicationsResult,
-                              ajaxApplicationsResult: AjaxApplicationsResult,
                               scopeAndRoleAuthorization: ScopeAndRoleAuthorization)
   extends Silhouette[Account, CookieAuthenticator] {
 
@@ -37,14 +35,7 @@ class Applications @Inject()(
    * @return The result to display.
    */
 //  def index = SecuredAction.async { implicit request =>
-  def index = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("all"))).async { implicit request =>
-    RequestHelper.isJson(request) match {
-      case true =>
-        val req = request.asInstanceOf[Applications.this.ajaxApplicationsResult.SecuredRequest[AnyContent]]
-        Future.successful(ajaxApplicationsResult.getResource(req))
-      case false =>
-        val req = request.asInstanceOf[Applications.this.htmlApplicationsResult.SecuredRequest[AnyContent]]
-        Future.successful(htmlApplicationsResult.getResource(req))
-    }
+  def index = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("all"))) { implicit request =>
+    Ok("Nothing here")
   }
 }

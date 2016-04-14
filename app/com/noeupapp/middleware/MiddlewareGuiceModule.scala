@@ -14,17 +14,17 @@ import com.mohiva.play.silhouette.impl.providers.oauth2.state.{CookieStateProvid
 import com.mohiva.play.silhouette.impl.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.services._
 import com.mohiva.play.silhouette.impl.util._
+import com.noeupapp.middleware.authorizationClient.login.{OAuth1InfoDAO, OAuth2InfoDAO, OpenIDInfoDAO, PasswordInfoDAO}
 import com.noeupapp.middleware.authorizationClient.{ScopeAndRoleAuthorization, ScopeAndRoleAuthorizationImpl}
+import com.noeupapp.middleware.entities.entity.Account
+import com.noeupapp.middleware.entities.user.UserService
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
 import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
-import qgd.middleware.authorizationClient.models.daos._
-import qgd.middleware.authorizationClient.models.services.UserService
-import qgd.middleware.authorizationClient.provider.QGDProvider
-import qgd.middleware.models.Account
+import com.noeupapp.middleware.authorizationClient.provider.QGDProvider
 
 /**
  * The Guice module which wires all Silhouette dependencies.

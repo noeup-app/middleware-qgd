@@ -8,13 +8,11 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.noeupapp.middleware.authorizationClient.RoleAuthorization.WithRole
 import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScope
 import com.noeupapp.middleware.authorizationClient.{RoleAuthorization, ScopeAndRoleAuthorization, ScopeAuthorization}
+import com.noeupapp.middleware.authorizationServer.client
 import com.noeupapp.middleware.entities.entity.Account
 import play.api.i18n.MessagesApi
 import play.api.mvc.Action
-import qgd.middleware.authorizationServer.forms.ClientForm
-import qgd.middleware.authorizationServer.models
-import qgd.middleware.authorizationServer.models.Client
-import qgd.middleware.errorHandle.ExceptionEither._
+import com.noeupapp.middleware.errorHandle.ExceptionEither._
 
 import scalaz.{-\/, \/-}
 
@@ -27,8 +25,8 @@ class Clients @Inject()(
                        ) extends Silhouette[Account, CookieAuthenticator] {
 
   def list = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
-    val allClients = models.Client.list()
-    Ok(qgd.middleware.authorizationServer.views.html.clients.list(allClients, None))
+    val allClients = client.Client.list()
+    Ok(com.noeupapp.middleware.authorizationServer.client.html.list(allClients, None))
   }
 
   def create() = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
@@ -39,11 +37,11 @@ class Clients @Inject()(
         Map("id" -> clientId,
             "secret" -> clientSecret)
       )
-      Ok(qgd.middleware.authorizationServer.views.html.clients.new_client(boundForm, None))
+      Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None))
   }
 
   def edit(id: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
-    val clientOpt = models.Client.findByClientId(id)
+    val clientOpt = client.Client.findByClientId(id)
     clientOpt match {
       case None => NotFound
       case Some(client) =>
@@ -56,16 +54,16 @@ class Clients @Inject()(
               "redirectUri" -> client.redirect_uri,
               "scope"       -> client.defaultScope.getOrElse(""))
         )
-        Ok(qgd.middleware.authorizationServer.views.html.clients.edit_client(boundForm, None))
+        Ok(com.noeupapp.middleware.authorizationServer.client.html.edit_client(boundForm, None))
     }
   }
 
   def get(id: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
-    val clientOpt = models.Client.findByClientId(id)
+    val clientOpt = client.Client.findByClientId(id)
     clientOpt match {
       case None => NotFound
       case Some(client) =>
-        Ok(qgd.middleware.authorizationServer.views.html.clients.show_client(client, None))
+        Ok(com.noeupapp.middleware.authorizationServer.client.html.show_client(client, None))
     }
   }
 
@@ -81,7 +79,7 @@ class Clients @Inject()(
           formWithErrors => {
             logger.debug("Form has errors")
             logger.debug(formWithErrors.errors.toString)
-            Ok(qgd.middleware.authorizationServer.views.html.clients.new_client(formWithErrors, None))
+            Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(formWithErrors, None))
               .flashing("error" -> "Form has errors. Please enter correct values.")
           },
 
@@ -93,15 +91,15 @@ class Clients @Inject()(
                 Try(Client.insert(client)) match {
                   case -\/(_) =>
                     logger.debug("Error while saving client entry")
-                    Ok(qgd.middleware.authorizationServer.views.html.clients.new_client(boundForm, None))
+                    Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None))
                       .flashing("error" -> "Please try again")
                   case \/-(_) =>
                     logger.debug("Successfully added. Redirecting to client list")
-                    Redirect(qgd.middleware.authorizationServer.controllers.routes.Clients.list())
+                    Redirect(com.noeupapp.middleware.authorizationServer.client.routes.Clients.list())
                 }
               case Some(c) => // duplicate
                 logger.debug("Duplicate client entry")
-                Ok(qgd.middleware.authorizationServer.views.html.clients.new_client(boundForm, None))
+                Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None))
                   .flashing("error" -> "Please select another id for this client")
             }
           }
@@ -120,7 +118,7 @@ class Clients @Inject()(
       formWithErrors => {
         logger.debug("Form has errors")
         logger.debug(formWithErrors.errors.toString)
-        Ok(qgd.middleware.authorizationServer.views.html.clients.new_client(formWithErrors, None))
+        Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(formWithErrors, None))
           .flashing("error" -> "Form has errors. Please enter correct values.")
       },
 
@@ -134,13 +132,13 @@ class Clients @Inject()(
             Try(Client.update(clientDetails)) match {
               case -\/(_) =>
                 logger.debug("Error while saving client entry")
-                Ok(qgd.middleware.authorizationServer.views.html.clients.new_client(boundForm, None)).flashing("error" -> "Please try again")
+                Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None)).flashing("error" -> "Please try again")
               case \/-(_) =>
                 logger.debug("Successfully added. Redirecting to client list")
-                Redirect(qgd.middleware.authorizationServer.controllers.routes.Clients.list())
+                Redirect(com.noeupapp.middleware.authorizationServer.client.routes.Clients.list())
             }
             logger.debug("redirecting to client list")
-            Redirect(qgd.middleware.authorizationServer.controllers.routes.Clients.list())
+            Redirect(com.noeupapp.middleware.authorizationServer.client.routes.Clients.list())
           case None => // does not exist
             logger.debug("No such client")
             NotFound

@@ -5,9 +5,9 @@ import java.util.UUID
 
 import anorm._
 import com.mohiva.play.silhouette.api.LoginInfo
+import com.noeupapp.middleware.entities.entity.Account
 import play.api.Logger
-import qgd.middleware.models.Account
-import qgd.middleware.utils.GlobalReadsWrites
+import com.noeupapp.middleware.utils.GlobalReadsWrites
 
 import scala.language.postfixOps
 
