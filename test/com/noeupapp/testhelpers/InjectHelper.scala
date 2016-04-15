@@ -1,4 +1,4 @@
-package com.noeupapp.testhelper
+package com.noeupapp.testhelpers
 
 import play.api.inject.guice.GuiceApplicationBuilder
 

@@ -1,4 +1,4 @@
-package com.noeupapp.testhelper
+package com.noeupapp.testhelpers
 
 import org.specs2.mock.Mockito
 import play.api.test.PlaySpecification

@@ -1,4 +1,4 @@
-package com.noeupapp.testhelper
+package com.noeupapp.testhelpers
 
 import java.util.UUID
 

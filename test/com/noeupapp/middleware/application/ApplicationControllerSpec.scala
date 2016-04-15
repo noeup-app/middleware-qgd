@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.test._
 import com.noeupapp.middleware.authorizationClient.{FakeScopeAndRoleAuthorization, ScopeAndRoleAuthorization}
 import com.noeupapp.middleware.entities.entity.Account
-import com.noeupapp.testhelper.Context
+import com.noeupapp.testhelpers.Context
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.matcher.Scope
 import org.specs2.mock.Mockito

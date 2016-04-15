@@ -1,6 +1,6 @@
 package com.noeupapp.middleware.authorizationClient.controllers
 
-import com.noeupapp.testhelper.Context
+import com.noeupapp.testhelpers.Context
 import org.specs2.mock.Mockito
 import play.api.test.{FakeRequest, PlaySpecification, WithApplication}
 

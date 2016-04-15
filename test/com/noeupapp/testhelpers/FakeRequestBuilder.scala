@@ -1,4 +1,4 @@
-package com.noeupapp.testhelper
+package com.noeupapp.testhelpers
 
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
