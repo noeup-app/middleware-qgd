@@ -3,7 +3,7 @@
 # ~~~~
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file                        com.noeupapp.middleware.controllers.Assets.versioned(path="/public/lib/middleware-qgd", file)
+GET         /assets/*file                        com.noeupapp.middleware.controllers.Assets.versioned(path="/public/lib/middleware-noeupapp", file)
 GET         /webjars/*file                       controllers.WebJarAssets.at(file)
 
 
