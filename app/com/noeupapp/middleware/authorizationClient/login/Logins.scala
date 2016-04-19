@@ -87,23 +87,23 @@ class Logins @Inject()(
     *
     * @return The result to display.
     */
-  def authenticateAction = Action.async(jsonOrAnyContent[Authenticate]) { implicit request =>
+  def authenticateAction = Action.async(jsonOrAnyContent[Login]) { implicit request =>
     RequestHelper.isJson(request) match {
       case true  =>
-        val authenticateData: Authenticate = request.body.asInstanceOf[Authenticate] // TODO Ugly
+        val authenticateData: Login = request.body.asInstanceOf[Login] // TODO Ugly
         authenticate(authenticateData, ajaxLoginsResult)
       case false =>
         LoginForm.form.bindFromRequest.fold(
           form => Future.successful(htmlLoginsResult.badRequest(form)),
           data => {
-            val authenticateData = Authenticate(data.email, data.password, data.rememberMe)
+            val authenticateData = Login(data.email, data.password, data.rememberMe)
             authenticate(authenticateData, htmlLoginsResult)
           }
         )
     }
 
   }
-  def authenticate(authenticate: Authenticate, loginsResult: LoginsResult)(implicit request: Request[Any]): Future[Result] = {
+  def authenticate(authenticate: Login, loginsResult: LoginsResult)(implicit request: Request[Any]): Future[Result] = {
     val credentials = authenticate.getCredentials
     credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
       val result = loginsResult.userIsAuthenticated()
