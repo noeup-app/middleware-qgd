@@ -5,11 +5,11 @@ import com.mohiva.play.silhouette.api.Authorization
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.noeupapp.middleware.authorizationClient.RoleAuthorization.WithRoleAuthorization
 import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScopeAuthorization
-import com.noeupapp.middleware.entities.entity.Account
+import com.noeupapp.middleware.entities.user.{Account, User}
 import play.api.i18n.Messages
 import play.api.mvc.Request
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 trait ScopeAndRoleAuthorization {
@@ -85,13 +85,15 @@ object RoleAuthorization {
     * Ex: WithService("serviceA", "serviceB") => only users with services "serviceA" OR "serviceB" are allowed.
     */
   case class WithRole(anyOf: String*) extends WithRoleAuthorization {
-    def isAuthorized[A](user: Account, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
-      WithRole.isAuthorized(user, anyOf: _*)
+    def isAuthorized[A](account: Account, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
+      WithRole.isAuthorized(account.user, anyOf: _*)
     }
   }
   object WithRole {
-    def isAuthorized(user: Account, anyOf: String*): Boolean =
-      anyOf.intersect(user.roles).nonEmpty || anyOf.isEmpty
+    def isAuthorized(user: User, anyOf: String*): Boolean =
+//      anyOf.intersect(user.roles).nonEmpty || anyOf.isEmpty
+    // TODO : fix user.role
+      true
   }
 
   /**
@@ -99,13 +101,15 @@ object RoleAuthorization {
     * Ex: Restrict("serviceA", "serviceB") => only users with services "serviceA" AND "serviceB" are allowed.
     */
   case class WithRoles(allOf: String*) extends WithRoleAuthorization {
-    def isAuthorized[A](user: Account, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
-      WithRoles.isAuthorized(user, allOf: _*)
+    def isAuthorized[A](account: Account, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
+      WithRoles.isAuthorized(account.user, allOf: _*)
     }
   }
   object WithRoles {
-    def isAuthorized(user: Account, allOf: String*): Boolean =
-      allOf.intersect(user.roles).size == allOf.size
+    def isAuthorized(user: User, allOf: String*): Boolean =
+//      allOf.intersect(user.roles).size == allOf.size
+    // TODO : fix user.role
+      true
   }
 }
 
@@ -134,28 +138,32 @@ object ScopeAuthorization {
     * Only allows those users that have AT LEAST ONE correct scopes out of required scopes
     */
   case class WithScope(anyOf: String*) extends WithScopeAuthorization{
-    def isAuthorized[A](user: Account, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
-      WithScope.isAuthorized(user, anyOf: _*)
+    def isAuthorized[A](account: Account, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
+      WithScope.isAuthorized(account.user, anyOf: _*)
     }
   }
   object WithScope extends WithScopeUtils {
-    def isAuthorized(user: Account, anyOf: String*): Boolean =
-      allRequiredScopesThatStartWithUserScope(anyOf, user.scopes).isEmpty ||
-        allRequiredScopesThatStartWithUserScope(anyOf, user.scopes).contains(true)
+    def isAuthorized(user: User, anyOf: String*): Boolean =
+//      allRequiredScopesThatStartWithUserScope(anyOf, user.scopes).isEmpty ||
+//        allRequiredScopesThatStartWithUserScope(anyOf, user.scopes).contains(true)
+    // TODO fix user.scope
+    true
   }
 
   /**
     * Only allows those users that have ALL correct scopes out of required scopes
     */
   case class WithScopes(allOf: String*) extends WithScopeAuthorization {
-    def isAuthorized[A](user: Account, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
-      WithScopes.isAuthorized(user, allOf: _*)
+    def isAuthorized[A](account: Account, authenticator: CookieAuthenticator)(implicit r: Request[A], m: Messages) = Future.successful {
+      WithScopes.isAuthorized(account.user, allOf: _*)
     }
   }
   object WithScopes extends WithScopeUtils {
-    def isAuthorized(user: Account, allOf: String*): Boolean =
-      allRequiredScopesThatStartWithUserScope(allOf, user.scopes).isEmpty ||
-        allRequiredScopesThatStartWithUserScope(allOf, user.scopes).fold(true)(_ && _)
+    def isAuthorized(user: User, allOf: String*): Boolean =
+//      allRequiredScopesThatStartWithUserScope(allOf, user.scopes).isEmpty ||
+//        allRequiredScopesThatStartWithUserScope(allOf, user.scopes).fold(true)(_ && _)
+    // TODO fix user.scope
+    true
 
   }
 }
