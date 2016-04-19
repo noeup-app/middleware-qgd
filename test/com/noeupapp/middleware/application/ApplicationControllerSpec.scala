@@ -7,7 +7,6 @@ import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.test._
 import com.noeupapp.middleware.authorizationClient.{FakeScopeAndRoleAuthorization, ScopeAndRoleAuthorization}
-import com.noeupapp.middleware.entities.entity.Account
 import com.noeupapp.testhelpers.Context
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.matcher.Scope
@@ -45,12 +44,8 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
     "return 200 if user is authorized" in new Context {
       new WithApplication(application) {
         val Some(result) =
-          identity.loginInfo match {
-            case Some(loginInfoFound) =>
-              route(FakeRequest(com.noeupapp.middleware.application.routes.Applications.index())
-                .withAuthenticator[CookieAuthenticator](loginInfoFound))
-            case None => throw new RuntimeException("identity.loginInfo is None")
-          }
+          route(FakeRequest(com.noeupapp.middleware.application.routes.Applications.index())
+                .withAuthenticator[CookieAuthenticator](identity.loginInfo))
 
 
         status(result) must beEqualTo(OK)

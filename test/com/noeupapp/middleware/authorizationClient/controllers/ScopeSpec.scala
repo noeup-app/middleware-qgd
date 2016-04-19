@@ -8,7 +8,7 @@ import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.test.PlaySpecification
 import ScopeAuthorization.{WithScope, WithScopes}
-import com.noeupapp.middleware.entities.entity.Account
+import com.noeupapp.middleware.entities.user.{Account, User}
 
 
 class ScopeSpec extends PlaySpecification with Mockito {
@@ -23,25 +23,24 @@ class ScopeSpec extends PlaySpecification with Mockito {
       * An identity.
       */
     val identity = Account(
-      id = UUID.randomUUID(),
-      loginInfo = Some(LoginInfo("facebook", "user@facebook.com")),
-      firstName = None,
-      lastName = None,
-      fullName = None,
-      email = None,
-      scopes = List(),
-      roles = List(),
-      avatarURL = None,
-      deleted = false
+      loginInfo = LoginInfo("facebook", "user@facebook.com"),
+      user = User(
+        id = UUID.randomUUID(),
+        firstName = None,
+        lastName = None,
+        email = None,
+        avatarUrl = None,
+        active = false,
+        deleted = false
+      )
     )
 
-
     def checkAND(ok: Boolean, required_scopes: List[String], user_scopes: List[String]): Unit ={
-      val res = WithScopes.isAuthorized(identity.copy(scopes = user_scopes),required_scopes: _*)
+      val res = WithScopes.isAuthorized(identity.user/*.copy(scopes = user_scopes)*/,required_scopes: _*)
       res must beEqualTo(ok)
     }
     def checkOR(ok: Boolean, required_scopes: List[String], user_scopes: List[String]): Unit ={
-      val res = WithScope.isAuthorized(identity.copy(scopes = user_scopes),required_scopes: _*)
+      val res = WithScope.isAuthorized(identity.user/*.copy(scopes = user_scopes)*/,required_scopes: _*)
       res must beEqualTo(ok)
     }
   }

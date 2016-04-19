@@ -2,18 +2,24 @@ package com.noeupapp.middleware.authorizationServer.oauth2
 
 import java.util.Date
 
-import com.noeupapp.middleware.authorizationServer.authCode.AuthCode
+import com.google.inject.Inject
+import com.mohiva.play.silhouette.api
+import com.noeupapp.middleware.authorizationClient.login.{LoginInfo, PasswordInfoDAO}
+import com.noeupapp.middleware.authorizationServer.authCode.{AuthCode, AuthCodeService}
 import com.noeupapp.middleware.authorizationServer.client.Client
-import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OauthAccessToken
-import com.noeupapp.middleware.entities.entity.Account
+import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessToken, OAuthAccessTokenDAO}
+import com.noeupapp.middleware.entities.user.{User, UserService}
 import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config}
 import com.noeupapp.middleware.utils.NamedLogger
+import play.api.Logger
+import redis.clients.util.Pool
 
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import scalaoauth2.provider._
+import scala.concurrent.ExecutionContext.Implicits.global
 
-class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
+class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO, oAuthAccessTokenDAO: OAuthAccessTokenDAO, userService: UserService, authCodeService: AuthCodeService) extends DataHandler[User] with NamedLogger {
 
   /**
     * Validate Client if client & secret matches and grantType is in the authorized list // TODO check RFC about refresh token
@@ -41,7 +47,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
     *
     * @param authInfo
     */
-  def createAccessToken(authInfo: AuthInfo[Account]): Future[AccessToken]  = {
+  def createAccessToken(authInfo: AuthInfo[User]): Future[AccessToken]  = {
 
     val refreshToken = Some(BearerTokenGenerator.generateToken)
     //val jsonWebToken = JsonWebTokenGenerator.generateToken(authInfo)
@@ -49,7 +55,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
     val expiration = Some(Config.OAuth2.accessTokenExpirationInSeconds.toLong)
     val now = new Date()//System.currentTimeMillis())
 
-    val token = new OauthAccessToken( accessToken, //jsonWebToken,
+    val token = new OAuthAccessToken( accessToken, //jsonWebToken,
                                       refreshToken,
                                       authInfo.clientId.getOrElse(""),    // TODO Why does Nulab did use option Here?
                                       authInfo.user.id,
@@ -60,7 +66,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
                                     )
 
     //authAccessService.saveAccessToken(token, authInfo) // TODO Check if needed here (does provider really needs to keep token ?)
-    OauthAccessToken.insert(token)
+    oAuthAccessTokenDAO.insert(token)
 
     logger.debug(s"...create access Token: $token")
 
@@ -74,7 +80,9 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
     * @param authInfo
     * @return
     */
-  override def getStoredAccessToken(authInfo: AuthInfo[Account]): Future[Option[AccessToken]] = ???
+  override def getStoredAccessToken(authInfo: AuthInfo[User]): Future[Option[AccessToken]] = {
+    Future.successful(None)
+  }
 
   /**
     * Creates an provider Access Token response from full OauthAccessToken
@@ -82,7 +90,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
     * @param accessToken OauthAccessToken
     * @return
     */
-  implicit def oauthAccessTokenToAccessToken(accessToken: OauthAccessToken): AccessToken =
+  implicit def oauthAccessTokenToAccessToken(accessToken: OAuthAccessToken): AccessToken =
     AccessToken(
       accessToken.accessToken,
       accessToken.refreshToken,
@@ -102,10 +110,20 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
     * @param request
     * @return
     */
-  def findUser(request: AuthorizationRequest): Future[Option[Account]] = {
+  def findUser(request: AuthorizationRequest): Future[Option[User]] = {
+    Logger.warn("AuthorizationHandler.findUser")
     request match {
       case request: PasswordRequest =>
-        Future.successful(Account.findByEmailAndPassword(request.username, request.password))
+        Logger.warn(request.username)
+        userService.findByEmail(request.username) flatMap { userFoundByEmail =>
+          val passwordFound  = passwordInfoDAO.find(api.LoginInfo("credentials", request.username))
+          passwordFound.map{ password =>
+            (userFoundByEmail, password) match {
+              case (a @ Some(_),Some(_)) => a
+              case _ => None
+            }
+          }
+        }
       case request: ClientCredentialsRequest =>
         // Client credential cannot return any user and is just used to provide general information on client
         logger.debug("ClientCredentialsRequest : no user defined")
@@ -126,7 +144,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
     * @param refreshToken
     * @return
     */
-  def findAuthInfoByRefreshToken(refreshToken: String): Future[Option[AuthInfo[Account]]] = {
+  def findAuthInfoByRefreshToken(refreshToken: String): Future[Option[AuthInfo[User]]] = {
     logger.warn("...findAuthInfoByRefreshToken :: NOT_IMPLEMENTED")
     Future.successful(None)
   }
@@ -138,7 +156,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
     * @param refreshToken
     * @return
     */
-  def refreshAccessToken(authInfo: AuthInfo[Account], refreshToken: String): Future[AccessToken] = {
+  def refreshAccessToken(authInfo: AuthInfo[User], refreshToken: String): Future[AccessToken] = {
     // TODO GUILLAUME : refresh != create
     createAccessToken(authInfo)
   }
@@ -153,22 +171,17 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
     * @param code
     * @return
     */
-  def findAuthInfoByCode(code: String): Future[Option[AuthInfo[Account]]] = Future.successful{ // TODO MANAGE FUTURE IN SERVICE
-  val storedCode = AuthCode.find(code)
-    val now = new Date().getTime
+  def findAuthInfoByCode(code: String): Future[Option[AuthInfo[User]]] = {
+    authCodeService.find(code) flatMap {
+      case Some(authCode) if ! authCode.isExpired =>
+        logger.debug("valid code found!")
+        userService.findById(authCode.userId).map(_.map{ user =>
+          val authInfo = AuthInfo(user, Some(authCode.clientId), authCode.scope, authCode.redirectUri)
+          logger.debug(s"findAuthInfoByCode: $code -> authInfo: $authInfo")
+          authInfo
+        })
+      case _ => Future.successful(None)
 
-    // filter out expired code
-    storedCode.filter { c =>
-      val codeTime = c.createdAt.getTime + c.expiresIn
-      logger.debug(s"codeTime: $codeTime, currentTime: $now")
-      codeTime > now
-    }.flatMap { c =>
-      logger.debug("valid code found!")
-      Account.findByUserId(c.userId).map { user =>
-        val authInfo = AuthInfo(user, Some(c.clientId), c.scope, c.redirectUri)
-        logger.debug(s"findAuthInfoByCode: $code -> authInfo: $authInfo")
-        authInfo
-      }
     }
   }
 
@@ -210,7 +223,7 @@ class AuthorizationHandler extends DataHandler[Account] with NamedLogger {
     * @param accessToken
     * @return
     */
-  def findAuthInfoByAccessToken(accessToken: AccessToken): Future[Option[AuthInfo[Account]]] = {
+  def findAuthInfoByAccessToken(accessToken: AccessToken): Future[Option[AuthInfo[User]]] = {
     logger.warn("...findAuthInfoByAccessToken :: NOT_IMPLEMENTED")
     Future.successful(None)
     /*// TODO MANAGE FUTURE IN HIGHER LEVEL!

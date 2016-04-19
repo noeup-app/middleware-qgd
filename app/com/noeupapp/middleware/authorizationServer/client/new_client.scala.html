@@ -1,6 +1,6 @@
-@import com.noeupapp.middleware.entities.entity.Account
 @import com.noeupapp.middleware.authorizationServer.client.Client
-@(clientForm: Form[Client], userOpt: Option[Account])(implicit flash: Flash, messages: Messages)
+@import com.noeupapp.middleware.entities.user.User
+@(clientForm: Form[Client], userOpt: Option[User])(implicit flash: Flash, messages: Messages)
 
 @com.noeupapp.middleware.views.html.home("Welcome to Apps", userOpt) {
 

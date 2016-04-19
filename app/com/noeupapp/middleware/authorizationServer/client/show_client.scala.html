@@ -1,6 +1,6 @@
-@import com.noeupapp.middleware.entities.entity.Account
 @import com.noeupapp.middleware.authorizationServer.client.Client
-@(client: Client, userOpt: Option[Account])(implicit messages: Messages)
+@import com.noeupapp.middleware.entities.user.User
+@(client: Client, userOpt: Option[User])(implicit messages: Messages)
 
 @com.noeupapp.middleware.views.html.home("Welcome to Apps", userOpt) {
     show client

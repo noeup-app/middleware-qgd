@@ -15,9 +15,8 @@ import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
-import Authenticate.authenticateFormat
-import com.noeupapp.middleware.entities.entity.Account
-import com.noeupapp.middleware.entities.user.UserService
+import Login.authenticateFormat
+import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.{BodyParserHelper, RequestHelper}
 
@@ -38,16 +37,16 @@ import scala.language.postfixOps
   * @param clock The clock instance.
   */
 class Logins @Inject()(
-                                            val messagesApi: MessagesApi,
-                                            val env: Environment[Account, CookieAuthenticator],
-                                            userService: UserService,
-                                            authInfoRepository: AuthInfoRepository,
-                                            credentialsProvider: CredentialsProvider,
-                                            socialProviderRegistry: SocialProviderRegistry,
-                                            htmlLoginsResult: HtmlLoginsResult,
-                                            ajaxLoginsResult: AjaxLoginsResult,
-                                            configuration: Configuration,
-                                            clock: Clock)
+                        val messagesApi: MessagesApi,
+                        val env: Environment[Account, CookieAuthenticator],
+                        userService: AccountService,
+                        authInfoRepository: AuthInfoRepository,
+                        credentialsProvider: CredentialsProvider,
+                        socialProviderRegistry: SocialProviderRegistry,
+                        htmlLoginsResult: HtmlLoginsResult,
+                        ajaxLoginsResult: AjaxLoginsResult,
+                        configuration: Configuration,
+                        clock: Clock)
   extends Silhouette[Account, CookieAuthenticator] {
 
 

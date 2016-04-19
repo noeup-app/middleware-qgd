@@ -1,6 +1,6 @@
-@import com.noeupapp.middleware.entities.entity.Account
 @import com.noeupapp.middleware.authorizationServer.client.Client
-@(clientForm: Form[Client], userOpt: Option[Account])(implicit flash: Flash, message: Messages)
+@import com.noeupapp.middleware.entities.user.User
+@(clientForm: Form[Client], userOpt: Option[User])(implicit flash: Flash, message: Messages)
 
 @com.noeupapp.middleware.views.html.home("Welcome to Apps", userOpt) {
     @flash.get("error").map { errorMessage =>

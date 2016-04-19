@@ -16,8 +16,7 @@ import com.mohiva.play.silhouette.impl.services._
 import com.mohiva.play.silhouette.impl.util._
 import com.noeupapp.middleware.authorizationClient.login.{OAuth1InfoDAO, OAuth2InfoDAO, OpenIDInfoDAO, PasswordInfoDAO}
 import com.noeupapp.middleware.authorizationClient.{ScopeAndRoleAuthorization, ScopeAndRoleAuthorizationImpl}
-import com.noeupapp.middleware.entities.entity.Account
-import com.noeupapp.middleware.entities.user.UserService
+import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
@@ -67,12 +66,12 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
    */
   @Provides
   def provideEnvironment(
-    userService: UserService,
-    authenticatorService: AuthenticatorService[CookieAuthenticator],
-    eventBus: EventBus): Environment[Account, CookieAuthenticator] = {
+                          accountService: AccountService,
+                          authenticatorService: AuthenticatorService[CookieAuthenticator],
+                          eventBus: EventBus): Environment[Account, CookieAuthenticator] = {
 
     Environment[Account, CookieAuthenticator](
-      userService,
+      accountService,
       authenticatorService,
       Seq(),
       eventBus

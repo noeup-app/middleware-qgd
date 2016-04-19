@@ -1,5 +1,5 @@
-@import com.noeupapp.middleware.entities.entity.Account
-@(title: String, userOpt: Option[Account])(content: Html)(implicit messages: Messages)
+@import com.noeupapp.middleware.entities.user.User
+@(title: String, userOpt: Option[User])(content: Html)(implicit messages: Messages)
 
 
 @com.noeupapp.middleware.views.html.main(title, userOpt) {

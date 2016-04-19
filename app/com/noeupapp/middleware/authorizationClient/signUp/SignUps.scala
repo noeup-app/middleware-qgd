@@ -14,8 +14,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import SignUpForm.signUpFormDataFormat
-import com.noeupapp.middleware.entities.entity.Account
-import com.noeupapp.middleware.entities.user.UserService
+import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.{BodyParserHelper, RequestHelper}
 
@@ -31,14 +30,14 @@ import scala.concurrent.Future
  * @param passwordHasher The password hasher implementation.
  */
 class SignUps @Inject()(
-                                   val messagesApi: MessagesApi,
-                                   val env: Environment[Account, CookieAuthenticator],
-                                   userService: UserService,
-                                   authInfoRepository: AuthInfoRepository,
-                                   htmlSignUpsResult: HtmlSignUpsResult,
-                                   ajaxSignUpsResult: AjaxSignUpsResult,
-                                   avatarService: AvatarService,
-                                   passwordHasher: PasswordHasher)
+                         val messagesApi: MessagesApi,
+                         val env: Environment[Account, CookieAuthenticator],
+                         userService: AccountService,
+                         authInfoRepository: AuthInfoRepository,
+                         htmlSignUpsResult: HtmlSignUpsResult,
+                         ajaxSignUpsResult: AjaxSignUpsResult,
+                         avatarService: AvatarService,
+                         passwordHasher: PasswordHasher)
   extends Silhouette[Account, CookieAuthenticator] {
 
 
@@ -102,21 +101,18 @@ class SignUps @Inject()(
         Future.successful(authorizationResult.userAlreadyExists())
       case None =>
         val authInfo = passwordHasher.hash(data.password)
-        val user = Account(
+        val user = User(
           id = UUID.randomUUID(),
-          loginInfo = Some(loginInfo),
           firstName = Some(data.firstName),
           lastName = Some(data.lastName),
-          fullName = Some(data.firstName + " " + data.lastName),
           email = Some(data.email),
-          scopes = List(),
-          roles = List(),
-          avatarURL = None,
+          avatarUrl = None,
+          active = false,
           deleted = false
         )
         for {
           avatar <- avatarService.retrieveURL(data.email)
-          user <- userService.save(user.copy(avatarURL = avatar))
+          user <- userService.save(Account(loginInfo, user.copy(avatarUrl = avatar)))
           authInfo <- authInfoRepository.add(loginInfo, authInfo)
           authenticator <- env.authenticatorService.create(loginInfo)
           value <- env.authenticatorService.init(authenticator)

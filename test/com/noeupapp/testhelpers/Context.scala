@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.noeupapp.middleware.authorizationClient.{FakeScopeAndRoleAuthorization, ScopeAndRoleAuthorization}
-import com.noeupapp.middleware.entities.entity.Account
+import com.noeupapp.middleware.entities.user.{Account, User}
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.matcher.Scope
 import play.api.Mode
@@ -38,28 +38,23 @@ trait Context extends Scope {
     * An identity.
     */
   val identity = Account(
-    id = UUID.randomUUID(),
-    loginInfo = Some(loginInfo),
-    firstName = None,
-    lastName = None,
-    fullName = None,
-    email = None,
-    scopes = List(),
-    roles = List(),
-    avatarURL = None,
-    deleted = false
+    loginInfo = loginInfo,
+    user = User(
+      id = UUID.randomUUID(),
+      firstName = None,
+      lastName = None,
+      email = None,
+      avatarUrl = None,
+      active = false,
+      deleted = false
+    )
   )
 
   /**
     * A Silhouette fake environment.
     */
   implicit val env: Environment[Account, CookieAuthenticator] = {
-    identity.loginInfo match {
-      case Some(li) =>
-        new FakeEnvironment[Account, CookieAuthenticator](Seq(li -> identity))
-      case None => throw new RuntimeException("identity.loginInfo is None")
-    }
-
+    new FakeEnvironment[Account, CookieAuthenticator](Seq(loginInfo -> identity))
   }
 
 

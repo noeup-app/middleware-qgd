@@ -7,8 +7,7 @@ import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
-import com.noeupapp.middleware.entities.entity.Account
-import com.noeupapp.middleware.entities.user.UserService
+import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
@@ -26,13 +25,13 @@ import scala.concurrent.Future
  * @param socialProviderRegistry The social provider registry.
  */
 class SocialAuths @Inject()(
-                                       val messagesApi: MessagesApi,
-                                       val env: Environment[Account, CookieAuthenticator],
-                                       userService: UserService,
-                                       authInfoRepository: AuthInfoRepository,
-                                       htmlSocialAuthsResult: HtmlSocialAuthsResult,
-                                       ajaxSocialAuthsResult: AjaxSocialAuthsResult,
-                                       socialProviderRegistry: SocialProviderRegistry)
+                             val messagesApi: MessagesApi,
+                             val env: Environment[Account, CookieAuthenticator],
+                             userService: AccountService,
+                             authInfoRepository: AuthInfoRepository,
+                             htmlSocialAuthsResult: HtmlSocialAuthsResult,
+                             ajaxSocialAuthsResult: AjaxSocialAuthsResult,
+                             socialProviderRegistry: SocialProviderRegistry)
   extends Silhouette[Account, CookieAuthenticator] with Logger {
 
   /**

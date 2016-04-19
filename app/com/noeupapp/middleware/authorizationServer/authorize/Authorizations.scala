@@ -32,7 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class Authorizations @Inject()(val messagesApi: MessagesApi,
                                val env: Environment[Account, CookieAuthenticator],
-                               userService: UserService,
+                               userService: AccountService,
                                configuration: Configuration,
                                credentialsProvider: CredentialsProvider)
     extends Silhouette[Account, CookieAuthenticator] {
@@ -79,7 +79,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
           case Some(user) => // User is connected, let's show him the authorize view
             val aaInfoForm = AuthorizeForm.form.bind(data)
             Logger.info(s"Auth : $aaInfoForm")
-            Ok(com.noeupapp.middleware.authorizationServer.authorize.html.authorize(user, aaInfoForm))
+            Ok(com.noeupapp.middleware.authorizationServer.authorize.html.authorize(user.user, aaInfoForm))
           case None => // User is not connected, let's redirect him to login page
             Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(client_id, redirect_uri, state, scope))
         }
@@ -95,7 +95,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
         boundForm.fold(
           formWithErrors => {
             log.debug("Authorize.send_auth : form ko -> " + formWithErrors.errors.toString)
-            Ok(com.noeupapp.middleware.authorizationServer.authorize.html.authorize(user, formWithErrors))
+            Future.successful(Ok(com.noeupapp.middleware.authorizationServer.authorize.html.authorize(user.user, formWithErrors)))
           },
           aaInfo => {
             Logger.debug("Authorize.send_auth form ok")
@@ -150,7 +150,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
         Future.successful(BadRequest(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq()))))
       },
       data => {
-        val authenticate = Authenticate(data.email, data.password, data.rememberMe)
+        val authenticate = Login(data.email, data.password, data.rememberMe)
         val credentials = authenticate.getCredentials
         credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
           Logger.info("Form data : " + data)
