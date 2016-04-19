@@ -73,10 +73,11 @@ object Client {
           WHERE (c.client_id = {client_id} AND c.client_secret = {client_secret})
       """)
       .on("client_id" -> clientId,
-          "client_secret" -> clientSecret,
-          "authorizedGrantTypes" -> grantType)
-      .as(client *)
-      .headOption.flatMap(getGrantTypesToList(_)).contains(grantType)
+          "client_secret" -> clientSecret
+//          , "authorizedGrantTypes" -> grantType
+      )
+      .as(client *).nonEmpty
+      //.headOption.flatMap(getGrantTypesToList(_)).contains(grantType)
   )}
 
 
