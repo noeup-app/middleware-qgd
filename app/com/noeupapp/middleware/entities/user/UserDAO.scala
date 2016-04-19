@@ -5,7 +5,6 @@ import java.util.UUID
 
 import anorm._
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.noeupapp.middleware.entities.entity.Account
 import play.api.Logger
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 
@@ -20,23 +19,17 @@ class UserDAO extends GlobalReadsWrites {
   /**
     * Finds a user by its login info.
     *
-    * @param loginInfo The login info of the user to find.
+    * @param email user email
     * @return The found user or None if no user for the given login info could be found.
     */
-  def find(loginInfo: LoginInfo)(implicit connection: Connection): List[Account] = {
+  def find(email: String)(implicit connection: Connection): Option[User] = {
     SQL(
-      """SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.deleted
-          FROM entity_users u
-          INNER JOIN entity_relation_login_infos_users r_li_u ON u.id = r_li_u.user_id
-          LEFT JOIN entity_relation_users_roles r_u_r ON u.id = r_u_r.user_id
-          LEFT JOIN entity_roles r ON r.id = r_u_r.role_id
-          WHERE r_li_u.provider_id = {provider_id} AND r_li_u.provider_key = {provider_key};
-                                 """)
+      """SELECT u.id, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.active, u.deleted
+         FROM entity_users u
+         WHERE u.email = {email};""")
       .on(
-      'provider_id  -> loginInfo.providerID,
-      'provider_key -> loginInfo.providerKey
-      )
-      .as(Account.parse *)
+      'email  -> email
+      ).as(User.parse.singleOpt) // One email corresponds to at most one user
   }
 
 
@@ -47,18 +40,14 @@ class UserDAO extends GlobalReadsWrites {
     * @return The found user or None if no user for the given ID could be found.
     */
   def find(userID: UUID)(implicit connection:
-  Connection): List[Account] = {
+  Connection): Option[User] = {
       SQL(
-        """SELECT u.id, r_li_u.provider_id, r_li_u.provider_key, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.deleted
-          FROM entity_users u
-          INNER JOIN entity_relation_login_infos_users r_li_u ON u.id = r_li_u.user_id
-          LEFT JOIN entity_relation_users_roles r_u_r ON u.id = r_u_r.user_id
-          INNER JOIN entity_roles r ON r.id = r_u_r.role_id
-          WHERE u.id = {user_id};
-                                 """)
+        """SELECT u.id, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.active, u.deleted
+           FROM entity_users u
+           WHERE u.id = {id};""")
       .on(
-        'user_id -> userID)
-        .as(Account.parse *)
+        'id -> userID)
+        .as(User.parse.singleOpt)
   }
 
   /**
@@ -67,66 +56,31 @@ class UserDAO extends GlobalReadsWrites {
     * @param user the user to insert
     * @param connection the implicit connection of the transaction
     */
-  def add(user: Account)(implicit connection: Connection) = {
+  def add(user: User)(implicit connection: Connection): Boolean = {
     SQL(
-      """INSERT INTO entity_users (id, first_name, last_name, email, avatar_url, base_node)
-         (SELECT {id}, {first_name}, {last_name}, {email}, {avatar_url}, {base_node}
-         WHERE NOT EXISTS (SELECT id FROM entity_users WHERE id = {id}));""")
+      """INSERT INTO entity_users (
+                      id,
+                      email,
+                      first_name,
+                      last_name,
+                      avatar_url,
+                      active,
+                      deleted)
+        VALUES ({id},
+                {email},
+                {first_name},
+                {last_name},
+                {avatar_url},
+                {active},
+                {deleted});""")
       .on(
         'id -> user.id,
+        'email -> user.email,
         'first_name -> user.firstName,
         'last_name -> user.lastName,
-        'email -> user.email,
-        'avatar_url -> user.avatarURL,
-        'base_node -> new UUID(0, 0) // TODO change new UUID(0,0)
+        'avatar_url -> user.avatarUrl,
+        'active -> user.active,
+        'deleted -> user.deleted
       ).execute()
   }
-
-
-
-  /**
-    * Insert :
-    *   - login info
-    *
-    * @param user the user that contains login infos
-    * @param connection the implicit connection of the transaction
-    */
-  def addLoginInfo(user: Account)(implicit connection: Connection) = {
-    // Add login info
-    user.loginInfo.map {loginInfo =>
-        Logger.warn(loginInfo.toString)
-        SQL(
-          """INSERT INTO entity_login_infos (provider_id, provider_key)
-         (SELECT {provider_id}, {provider_key}
-         WHERE NOT EXISTS (SELECT * FROM entity_login_infos WHERE provider_id = {provider_id} AND provider_key = {provider_key}));""")
-          .on(
-            'provider_id -> loginInfo.providerID,
-            'provider_key -> loginInfo.providerKey
-          ).execute()
-    }
-  }
-
-  /**
-    * Insert :
-    *   - relation between user and login info
-    *
-    * @param user the user that contains login infos
-    * @param connection the implicit connection of the transaction
-    */
-  def addRelationWithUser(user: Account)(implicit connection: Connection) = {
-    // Add login info
-    user.loginInfo.map {loginInfo =>
-        SQL(
-          """INSERT INTO entity_relation_login_infos_users (provider_id, provider_key, user_id)
-         (SELECT {provider_id}, {provider_key}, {user_id}
-         WHERE NOT EXISTS (SELECT * FROM entity_relation_login_infos_users WHERE provider_id = {provider_id} AND provider_key = {provider_key} AND user_id = {user_id}));""")
-          .on(
-            'provider_id -> loginInfo.providerID,
-            'provider_key -> loginInfo.providerKey,
-            'user_id -> user.id
-          ).execute()
-    }
-  }
-
-
 }

@@ -9,7 +9,7 @@ import com.noeupapp.middleware.authorizationClient.RoleAuthorization.WithRole
 import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScope
 import com.noeupapp.middleware.authorizationClient.{RoleAuthorization, ScopeAndRoleAuthorization, ScopeAuthorization}
 import com.noeupapp.middleware.authorizationServer.client
-import com.noeupapp.middleware.entities.entity.Account
+import com.noeupapp.middleware.entities.user.{Account, User}
 import play.api.i18n.MessagesApi
 import play.api.mvc.Action
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
