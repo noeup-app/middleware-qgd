@@ -2,8 +2,8 @@ package com.noeupapp.middleware.entities.role
 
 import javax.inject.Inject
 
-import com.noeupapp.middleware.entities.entity.Account
 import com.noeupapp.middleware.entities.relationUserRole.RelationUserRoleDAO
+import com.noeupapp.middleware.entities.user.{Account, User}
 import play.api.Play.current
 import play.api.db.DB
 
@@ -14,7 +14,8 @@ class RoleService  @Inject() (relationUserRole: RelationUserRoleDAO) {
 
   def addUserRoles(user: Account) = Future {
     DB.withTransaction({ implicit c =>
-      user.roles.map(relationUserRole.addRoleToUser(user.id, _))
+      // TODO
+//      user.roles.map(relationUserRole.addRoleToUser(user.id, _))
     })
   }
 }
