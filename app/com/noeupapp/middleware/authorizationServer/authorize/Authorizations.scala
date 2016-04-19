@@ -7,11 +7,10 @@ import com.mohiva.play.silhouette.api.{Environment, LoginEvent, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.{CredentialsProvider, SocialProviderRegistry}
-import com.noeupapp.middleware.authorizationClient.login.Authenticate
-import com.noeupapp.middleware.authorizationServer.authCode.AuthCode
+import com.noeupapp.middleware.authorizationClient.login.Login
+import com.noeupapp.middleware.authorizationServer.authCode.{AuthCode, AuthCodeService}
 import com.noeupapp.middleware.authorizationServer.client.Client
-import com.noeupapp.middleware.entities.entity.Account
-import com.noeupapp.middleware.entities.user.UserService
+import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
 import play.api.db.DB
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.Action
@@ -34,7 +33,8 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
                                val env: Environment[Account, CookieAuthenticator],
                                userService: AccountService,
                                configuration: Configuration,
-                               credentialsProvider: CredentialsProvider)
+                               credentialsProvider: CredentialsProvider,
+                               authCodeService: AuthCodeService)
     extends Silhouette[Account, CookieAuthenticator] {
 
 
@@ -88,7 +88,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
 
   // TODO comments
   // TODO secured action
-  def send_auth = UserAwareAction { implicit request =>
+  def send_auth = UserAwareAction.async { implicit request =>
     request.identity match {
       case Some(user) =>
         val boundForm = AuthorizeForm.form.bindFromRequest
@@ -102,13 +102,9 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
             aaInfo.accepted match {
               case "Y" =>
                 val expiresIn = Int.MaxValue
-                val acOpt =
-                  DB.withTransaction { implicit session =>
-                    AuthCode.generateAuthCodeForClient(
+                authCodeService.generateAuthCodeForClient(
                       aaInfo.clientId, aaInfo.redirectUri, aaInfo.scope,
-                      user.id, expiresIn)
-                  }
-                acOpt match {
+                      user.user.id, expiresIn) map {
                   case Some(ac) =>
                     val authCode = ac.authorizationCode
                     val state = aaInfo.state
@@ -120,15 +116,15 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
 
               case "N" =>
                 val errorCode = "access_denied"
-                Redirect(s"${aaInfo.redirectUri}?error=$errorCode")
+                Future.successful(Redirect(s"${aaInfo.redirectUri}?error=$errorCode"))
               case _ =>
                 val errorCode = "invalid_request"
-                Redirect(s"${aaInfo.redirectUri}?error=$errorCode")
+                Future.successful(Redirect(s"${aaInfo.redirectUri}?error=$errorCode"))
             }
           })
       case None       =>
         Logger.info("Authorize.send_auth : Not connected")
-        Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.authenticate()) // TODO add flash message
+        Future.successful(Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.authenticate())) // TODO add flash message
     }
   }
 
