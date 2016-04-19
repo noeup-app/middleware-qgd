@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.api.util.PasswordHasher
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
 import play.api.Logger
 import play.api.i18n.MessagesApi
@@ -31,14 +31,14 @@ import scala.concurrent.Future
  */
 class SignUps @Inject()(
                          val messagesApi: MessagesApi,
-                         val env: Environment[Account, CookieAuthenticator],
+                         val env: Environment[Account, BearerTokenAuthenticator],
                          userService: AccountService,
                          authInfoRepository: AuthInfoRepository,
                          htmlSignUpsResult: HtmlSignUpsResult,
                          ajaxSignUpsResult: AjaxSignUpsResult,
                          avatarService: AvatarService,
                          passwordHasher: PasswordHasher)
-  extends Silhouette[Account, CookieAuthenticator] {
+  extends Silhouette[Account, BearerTokenAuthenticator] {
 
 
 
@@ -96,7 +96,8 @@ class SignUps @Inject()(
   }
 
   def signUp(loginInfo: LoginInfo, data: SignUpForm.Data, authorizationResult: SignUpsResult)(implicit request: Request[Any]): Future[Result] = {
-    val res = userService.retrieve(loginInfo).flatMap {
+    Logger.debug("SignUps.signUp")
+    userService.retrieve(loginInfo).flatMap {
       case Some(user) =>
         Future.successful(authorizationResult.userAlreadyExists())
       case None =>
@@ -118,12 +119,12 @@ class SignUps @Inject()(
           value <- env.authenticatorService.init(authenticator)
           result <- env.authenticatorService.embed(value, authorizationResult.userSuccessfullyCreated())
         } yield {
+          Logger.info("User successfully added")
           env.eventBus.publish(SignUpEvent(user, request, request2Messages))
           env.eventBus.publish(LoginEvent(user, request, request2Messages))
           result
         }
-    }
-    res.recover{
+    }.recover{
       case e: Exception => {
         Logger.error("An exception occurred", e)
         authorizationResult.manageError(e)

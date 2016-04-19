@@ -4,7 +4,7 @@ import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.noeupapp.middleware.authorizationClient.RoleAuthorization.WithRole
 import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScope
 import com.noeupapp.middleware.authorizationClient.{RoleAuthorization, ScopeAndRoleAuthorization, ScopeAuthorization}
@@ -20,9 +20,9 @@ import scalaz.{-\/, \/-}
 
 class Clients @Inject()(
                          val messagesApi: MessagesApi,
-                         val env: Environment[Account, CookieAuthenticator],
+                         val env: Environment[Account, BearerTokenAuthenticator],
                          scopeAndRoleAuthorization: ScopeAndRoleAuthorization
-                       ) extends Silhouette[Account, CookieAuthenticator] {
+                       ) extends Silhouette[Account, BearerTokenAuthenticator] {
 
   def list = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
     val allClients = client.Client.list()

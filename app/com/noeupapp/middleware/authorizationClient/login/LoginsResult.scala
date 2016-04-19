@@ -3,7 +3,7 @@ package com.noeupapp.middleware.authorizationClient.login
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import com.noeupapp.middleware.authorizationClient.AuthorizationResult
 import com.noeupapp.middleware.entities.user.{Account, User}
@@ -34,7 +34,7 @@ trait LoginsResult extends AuthorizationResult {
   */
 class HtmlLoginsResult @Inject() (
                                     val messagesApi: MessagesApi,
-                                    val env: Environment[Account, CookieAuthenticator],
+                                    val env: Environment[Account, BearerTokenAuthenticator],
                                     socialProviderRegistry: SocialProviderRegistry)
   extends LoginsResult {
 
@@ -71,7 +71,7 @@ class HtmlLoginsResult @Inject() (
   */
 class AjaxLoginsResult @Inject() (
                                     val messagesApi: MessagesApi,
-                                    val env: Environment[Account, CookieAuthenticator])
+                                    val env: Environment[Account, BearerTokenAuthenticator])
   extends LoginsResult {
 
   override def badRequest(form: Form[LoginForm.Data])(implicit request: Request[Any]): Result =

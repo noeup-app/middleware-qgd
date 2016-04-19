@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.noeupapp.middleware.authorizationClient.{FakeScopeAndRoleAuthorization, ScopeAndRoleAuthorization}
 import com.noeupapp.middleware.entities.user.{Account, User}
@@ -27,7 +27,7 @@ trait Context extends Scope {
     */
   class FakeModule extends AbstractModule with ScalaModule {
     def configure() = {
-      bind[Environment[Account, CookieAuthenticator]].toInstance(env)
+      bind[Environment[Account, BearerTokenAuthenticator]].toInstance(env)
       bind[ScopeAndRoleAuthorization].to[FakeScopeAndRoleAuthorization]
     }
   }
@@ -53,8 +53,8 @@ trait Context extends Scope {
   /**
     * A Silhouette fake environment.
     */
-  implicit val env: Environment[Account, CookieAuthenticator] = {
-    new FakeEnvironment[Account, CookieAuthenticator](Seq(loginInfo -> identity))
+  implicit val env: Environment[Account, BearerTokenAuthenticator] = {
+    new FakeEnvironment[Account, BearerTokenAuthenticator](Seq(loginInfo -> identity))
   }
 
 

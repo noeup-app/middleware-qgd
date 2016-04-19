@@ -1,7 +1,7 @@
 package com.noeupapp.testhelpers
 
 import com.google.inject.Inject
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.test._
 import play.api.libs.json.{JsValue, Json}
 import play.api.test.FakeRequest
@@ -15,11 +15,11 @@ class FakeRequestBuilder @Inject()() {
       data2post match {
         case Some(data) =>
           route(FakeRequest(httpMethod, url)
-            .withAuthenticator[CookieAuthenticator](loginInfo)
+            .withAuthenticator[BearerTokenAuthenticator](loginInfo)
             .withJsonBody(data))
         case None =>
           route(FakeRequest(httpMethod, url)
-            .withAuthenticator[CookieAuthenticator](loginInfo))
+            .withAuthenticator[BearerTokenAuthenticator](loginInfo))
       }
     }
     status(result) must be equalTo OK

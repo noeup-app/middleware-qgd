@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.test._
 import com.noeupapp.middleware.authorizationClient.{FakeScopeAndRoleAuthorization, ScopeAndRoleAuthorization}
 import com.noeupapp.testhelpers.Context
@@ -25,7 +25,7 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
     "redirect to login page if user is unauthorized" in new Context {
       new WithApplication(application) {
         val Some(redirectResult) = route(FakeRequest(com.noeupapp.middleware.application.routes.Applications.index())
-          .withAuthenticator[CookieAuthenticator](LoginInfo("invalid", "invalid"))
+          .withAuthenticator[BearerTokenAuthenticator](LoginInfo("invalid", "invalid"))
         )
 
         status(redirectResult) must be equalTo SEE_OTHER
@@ -45,7 +45,7 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
       new WithApplication(application) {
         val Some(result) =
           route(FakeRequest(com.noeupapp.middleware.application.routes.Applications.index())
-                .withAuthenticator[CookieAuthenticator](identity.loginInfo))
+                .withAuthenticator[BearerTokenAuthenticator](identity.loginInfo))
 
 
         status(result) must beEqualTo(OK)
@@ -63,7 +63,7 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
 //     */
 //    class FakeModule extends AbstractModule with ScalaModule {
 //      def configure() = {
-//        bind[Environment[Account, CookieAuthenticator]].toInstance(env)
+//        bind[Environment[Account, BearerTokenAuthenticator]].toInstance(env)
 //        bind[ScopeAndRoleAuthorization].to[FakeScopeAndRoleAuthorization]
 //      }
 //    }
@@ -87,10 +87,10 @@ class ApplicationControllerSpec extends PlaySpecification with Mockito {
 //    /**
 //     * A Silhouette fake environment.
 //     */
-//    implicit val env: Environment[Account, CookieAuthenticator] = {
+//    implicit val env: Environment[Account, BearerTokenAuthenticator] = {
 //      identity.loginInfo match {
 //        case Some(li) =>
-//          new FakeEnvironment[Account, CookieAuthenticator](Seq(li -> identity))
+//          new FakeEnvironment[Account, BearerTokenAuthenticator](Seq(li -> identity))
 //        case None => throw new RuntimeException("identity.loginInfo is None")
 //      }
 //

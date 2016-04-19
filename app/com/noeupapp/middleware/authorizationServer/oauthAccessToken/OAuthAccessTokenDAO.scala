@@ -57,9 +57,9 @@ class OAuthAccessTokenDAO {
       SQL(
         """
           SELECT *
-          FROM oauth_access_tokens
+          FROM auth_access_tokens
           WHERE
-            client_id = {client_id}::uuid AND
+            client_id = {client_id} AND
             user_uuid = {user_uuid}::uuid
         """)
         .on(
@@ -79,6 +79,8 @@ class OAuthAccessTokenDAO {
   //accessTokens.where(_.refreshToken === refreshToken).firstOption
 
 
+
+
   /**
     * Add a new AccessToken
     *
@@ -86,7 +88,34 @@ class OAuthAccessTokenDAO {
     * @return
     */
   def insert(token: OAuthAccessToken) = {
-    logger.warn("...findAuthInfoByRefreshToken :: NOT_IMPLEMENTED")
+    DB.withConnection({ implicit c =>
+      SQL(
+        """
+          INSERT INTO auth_access_tokens (token,
+                                          refresh_token,
+                                          client_id,
+                                          user_uuid,
+                                          scope,
+                                          expires_in,
+                                          created_at)
+          VALUES ({token},
+                  {refresh_token},
+                  {client_id},
+                  {user_uuid}::uuid,
+                  {scope},
+                  {expires_in},
+                  {created_at})
+        """)
+        .on(
+          "token" -> token.accessToken,
+          "refresh_token" -> token.refreshToken,
+          "client_id" -> token.clientId,
+          "user_uuid" -> token.userId,
+          "scope" -> token.scope,
+          "expires_in" -> token.expiresIn,
+          "created_at" -> token.createdAt
+        ).execute()
+    })
   }
 
   // token.id match {

@@ -3,7 +3,7 @@ package com.noeupapp.middleware.authorizationClient.signUp
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.noeupapp.middleware.authorizationClient.AuthorizationResult
 import play.api.data.Form
 import play.api.i18n.{Messages, MessagesApi}
@@ -32,7 +32,7 @@ trait SignUpsResult extends AuthorizationResult {
   */
 class HtmlSignUpsResult @Inject() (
                                      val messagesApi: MessagesApi,
-                                     val env: Environment[Account, CookieAuthenticator])
+                                     val env: Environment[Account, BearerTokenAuthenticator])
   extends SignUpsResult {
 
   override def badRequest(form: Form[Data])(implicit request: Request[Any]): Result =
@@ -65,7 +65,7 @@ class HtmlSignUpsResult @Inject() (
   */
 class AjaxSignUpsResult @Inject() (
                                      val messagesApi: MessagesApi,
-                                     val env: Environment[Account, CookieAuthenticator])
+                                     val env: Environment[Account, BearerTokenAuthenticator])
   extends SignUpsResult {
 
   override def badRequest(form: Form[Data])(implicit request: Request[Any]): Result =

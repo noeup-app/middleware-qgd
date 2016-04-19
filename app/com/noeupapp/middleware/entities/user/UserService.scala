@@ -20,32 +20,43 @@ import scala.util.Try
 class UserService @Inject()(userDAO: UserDAO) {
 
   def findByEmail(email: String): Future[Option[User]] = {
-    Future.successful{
-      Try {
+    Future{
+      try {
         DB.withConnection({ implicit c =>
           userDAO.find(email)
         })
-      }.toOption.flatten
+      } catch {
+        case e: Exception => Logger.error(s"UserService.findByEmail($email)", e)
+          None
+      }
     }
   }
 
   def findById(id: UUID): Future[Option[User]] = {
-    Future.successful{
-      Try {
+    Future{
+      try {
         DB.withConnection({ implicit c =>
           userDAO.find(id)
         })
-      }.toOption.flatten
+      } catch {
+        case e: Exception =>
+          Logger.error(s"UserService.findById($id)", e)
+          None
+      }
     }
   }
 
   def add(user: User): Future[Boolean] = {
-    Future.successful{
-      Try {
+    Future{
+      try {
         DB.withConnection({ implicit c =>
           userDAO.add(user)
         })
-      }.toOption.getOrElse(false)
+      } catch {
+        case e: Exception =>
+          Logger.error(s"UserService.add($user)", e)
+          false
+      }
     }
   }
 

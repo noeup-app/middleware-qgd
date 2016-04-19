@@ -3,7 +3,7 @@ package com.noeupapp.middleware.application
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, LogoutEvent, Silhouette}
-import com.mohiva.play.silhouette.impl.authenticators.{BearerTokenAuthenticator, CookieAuthenticator}
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import com.noeupapp.middleware.authorizationClient.{RoleAuthorization, ScopeAndRoleAuthorization, ScopeAuthorization}
 import play.api.i18n.MessagesApi
@@ -24,10 +24,10 @@ import scala.concurrent.Future
  */
 class Applications @Inject()(
                               val messagesApi: MessagesApi,
-                              val env: Environment[Account, CookieAuthenticator],
+                              val env: Environment[Account, BearerTokenAuthenticator],
                               socialProviderRegistry: SocialProviderRegistry,
                               scopeAndRoleAuthorization: ScopeAndRoleAuthorization)
-  extends Silhouette[Account, CookieAuthenticator] {
+  extends Silhouette[Account, BearerTokenAuthenticator] {
 
   /**
    * Handles the index action.

@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.Clock
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers._
 import net.ceedubs.ficus.Ficus._
@@ -38,7 +38,7 @@ import scala.language.postfixOps
   */
 class Logins @Inject()(
                         val messagesApi: MessagesApi,
-                        val env: Environment[Account, CookieAuthenticator],
+                        val env: Environment[Account, BearerTokenAuthenticator],
                         userService: AccountService,
                         authInfoRepository: AuthInfoRepository,
                         credentialsProvider: CredentialsProvider,
@@ -47,7 +47,7 @@ class Logins @Inject()(
                         ajaxLoginsResult: AjaxLoginsResult,
                         configuration: Configuration,
                         clock: Clock)
-  extends Silhouette[Account, CookieAuthenticator] {
+  extends Silhouette[Account, BearerTokenAuthenticator] {
 
 
   /**
@@ -111,11 +111,12 @@ class Logins @Inject()(
           val c = configuration.underlying
           env.authenticatorService.create(loginInfo).map {
             case authenticator if authenticate.rememberMe =>
-              authenticator.copy(
-                expirationDateTime = clock.now + c.as[FiniteDuration]("silhouette.authenticator.rememberMe.authenticatorExpiry"),
-                idleTimeout = c.getAs[FiniteDuration]("silhouette.authenticator.rememberMe.authenticatorIdleTimeout"),
-                cookieMaxAge = c.getAs[FiniteDuration]("silhouette.authenticator.rememberMe.cookieMaxAge")
-              )
+//              authenticator.copy(
+//                expirationDateTime = clock.now + c.as[FiniteDuration]("silhouette.authenticator.rememberMe.authenticatorExpiry"),
+//                idleTimeout = c.getAs[FiniteDuration]("silhouette.authenticator.rememberMe.authenticatorIdleTimeout"),
+//                cookieMaxAge = c.getAs[FiniteDuration]("silhouette.authenticator.rememberMe.cookieMaxAge")
+//              )
+              authenticator
             case authenticator => authenticator
           }.flatMap { authenticator =>
             env.eventBus.publish(LoginEvent(user, request, request2Messages))

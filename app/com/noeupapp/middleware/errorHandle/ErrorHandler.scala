@@ -42,7 +42,9 @@ class ErrorHandler @Inject() (
     * @return The result to send to the client.
     */
   override def onNotAuthenticated(request: RequestHeader, messages: Messages): Option[Future[Result]] = {
-    Some(Future.successful(Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())))
+    Logger.error("******* onNotAuthenticated :\n" + request.headers + "\n Message : \n" + messages )
+    Some(Future.successful(Ok("You are not authorized to access this resource !")))
+    //    Some(Future.successful(Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())))
   }
 
   /**

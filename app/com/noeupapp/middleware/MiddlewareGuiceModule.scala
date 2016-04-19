@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
 import com.mohiva.play.silhouette.api.{Environment, EventBus}
 import com.mohiva.play.silhouette.impl.authenticators._
-import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
+import com.mohiva.play.silhouette.impl.daos.{AuthenticatorDAO, CacheAuthenticatorDAO, DelegableAuthInfoDAO}
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.providers.oauth1.secrets.{CookieSecretProvider, CookieSecretSettings}
 import com.mohiva.play.silhouette.impl.providers.oauth2._
@@ -20,10 +20,12 @@ import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
-import play.api.Configuration
+import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 import com.noeupapp.middleware.authorizationClient.provider.QGDProvider
+
+import scala.concurrent.Future
 
 /**
  * The Guice module which wires all Silhouette dependencies.
@@ -67,10 +69,10 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
   @Provides
   def provideEnvironment(
                           accountService: AccountService,
-                          authenticatorService: AuthenticatorService[CookieAuthenticator],
-                          eventBus: EventBus): Environment[Account, CookieAuthenticator] = {
+                          authenticatorService: AuthenticatorService[BearerTokenAuthenticator],
+                          eventBus: EventBus): Environment[Account, BearerTokenAuthenticator] = {
 
-    Environment[Account, CookieAuthenticator](
+    Environment[Account, BearerTokenAuthenticator](
       accountService,
       authenticatorService,
       Seq(),
@@ -99,13 +101,36 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
    */
   @Provides
   def provideAuthenticatorService(
-    fingerprintGenerator: FingerprintGenerator,
-    idGenerator: IDGenerator,
-    configuration: Configuration,
-    clock: Clock): AuthenticatorService[CookieAuthenticator] = {
+                                 idGenerator: IDGenerator,
+                                 cacheLayer: CacheLayer,
+                                 configuration: Configuration,
+                                 clock: Clock): AuthenticatorService[BearerTokenAuthenticator] = {
 
-    val config = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
-    new CookieAuthenticatorService(config, None, fingerprintGenerator, idGenerator, clock)
+
+    val config: BearerTokenAuthenticatorSettings = BearerTokenAuthenticatorSettings()
+    val dao = new AuthenticatorDAO[BearerTokenAuthenticator] {
+      override def find(id: String): Future[Option[BearerTokenAuthenticator]] = {
+        println(s"====> AuthenticatorDAO.find($id)")
+        Future.successful(None)
+      }
+
+      override def update(authenticator: BearerTokenAuthenticator): Future[BearerTokenAuthenticator] = {
+        println(s"====> AuthenticatorDAO.update($authenticator)")
+        Future.successful(authenticator)
+      }
+
+      override def remove(id: String): Future[Unit] = {
+        println(s"====> AuthenticatorDAO.remove")
+        Future(())
+      }
+
+      override def add(authenticator: BearerTokenAuthenticator): Future[BearerTokenAuthenticator] = {
+        println(s"====> AuthenticatorDAO.add($authenticator)")
+        Future(authenticator)
+      }
+    }
+//    new BearerTokenAuthenticatorService(config, None, fingerprintGenerator, idGenerator, clock)
+    new BearerTokenAuthenticatorService(config, dao, idGenerator, clock)
   }
 
   /**

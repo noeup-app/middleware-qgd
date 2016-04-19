@@ -28,8 +28,8 @@ class AccountService @Inject()(userService: UserService, roleService: RoleServic
     * @return The retrieved user or None if no user could be retrieved for the given login info.
     */
   def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
+    println("------------------------AccountService.retrieve : " + loginInfo)
     DB.withConnection({ implicit c =>
-      Logger.debug("AccountService.retrieve : " + loginInfo)
       // Cas particulier de l'utilisation de l'Expect. gérer l'erreur avec eventbus et retourner une Future
       userService.findByEmail(loginInfo.providerKey).map{
         case Some(user) =>
@@ -51,11 +51,19 @@ class AccountService @Inject()(userService: UserService, roleService: RoleServic
     */
   def save(account: Account): Future[Account] = {
     DB.withTransaction({ implicit c =>
+
       for{
-        _ <- userService.add(account.user)
+        userSuccessfullyAdded <- userService.add(account.user)
 //        _ <- userDAO.addLoginInfo(account)
-        _ <- roleService.addUserRoles(account)
-      } yield account
+        roleSuccessfullyAdded <- roleService.addUserRoles(account)
+      } yield {
+        if(userSuccessfullyAdded && roleSuccessfullyAdded) {
+          Logger.debug("Account saved")
+          account
+        }else {
+          throw new Exception("An error occurred when saving account")
+        }
+      }
     })
   }
 

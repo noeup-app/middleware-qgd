@@ -4,7 +4,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.{Environment, LoginEvent, Silhouette}
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.{CredentialsProvider, SocialProviderRegistry}
 import com.noeupapp.middleware.authorizationClient.login.Login
@@ -30,12 +30,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 
 class Authorizations @Inject()(val messagesApi: MessagesApi,
-                               val env: Environment[Account, CookieAuthenticator],
+                               val env: Environment[Account, BearerTokenAuthenticator],
                                userService: AccountService,
                                configuration: Configuration,
                                credentialsProvider: CredentialsProvider,
                                authCodeService: AuthCodeService)
-    extends Silhouette[Account, CookieAuthenticator] {
+    extends Silhouette[Account, BearerTokenAuthenticator] {
 
 
   val log = play.Logger.of("application")

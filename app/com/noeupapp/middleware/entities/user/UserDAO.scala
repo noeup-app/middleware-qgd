@@ -24,12 +24,12 @@ class UserDAO extends GlobalReadsWrites {
     */
   def find(email: String)(implicit connection: Connection): Option[User] = {
     SQL(
-      """SELECT u.id, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.active, u.deleted
-         FROM entity_users u
-         WHERE u.email = {email};""")
+      """SELECT id, first_name, last_name, email, avatar_url, active, deleted
+         FROM entity_users
+         WHERE email = {email};""")
       .on(
       'email  -> email
-      ).as(User.parse.singleOpt) // One email corresponds to at most one user
+      ).as(User.parse *).headOption // One email corresponds to at most one user
   }
 
 
@@ -42,12 +42,12 @@ class UserDAO extends GlobalReadsWrites {
   def find(userID: UUID)(implicit connection:
   Connection): Option[User] = {
       SQL(
-        """SELECT u.id, u.first_name, u.last_name, u.email, r.role_name, u.avatar_url, u.active, u.deleted
-           FROM entity_users u
-           WHERE u.id = {id};""")
+        """SELECT id, first_name, last_name, email, avatar_url, active, deleted
+           FROM entity_users
+           WHERE id = {id};""")
       .on(
-        'id -> userID)
-        .as(User.parse.singleOpt)
+        'id -> userID
+      ).as(User.parse *).headOption
   }
 
   /**
@@ -57,7 +57,8 @@ class UserDAO extends GlobalReadsWrites {
     * @param connection the implicit connection of the transaction
     */
   def add(user: User)(implicit connection: Connection): Boolean = {
-    SQL(
+    Logger.trace("UserDao.add...")
+    val a = SQL(
       """INSERT INTO entity_users (
                       id,
                       email,
@@ -82,5 +83,7 @@ class UserDAO extends GlobalReadsWrites {
         'active -> user.active,
         'deleted -> user.deleted
       ).execute()
+    Logger.trace("UserDao.add OK")
+    a
   }
 }

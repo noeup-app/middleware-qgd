@@ -3,7 +3,7 @@ package com.noeupapp.middleware.authorizationClient.socialAuth
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.Environment
-import com.mohiva.play.silhouette.impl.authenticators.CookieAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import com.noeupapp.middleware.authorizationClient.AuthorizationResult
 import com.noeupapp.middleware.entities.user.{Account, User}
@@ -26,7 +26,7 @@ trait SocialAuthsResult extends AuthorizationResult {
   */
 class HtmlSocialAuthsResult @Inject() (
                                         val messagesApi: MessagesApi,
-                                        val env: Environment[Account, CookieAuthenticator])
+                                        val env: Environment[Account, BearerTokenAuthenticator])
   extends SocialAuthsResult {
 
   override def userSuccessfullyAuthenticated(): Result =
@@ -46,7 +46,7 @@ class HtmlSocialAuthsResult @Inject() (
   */
 class AjaxSocialAuthsResult @Inject() (
                                         val messagesApi: MessagesApi,
-                                        val env: Environment[Account, CookieAuthenticator])
+                                        val env: Environment[Account, BearerTokenAuthenticator])
   extends SocialAuthsResult {
 
   override def userSuccessfullyAuthenticated(): Result = Ok("User successfully authenticated") // TODO Doublon avec Logins?

@@ -12,10 +12,11 @@ import scala.concurrent.Future
 
 class RoleService  @Inject() (relationUserRole: RelationUserRoleDAO) {
 
-  def addUserRoles(user: Account) = Future {
+  def addUserRoles(user: Account): Future[Boolean] = Future {
     DB.withTransaction({ implicit c =>
       // TODO
 //      user.roles.map(relationUserRole.addRoleToUser(user.id, _))
     })
+    true
   }
 }
