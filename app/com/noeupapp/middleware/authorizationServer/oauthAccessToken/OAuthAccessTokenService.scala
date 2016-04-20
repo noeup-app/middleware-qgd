@@ -5,6 +5,7 @@ import java.util.{Date, UUID}
 import anorm.SqlParser._
 import anorm._
 import com.google.inject.Inject
+import com.noeupapp.middleware.entities.user.{User, UserService}
 import com.noeupapp.middleware.errorHandle.{ExceptionEither, FailError}
 import com.noeupapp.middleware.errorHandle.FailError._
 import play.api.Logger
@@ -15,8 +16,11 @@ import scala.util.{Failure, Success, Try}
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
 
+import scala.language.implicitConversions
 
-class OAuthAccessTokenService @Inject() (oAuthAccessTokenDAO: OAuthAccessTokenDAO) {
+
+class OAuthAccessTokenService @Inject() (oAuthAccessTokenDAO: OAuthAccessTokenDAO,
+                                         userService: UserService) {
 
   val logger = Logger(this.getClass)
 
@@ -76,10 +80,8 @@ class OAuthAccessTokenService @Inject() (oAuthAccessTokenDAO: OAuthAccessTokenDA
   def insert(accessToken: OAuthAccessToken): Future[Expect[Boolean]] = {
     Logger.trace(s"OAuthAccessTokenService.insert($accessToken)")
     ExceptionEither.safeDatabaseCall{ implicit c =>
-      oAuthAccessTokenDAO.insert(accessToken) match {
-        case true => \/-(true)
-        case false => -\/(FailError("Cannot insert access token"))
-      }
+      oAuthAccessTokenDAO.insert(accessToken)
+      \/-(true)
     }
   }
 
@@ -117,28 +119,22 @@ class OAuthAccessTokenService @Inject() (oAuthAccessTokenDAO: OAuthAccessTokenDA
 
   def deleteByClientIdAndUserId(client_id: String, user_uuid: UUID): Future[Expect[Boolean]] = {
     ExceptionEither.safeDatabaseCall{ implicit c =>
-      oAuthAccessTokenDAO.deleteByClientIdAndUserId(client_id, user_uuid) match {
-        case true => \/-(true)
-        case false => -\/(FailError("Cannot delete access token"))
-      }
+      oAuthAccessTokenDAO.deleteByClientIdAndUserId(client_id, user_uuid)
+      \/-(true)
     }
   }
 
   def deleteByRefreshToken(refreshToken: String): Future[Expect[Boolean]] = {
     ExceptionEither.safeDatabaseCall{ implicit c =>
-      oAuthAccessTokenDAO.deleteByRefreshToken(refreshToken) match {
-        case true => \/-(true)
-        case false => -\/(FailError("Cannot delete access token"))
-      }
+      oAuthAccessTokenDAO.deleteByRefreshToken(refreshToken)
+      \/-(true)
     }
   }
 
   def deleteByAccessToken(accessToken: String): Future[Expect[Boolean]] = {
     ExceptionEither.safeDatabaseCall{ implicit c =>
-      oAuthAccessTokenDAO.deleteByAccessToken(accessToken) match {
-        case true => \/-(true)
-        case false => -\/(FailError("Cannot delete access token"))
-      }
+      oAuthAccessTokenDAO.deleteByAccessToken(accessToken)
+      \/-(true)
     }
   }
 

@@ -69,7 +69,11 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
   override def add(loginInfo: api.LoginInfo, authInfo: T): Future[T] = {
     val serializedLoginInfo: String = loginInfo
     val serializedAuthInfo: String  = authInfo
-    pool.withClient(_.set(serializedLoginInfo, serializedAuthInfo)) // TODO manage errors
+    try{
+      pool.withClient(_.set(serializedLoginInfo, serializedAuthInfo)) // TODO manage errors
+    }catch {
+      case e: Exception => Logger.error("AuthInfoDAOImpl.add", e)
+    }
     Future.successful(authInfo)
   }
 

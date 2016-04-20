@@ -9,6 +9,8 @@ import com.noeupapp.middleware.authorizationServer.authCode.{AuthCode, AuthCodeS
 import com.noeupapp.middleware.authorizationServer.client.Client
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessToken, OAuthAccessTokenDAO, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.user.{User, UserService}
+import com.noeupapp.middleware.errorHandle.FailError
+import com.noeupapp.middleware.errorHandle.FailError._
 import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config}
 import com.noeupapp.middleware.utils.NamedLogger
 import play.api.Logger
@@ -20,6 +22,7 @@ import scalaoauth2.provider._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
+import org.joda.time.DateTime
 
 class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
                                       accessTokenService: OAuthAccessTokenService,
@@ -73,15 +76,16 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
 
     //authAccessService.saveAccessToken(token, authInfo) // TODO Check if needed here (does provider really needs to keep token ?)
 
-    {
-      for{
-        _ <- EitherT(accessTokenService.insert(token))
-      } yield token
-    }.run map {
+    accessTokenService.insert(token) map {
       case -\/(e) =>
         Logger.error(s"Error on creating access token $e")
+//        e.cause match {
+//          case Some(\/-(error)) => Logger.error("AuthorizationHandler.createAccessToken " + error.toString)
+//          case Some(-\/(error)) => Logger.error("AuthorizationHandler.createAccessToken " + error.toString)
+//          case _ =>
+//        }
         throw new Exception("Error on creating access token")
-      case \/-(t) => t
+      case \/-(t) => token
     }
   }
 
@@ -167,8 +171,21 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def findAuthInfoByRefreshToken(refreshToken: String): Future[Option[AuthInfo[User]]] = {
-    Logger.error("AuthorizationHandler.findAuthInfoByRefreshToken (TODO)")
-    Future.successful(None)
+    Logger.error("AuthorizationHandler.findAuthInfoByRefreshToken")
+    // TODO : this is a fix because userService.findById returns option instead of expect
+    def option2Expect[T](opt: Option[T]): Expect[T] = {
+      opt match {
+        case Some(r) => \/-(r)
+        case None => -\/(FailError("None"))
+      }
+    }
+    for{
+      accessToken <- EitherT(accessTokenService.findByRefreshToken(refreshToken))
+      user        <- EitherT(userService.findById(accessToken.userId).map(option2Expect))
+    } yield AuthInfo[User](user, Some(accessToken.clientId), accessToken.scope, None)
+  }.run map {
+    case -\/(_) => None
+    case \/-(e) => Some(e)
   }
 
   /**
@@ -179,9 +196,26 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def refreshAccessToken(authInfo: AuthInfo[User], refreshToken: String): Future[AccessToken] = {
-    Logger.error("AuthorizationHandler.refreshAccessToken (TODO)")
-    // TODO GUILLAUME : refresh != create
-    createAccessToken(authInfo)
+    Logger.error("AuthorizationHandler.refreshAccessToken")
+    val newToken = BearerTokenGenerator.generateToken
+    val expiresIn = Some(Config.OAuth2.accessTokenExpirationInSeconds.toLong)
+    for {
+      accessToken    <- EitherT(accessTokenService.findByRefreshToken(refreshToken))
+      newAccessToken <- EitherT(accessTokenService.deleteExistingAndCreate(
+        accessToken.copy(
+          accessToken = newToken,
+          expiresIn = expiresIn,
+          createdAt = new Date()
+        ),
+        authInfo.user.id,
+        authInfo.clientId.getOrElse(""))
+      )
+    } yield newAccessToken
+  }.run map {
+    case -\/(e) =>
+      Logger.error(s"AuthorizationHandler $e")
+      throw new Exception("An error occurred on refresh token")
+    case \/-(r) => r
   }
 
 
