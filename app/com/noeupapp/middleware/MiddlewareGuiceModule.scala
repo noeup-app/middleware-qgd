@@ -1,6 +1,7 @@
 package com.noeupapp.middleware
 
 import com.google.inject.{AbstractModule, Provides}
+import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
@@ -14,9 +15,9 @@ import com.mohiva.play.silhouette.impl.providers.oauth2.state.{CookieStateProvid
 import com.mohiva.play.silhouette.impl.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.services._
 import com.mohiva.play.silhouette.impl.util._
-import com.noeupapp.middleware.authorizationClient.login.{OAuth1InfoDAO, OAuth2InfoDAO, OpenIDInfoDAO, PasswordInfoDAO}
+import com.noeupapp.middleware.authorizationClient.login._
 import com.noeupapp.middleware.authorizationClient.{ScopeAndRoleAuthorization, ScopeAndRoleAuthorizationImpl}
-import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
+import com.noeupapp.middleware.entities.user.{Account, AccountService, User, UserService}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
@@ -24,6 +25,9 @@ import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 import com.noeupapp.middleware.authorizationClient.provider.QGDProvider
+import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthenticatorDAO
+import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenDAO
+import org.joda.time.DateTime
 
 import scala.concurrent.Future
 
@@ -103,33 +107,15 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
   def provideAuthenticatorService(
                                  idGenerator: IDGenerator,
                                  cacheLayer: CacheLayer,
+//                                 dao: BearerAuthenticatorDAO,
+                                 authAccessTokenDAO: OAuthAccessTokenDAO,
+                                 userService: UserService,
                                  configuration: Configuration,
                                  clock: Clock): AuthenticatorService[BearerTokenAuthenticator] = {
 
 
+    val dao = new BearerAuthenticatorDAO(authAccessTokenDAO, userService)
     val config: BearerTokenAuthenticatorSettings = BearerTokenAuthenticatorSettings()
-    val dao = new AuthenticatorDAO[BearerTokenAuthenticator] {
-      override def find(id: String): Future[Option[BearerTokenAuthenticator]] = {
-        println(s"====> AuthenticatorDAO.find($id)")
-        Future.successful(None)
-      }
-
-      override def update(authenticator: BearerTokenAuthenticator): Future[BearerTokenAuthenticator] = {
-        println(s"====> AuthenticatorDAO.update($authenticator)")
-        Future.successful(authenticator)
-      }
-
-      override def remove(id: String): Future[Unit] = {
-        println(s"====> AuthenticatorDAO.remove")
-        Future(())
-      }
-
-      override def add(authenticator: BearerTokenAuthenticator): Future[BearerTokenAuthenticator] = {
-        println(s"====> AuthenticatorDAO.add($authenticator)")
-        Future(authenticator)
-      }
-    }
-//    new BearerTokenAuthenticatorService(config, None, fingerprintGenerator, idGenerator, clock)
     new BearerTokenAuthenticatorService(config, dao, idGenerator, clock)
   }
 

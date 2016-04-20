@@ -61,7 +61,10 @@ class AccountService @Inject()(userService: UserService, roleService: RoleServic
           Logger.debug("Account saved")
           account
         }else {
-          throw new Exception("An error occurred when saving account")
+          val errorMessageUser = if(userSuccessfullyAdded) "Error while saving user" else ""
+          val errorMessageRole = if(roleSuccessfullyAdded) "Error while saving role" else ""
+
+          throw new Exception(s"An error occurred when saving account : $errorMessageUser | $errorMessageRole")
         }
       }
     })

@@ -32,7 +32,7 @@ case class OAuthAccessToken(
                         // client: Option[Client] = None
                         userId: UUID,
                         // account: Option[OauthIdentity] = None
-                        token_type: String,
+//                        token_type: String,
                         scope: Option[String],
                         expiresIn: Option[Long],
                         createdAt: Date
@@ -50,17 +50,30 @@ object OAuthAccessToken {
 
   implicit val accessTokensFormat = Json.format[OAuthAccessToken]
 
+//  val accessTokenParser = {
+//    get[String]("token_id") ~
+//    get[Option[String]]("refresh_token") ~
+//    get[String]("client_id") ~
+//    get[UUID]("user_uuid") ~
+//    get[String]("token_type") ~
+//    get[Option[String]]("scope") ~
+//    get[Option[Long]]("expires_in") ~
+//    get[Date]("created_at") map {
+//      case token ~ refreshToken ~ clientId ~ userId ~ tokenType ~ scope ~ expireIn ~ createdAt =>
+//        OAuthAccessToken(token, refreshToken, clientId, userId, tokenType, scope, expireIn, createdAt)
+//    }
+//  }
+
   val accessTokenParser = {
-    get[String]("token_id") ~
+    get[String]("token") ~
     get[Option[String]]("refresh_token") ~
     get[String]("client_id") ~
     get[UUID]("user_uuid") ~
-    get[String]("token_type") ~
     get[Option[String]]("scope") ~
     get[Option[Long]]("expires_in") ~
     get[Date]("created_at") map {
-      case token ~ refreshToken ~ clientId ~ userId ~ tokenType ~ scope ~ expireIn ~ createdAt =>
-        OAuthAccessToken(token, refreshToken, clientId, userId, tokenType, scope, expireIn, createdAt)
+      case token ~ refreshToken ~ clientId ~ userId ~ scope ~ expireIn ~ createdAt =>
+        OAuthAccessToken(token, refreshToken, clientId, userId, scope, expireIn, createdAt)
     }
   }
 

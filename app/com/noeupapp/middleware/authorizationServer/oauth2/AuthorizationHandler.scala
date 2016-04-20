@@ -63,7 +63,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
                                       refreshToken,
                                       authInfo.clientId.getOrElse(""),    // TODO Why does Nulab did use option Here?
                                       authInfo.user.id,
-                                      "Bearer",
+//                                      "Bearer",
                                       authInfo.scope,
                                       expiration,
                                       now

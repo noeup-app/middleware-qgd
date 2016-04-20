@@ -30,7 +30,7 @@ class OAuthAccessTokenDAO {
       val res = SQL(
         """
           SELECT *
-          FROM oauth_access_tokens
+          FROM auth_access_tokens
           WHERE token = {token}
         """)
         .on(
@@ -160,7 +160,7 @@ class OAuthAccessTokenDAO {
       SQL(
         """
           SELECT user_uuid
-          FROM oauth_access_tokens
+          FROM auth_access_tokens
           WHERE token = {token}
         """)
         .on(
@@ -180,7 +180,7 @@ class OAuthAccessTokenDAO {
 
       val deleted = SQL(
         """
-          DELETE FROM oauth_access_tokens
+          DELETE FROM auth_access_tokens
           WHERE
             user_uuid = {user_uuid}::uuid AND
             client_id = {client_id}::uuid
@@ -194,7 +194,7 @@ class OAuthAccessTokenDAO {
 
       val inserted = SQL(
         """
-          INSERT INTO oauth_access_tokens (
+          INSERT INTO auth_access_tokens (
             uuid,
             token,
             scope,
@@ -236,7 +236,7 @@ class OAuthAccessTokenDAO {
     DB.withConnection({ implicit c =>
       SQL(
         """
-          UPDATE oauth_access_tokens
+          UPDATE auth_access_tokens
           SET
             token         = {token},
             expires_in    = {expires_in},
@@ -258,7 +258,7 @@ class OAuthAccessTokenDAO {
       SQL(
         """
           SELECT *
-          FROM oauth_access_tokens
+          FROM auth_access_tokens
           WHERE
             refresh_token = {refresh_token}
         """)

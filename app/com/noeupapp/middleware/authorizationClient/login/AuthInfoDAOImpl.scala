@@ -6,6 +6,7 @@ import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import org.sedis.Pool
 import play.api.libs.json.{Reads, Writes}
 import com.noeupapp.middleware.utils.CaseClassUtils
+import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -21,8 +22,10 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     * @param loginInfo The linked login info.
     * @return The retrieved auth info or None if no auth info could be retrieved for the given login info.
     */
-  override def find(loginInfo: api.LoginInfo): Future[Option[T]] =
+  override def find(loginInfo: api.LoginInfo): Future[Option[T]] = {
+    Logger.error(s"AuthInfoDAOImpl.find($loginInfo)")
     Future.successful(pool.withClient(_.get(loginInfo)) flatMap (r => r)) // TODO manage errors
+  }
 
   /**
     * Removes the auth info for the given login info.
@@ -31,6 +34,7 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     * @return A future to wait for the process to be completed.
     */
   override def remove(loginInfo: api.LoginInfo): Future[Unit] ={
+    Logger.error(s"AuthInfoDAOImpl.remove($loginInfo)")
     val serializedLoginInfo: String = loginInfo
     Future.successful(pool.withClient(_.del(serializedLoginInfo))) // TODO manage errors
   }
@@ -48,6 +52,7 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     * @return The saved auth info.
     */
   override def save(loginInfo: api.LoginInfo, authInfo: T): Future[T] = {
+    Logger.error(s"AuthInfoDAOImpl.save($loginInfo)")
     find(loginInfo).flatMap {
       case Some(_) => update(loginInfo, authInfo)
       case None => add(loginInfo, authInfo)
