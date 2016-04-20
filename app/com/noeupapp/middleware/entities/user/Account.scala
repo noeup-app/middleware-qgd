@@ -9,6 +9,7 @@ import com.noeupapp.middleware.authorizationClient.login.LoginInfo
 import org.mindrot.jbcrypt.BCrypt
 import play.api.Play.current
 import play.api.db.DB
+import play.api.libs.json.Json
 
 import scala.language.postfixOps
 
@@ -29,6 +30,8 @@ case class User(
 
 
 object User {
+
+  implicit val UserFormat = Json.format[User]
 
   val parse = {
     get[UUID]("id") ~
