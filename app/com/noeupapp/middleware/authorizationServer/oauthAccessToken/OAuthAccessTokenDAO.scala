@@ -1,5 +1,6 @@
 package com.noeupapp.middleware.authorizationServer.oauthAccessToken
 
+import java.sql.Connection
 import java.util.{Date, UUID}
 
 import anorm.SqlParser._
@@ -15,6 +16,7 @@ import play.api.Play.current
 
 class OAuthAccessTokenDAO {
 
+
   val logger = Logger(this.getClass)
 
 
@@ -24,24 +26,17 @@ class OAuthAccessTokenDAO {
     * @param token_id String
     * @return
     */
-  def find(token_id: String): Expect[OAuthAccessToken] = {
-    Logger.trace("AccessTokens - findAccessTokenDB(" + token_id + ")")
-    DB.withConnection({ implicit c =>
-      val res = SQL(
-        """
-          SELECT *
-          FROM auth_access_tokens
-          WHERE token = {token}
-        """)
-        .on(
-          "token" -> token_id
-        ).as(OAuthAccessToken.accessTokenParser *).headOption
-      Logger.trace("AccessTokens - found " + res)
-      res match {
-        case Some(r) => \/-(r)
-        case None => -\/(FailError("Cannot find access token from token"))
-      }
-    })
+  def find(token_id: String)(implicit connection: Connection): Option[OAuthAccessToken] = {
+    Logger.trace(s"OAuthAccessTokenDAO.find($token_id)")
+    SQL(
+      """
+        SELECT *
+        FROM auth_access_tokens
+        WHERE token = {token}
+      """)
+      .on(
+        "token" -> token_id
+      ).as(OAuthAccessToken.accessTokenParser *).headOption
   }
 
   /**
@@ -51,22 +46,19 @@ class OAuthAccessTokenDAO {
     * @param clientId
     * @return
     */
-  def findByUserAndClient(userId: UUID, clientId: String): Option[OAuthAccessToken] = {
-    Logger.trace("getStoredAccessToken - Try to getStoredAccessToken")
-    DB.withConnection({ implicit c =>
-      SQL(
-        """
-          SELECT *
-          FROM auth_access_tokens
-          WHERE
-            client_id = {client_id} AND
-            user_uuid = {user_uuid}::uuid
-        """)
-        .on(
-          "client_id"   -> clientId,
-          "user_uuid"   -> userId
-        ).as(OAuthAccessToken.accessTokenParser *).headOption
-    })
+  def findByUserAndClient(userId: UUID, clientId: String)(implicit connection: Connection): Option[OAuthAccessToken] = {
+    SQL(
+      """
+        SELECT *
+        FROM auth_access_tokens
+        WHERE
+          client_id = {client_id} AND
+          user_uuid = {user_uuid}::uuid
+      """)
+      .on(
+        "client_id"   -> clientId,
+        "user_uuid"   -> userId
+      ).as(OAuthAccessToken.accessTokenParser *).headOption
   }
 
   /**
@@ -75,10 +67,18 @@ class OAuthAccessTokenDAO {
     * @param refreshToken
     * @return
     */
-  def findByRefreshToken(refreshToken: String): Option[OAuthAccessToken] = ???
-  //accessTokens.where(_.refreshToken === refreshToken).firstOption
-
-
+  def findByRefreshToken(refreshToken: String)(implicit connection: Connection): Option[OAuthAccessToken] = {
+    SQL(
+      """
+        SELECT *
+        FROM auth_access_tokens
+        WHERE
+          refresh_token = {refresh_token}
+      """)
+      .on(
+        "refresh_token" -> refreshToken
+      ).as(OAuthAccessToken.accessTokenParser *).headOption
+  }
 
 
   /**
@@ -87,185 +87,71 @@ class OAuthAccessTokenDAO {
     * @param token
     * @return
     */
-  def insert(token: OAuthAccessToken) = {
-    DB.withConnection({ implicit c =>
-      SQL(
-        """
-          INSERT INTO auth_access_tokens (token,
-                                          refresh_token,
-                                          client_id,
-                                          user_uuid,
-                                          scope,
-                                          expires_in,
-                                          created_at)
-          VALUES ({token},
-                  {refresh_token},
-                  {client_id},
-                  {user_uuid}::uuid,
-                  {scope},
-                  {expires_in},
-                  {created_at})
-        """)
-        .on(
-          "token" -> token.accessToken,
-          "refresh_token" -> token.refreshToken,
-          "client_id" -> token.clientId,
-          "user_uuid" -> token.userId,
-          "scope" -> token.scope,
-          "expires_in" -> token.expiresIn,
-          "created_at" -> token.createdAt
-        ).execute()
-    })
+  def insert(token: OAuthAccessToken)(implicit connection: Connection): Boolean = {
+    SQL(
+      """
+        INSERT INTO auth_access_tokens (token,
+                                        refresh_token,
+                                        client_id,
+                                        user_uuid,
+                                        scope,
+                                        expires_in,
+                                        created_at)
+        VALUES ({token},
+                {refresh_token},
+                {client_id},
+                {user_uuid}::uuid,
+                {scope},
+                {expires_in},
+                {created_at})
+      """)
+      .on(
+        "token" -> token.accessToken,
+        "refresh_token" -> token.refreshToken,
+        "client_id" -> token.clientId,
+        "user_uuid" -> token.userId,
+        "scope" -> token.scope,
+        "expires_in" -> token.expiresIn,
+        "created_at" -> token.createdAt
+      ).execute()
   }
 
-  // token.id match {
-  //   case None => (accessTokens returning accessTokens.map(_.id)) += token
-  //   case Some(x) => accessTokens += token
-  // }
-
-
-  /**
-    * Update existing AccessToken associated with a user and a client.
-    *
-    * @param accessToken
-    * @param userId
-    * @param clientId
-    * @return
-    */
-  def updateByUserAndClient(accessToken: OAuthAccessToken, userId: Int, clientId: String) = ???
-  // session.withTransaction {
-  //   accessTokens.where(a => a.clientId === clientId && a.userId === userId).delete
-  //   accessTokens.insert(accessToken)
-  // }
-
-
-  /**
-    * Update AccessToken object based for the ID in accessToken object
-    *
-    * @param accessToken
-    * @return
-    */
-  def update(accessToken: OAuthAccessToken) = ???
-  //accessTokens.where(_.id === accessToken.id).update(accessToken)
-
-
-  /** DEPRECATED ?
-    * Find user from AccessToken
-    *
-    * @param token
-    * @return
-    */
-  def findUserUUIDFromToken(token: String): Expect[UUID] = {
-    DB.withConnection({ implicit c =>
-      SQL(
-        """
-          SELECT user_uuid
-          FROM auth_access_tokens
-          WHERE token = {token}
-        """)
-        .on(
-          "token" -> token
-        ).as(scalar[UUID].singleOpt) match {
-        case None    => -\/(FailError("User not found"))
-        case Some(x) => \/-(x)
-      }
-    })
+  def deleteByRefreshToken(refreshToken: String)(implicit connection: Connection): Boolean = {
+    SQL(
+      """
+          DELETE FROM auth_access_tokens
+          WHERE
+            refreshToken = {refreshToken}
+      """)
+      .on(
+        "refreshToken" -> refreshToken
+      ).execute()
   }
 
+  def deleteByAccessToken(accessToken: String)(implicit connection: Connection): Boolean = {
+    SQL(
+      """
+          DELETE FROM auth_access_tokens
+          WHERE
+            token = {token}
+      """)
+      .on(
+        "token" -> accessToken
+      ).execute()
+  }
 
-  def deleteExistingAndCreate(tokenObject: OAuthAccessToken, user_uuid: UUID, client_id: String): OAuthAccessToken = {
-    DB.withTransaction({ implicit c => // TODO extract service/DAO
-
-      Logger.trace("AccessTokens - deleteExistingAndCreate")
-
-      val deleted = SQL(
-        """
+  def deleteByClientIdAndUserId(client_id: String, user_uuid: UUID)(implicit connection: Connection): Boolean = {
+    SQL(
+      """
           DELETE FROM auth_access_tokens
           WHERE
             user_uuid = {user_uuid}::uuid AND
-            client_id = {client_id}::uuid
-        """)
-        .on(
-          "client_id" -> client_id,
-          "user_uuid" -> user_uuid
-        ).executeUpdate()
-
-      Logger.trace("AccessTokens - deleteExistingAndCreate - deleted line number : " + deleted)
-
-      val inserted = SQL(
-        """
-          INSERT INTO auth_access_tokens (
-            uuid,
-            token,
-            scope,
-            expires_in,
-            created_at,
-            refresh_token,
-            user_uuid,
-            client_id
-          )
-          VALUES (
-            {uuid}::uuid,
-            {token},
-            {scope},
-            {expires_in},
-            {created_at},
-            {refresh_token},
-            {user_uuid}::uuid,
-            {client_id}::uuid
-          )
-        """)
-        .on(
-          "uuid" -> UUID.randomUUID(),
-          "token" -> tokenObject.accessToken,
-          "scope" -> tokenObject.scope,
-          "expires_in" -> tokenObject.expiresIn,
-          "created_at" -> tokenObject.createdAt,
-          "refresh_token" -> tokenObject.refreshToken,
-          "user_uuid" -> user_uuid,
-          "client_id" -> client_id
-        ).executeUpdate()
-      Logger.trace("AccessTokens - deleteExistingAndCreate - inserted line number : " + inserted)
-      tokenObject
-    })
-  }
-
-
-  def refreshAccessToken(refreshToken: String, newToken: String, createdAt: Date, expiresIn: Long): Boolean = {
-    Logger.trace("refreshAccessToken")
-    DB.withConnection({ implicit c =>
-      SQL(
-        """
-          UPDATE auth_access_tokens
-          SET
-            token         = {token},
-            expires_in    = {expires_in},
-            created_at    = {created_at}
-          WHERE
-            refresh_token = {refresh_token}
-        """)
-        .on(
-          "token"         -> newToken,
-          "expires_in"    -> expiresIn,
-          "created_at"    -> createdAt,
-          "refresh_token" -> refreshToken
-        ).executeUpdate() == 1
-    })
-  }
-
-  def refreshToken(refreshToken: String): Option[OAuthAccessToken] = {
-    DB.withConnection({ implicit c =>
-      SQL(
-        """
-          SELECT *
-          FROM auth_access_tokens
-          WHERE
-            refresh_token = {refresh_token}
-        """)
-        .on(
-          "refresh_token" -> refreshToken
-        ).as(OAuthAccessToken.accessTokenParser *).headOption
-    })
+            client_id = {client_id}
+      """)
+      .on(
+        "client_id" -> client_id,
+        "user_uuid" -> user_uuid
+      ).execute()
   }
 
 }

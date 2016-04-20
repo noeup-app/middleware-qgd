@@ -1,13 +1,32 @@
 package com.noeupapp.middleware.errorHandle
 
+import java.sql.Connection
+
 import play.api.mvc.Results._
 import play.api.mvc._
 import com.noeupapp.middleware.errorHandle.FailError.Expect
+import play.api.Logger
+import play.api.db.DB
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success, Try}
 import scalaz._
+import play.api.Play.current
 
 object ExceptionEither {
+
+  def safeDatabaseCall[T](unsafeBlock: (Connection) => Expect[T]): Future[Expect[T]] = {
+    scala.util.Try {
+      DB.withTransaction({ implicit c =>
+        unsafeBlock(c)
+      })
+    } match {
+      case Failure(e) =>
+        Future.successful(-\/(FailError("Error while finding access token", e)))
+      case Success(res) => Future.successful(res)
+    }
+  }
 
   def Try[T](t: => T): Expect[T] = {
     try{

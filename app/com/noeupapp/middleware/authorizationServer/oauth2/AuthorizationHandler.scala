@@ -7,7 +7,7 @@ import com.mohiva.play.silhouette.api
 import com.noeupapp.middleware.authorizationClient.login.{LoginInfo, PasswordInfoDAO}
 import com.noeupapp.middleware.authorizationServer.authCode.{AuthCode, AuthCodeService}
 import com.noeupapp.middleware.authorizationServer.client.Client
-import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessToken, OAuthAccessTokenDAO}
+import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessToken, OAuthAccessTokenDAO, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.user.{User, UserService}
 import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config}
 import com.noeupapp.middleware.utils.NamedLogger
@@ -18,9 +18,11 @@ import scala.concurrent.Future
 import scala.language.implicitConversions
 import scalaoauth2.provider._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scalaz.{-\/, EitherT, \/-}
+import com.noeupapp.middleware.utils.FutureFunctor._
 
 class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
-                                      oAuthAccessTokenDAO: OAuthAccessTokenDAO,
+                                      accessTokenService: OAuthAccessTokenService,
                                       userService: UserService,
                                       authCodeService: AuthCodeService) extends DataHandler[User] with NamedLogger {
 
@@ -70,11 +72,17 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
                                     )
 
     //authAccessService.saveAccessToken(token, authInfo) // TODO Check if needed here (does provider really needs to keep token ?)
-    oAuthAccessTokenDAO.insert(token)
 
-    logger.debug(s"...create access Token: $token")
-
-    Future.successful(token)
+    {
+      for{
+        _ <- EitherT(accessTokenService.insert(token))
+      } yield token
+    }.run map {
+      case -\/(e) =>
+        Logger.error(s"Error on creating access token $e")
+        throw new Exception("Error on creating access token")
+      case \/-(t) => t
+    }
   }
 
 
@@ -84,18 +92,15 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @param authInfo
     * @return
     */
-  override def getStoredAccessToken(authInfo: AuthInfo[User]): Future[Option[AccessToken]] = Future {
+  override def getStoredAccessToken(authInfo: AuthInfo[User]): Future[Option[AccessToken]] = {
     Logger.error("AuthorizationHandler.getStoredAccessToken")
     authInfo.clientId match {
       case Some(clientId) =>
-        try{
-          oAuthAccessTokenDAO.findByUserAndClient(authInfo.user.id, clientId).map(e => e)
-        }catch {
-          case e: Exception =>
-            Logger.error("AuthorizationHandler.getStoredAccessToken", e)
-            None
-        }
-      case None => None
+          accessTokenService.findByUserAndClient(authInfo.user.id, clientId).map{
+            case -\/(_) => None
+            case \/-(res) => Some(res)
+          }
+      case None => Future.successful(None)
     }
   }
 

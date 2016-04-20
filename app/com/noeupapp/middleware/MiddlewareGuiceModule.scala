@@ -26,7 +26,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 import com.noeupapp.middleware.authorizationClient.provider.QGDProvider
 import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthenticatorDAO
-import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenDAO
+import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
 import org.joda.time.DateTime
 
 import scala.concurrent.Future
@@ -108,13 +108,13 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
                                  idGenerator: IDGenerator,
                                  cacheLayer: CacheLayer,
 //                                 dao: BearerAuthenticatorDAO,
-                                 authAccessTokenDAO: OAuthAccessTokenDAO,
+                                 accessTokenService: OAuthAccessTokenService,
                                  userService: UserService,
                                  configuration: Configuration,
                                  clock: Clock): AuthenticatorService[BearerTokenAuthenticator] = {
 
 
-    val dao = new BearerAuthenticatorDAO(authAccessTokenDAO, userService)
+    val dao = new BearerAuthenticatorDAO(accessTokenService, userService)
     val config: BearerTokenAuthenticatorSettings = BearerTokenAuthenticatorSettings()
     new BearerTokenAuthenticatorService(config, dao, idGenerator, clock)
   }
