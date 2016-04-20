@@ -112,8 +112,8 @@ class SignUps @Inject()(
           deleted = false
         )
         for {
-          avatar <- avatarService.retrieveURL(data.email)
-          user <- userService.save(Account(loginInfo, user.copy(avatarUrl = avatar)))
+//          avatar <- avatarService.retrieveURL(data.email)
+          user <- userService.save(Account(loginInfo, user/*.copy(avatarUrl = avatar)*/))
           authInfo <- authInfoRepository.add(loginInfo, authInfo)
           authenticator <- env.authenticatorService.create(loginInfo)
           value <- env.authenticatorService.init(authenticator)
