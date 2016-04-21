@@ -4,6 +4,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.SecuredErrorHandler
+import com.noeupapp.middleware.utils.RequestHelper
 import play.api.http.DefaultHttpErrorHandler
 import play.api.i18n.Messages
 import play.api.libs.json.Json
@@ -13,6 +14,7 @@ import play.api.routing.Router
 import play.api.{Configuration, Logger, OptionalSourceMapper}
 
 import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object ErrorHandler {
   case class JsonBadRequest(cause: String)
@@ -41,11 +43,15 @@ class ErrorHandler @Inject() (
     * @param messages The messages for the current language.
     * @return The result to send to the client.
     */
-  override def onNotAuthenticated(request: RequestHeader, messages: Messages): Option[Future[Result]] = {
-    Logger.error("******* onNotAuthenticated :\n" + request.headers + "\n Message : \n" + messages )
-    Some(Future.successful(Ok("You are not authorized to access this resource !")))
-    //    Some(Future.successful(Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())))
-  }
+  override def onNotAuthenticated(request: RequestHeader, messages: Messages): Option[Future[Result]] = Some(Future {
+    RequestHelper.isJson(request) match {
+      case true =>
+        Unauthorized("You are not not authenticated")
+          .withHeaders("X-Error-Type" -> "Unauthenticated")
+      case false =>
+        Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
+    }
+  })
 
   /**
     * Called when a user is authenticated but not authorized.
@@ -56,10 +62,15 @@ class ErrorHandler @Inject() (
     * @param messages The messages for the current language.
     * @return The result to send to the client.
     */
-  override def onNotAuthorized(request: RequestHeader, messages: Messages): Option[Future[Result]] = {
-    //Some(Future.successful(Redirect(com.noeupapp.middleware.authorizationClient.controllers.login.middleware.routes.Logins.loginAction()).flashing("error" -> Messages("access.denied")(messages))))
-    Some(Future.successful(Forbidden("You are not authorized to access this resource !")))
-  }
+  override def onNotAuthorized(request: RequestHeader, messages: Messages): Option[Future[Result]] = Some{Future{
+    RequestHelper.isJson(request) match {
+      case true =>
+        Unauthorized("You are not authorized to access this resource !")
+          .withHeaders("X-Error-Type" -> "Unauthorized")
+      case false =>
+        Forbidden("You are not authorized to access this resource !")
+    }
+  }}
 
 
 
