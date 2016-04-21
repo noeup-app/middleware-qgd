@@ -139,17 +139,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     request match {
       case request: PasswordRequest =>
         Logger.warn(request.username)
-        userService.findByEmail(request.username) flatMap { userFoundByEmail =>
-          val passwordFound  = passwordInfoDAO.find(api.LoginInfo("credentials", request.username))
-          passwordFound.map{ password =>
-            (userFoundByEmail, password) match {
-              case (a @ Some(_),Some(_)) =>
-                logger.debug(s"findUser => found $a")
-                a
-              case _ => None
-            }
-          }
-        }
+        userService.validateUser(request.username, request.password)
       case request: ClientCredentialsRequest =>
         // Client credential cannot return any user and is just used to provide general information on client
         logger.debug("ClientCredentialsRequest : no user defined")
