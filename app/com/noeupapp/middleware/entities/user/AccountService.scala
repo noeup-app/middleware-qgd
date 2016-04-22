@@ -28,15 +28,15 @@ class AccountService @Inject()(userService: UserService, roleService: RoleServic
     * @return The retrieved user or None if no user could be retrieved for the given login info.
     */
   def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
-    println("------------------------AccountService.retrieve : " + loginInfo)
+    Logger.debug("------------------------AccountService.retrieve : " + loginInfo)
     DB.withConnection({ implicit c =>
       // Cas particulier de l'utilisation de l'Expect. gérer l'erreur avec eventbus et retourner une Future
       userService.findByEmail(loginInfo.providerKey).map{
         case Some(user) =>
-          Logger.debug("AccountService.retrieve : no user found with " + loginInfo)
+          Logger.debug("AccountService.retrieve : user found : " + user)
           Some(Account(loginInfo, user))
         case None =>
-          Logger.debug("userDAO.find : no user found with " + loginInfo)
+          Logger.debug("AccountService.retrieve : no user found with " + loginInfo)
           None
       }
     })
