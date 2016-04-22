@@ -16,7 +16,7 @@ import play.api.Play.current
 
 object ExceptionEither {
 
-  def safeDatabaseCall[T](unsafeBlock: (Connection) => Expect[T]): Future[Expect[T]] = {
+  def TryBDCall[T](unsafeBlock: (Connection) => Expect[T]): Future[Expect[T]] = {
     scala.util.Try {
       DB.withTransaction({ implicit c =>
         unsafeBlock(c)

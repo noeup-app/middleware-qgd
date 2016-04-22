@@ -32,7 +32,7 @@ class OAuthAccessTokenService @Inject() (oAuthAccessTokenDAO: OAuthAccessTokenDA
     */
   def find(token: String): Future[Expect[OAuthAccessToken]] = {
     Logger.trace(s"OAuthAccessTokenService.find($token)")
-    ExceptionEither.safeDatabaseCall{ implicit c =>
+    ExceptionEither.TryBDCall { implicit c =>
       oAuthAccessTokenDAO.find(token) match {
         case Some(r) => \/-(r)
         case None => -\/(FailError("Access token not found"))
@@ -48,7 +48,7 @@ class OAuthAccessTokenService @Inject() (oAuthAccessTokenDAO: OAuthAccessTokenDA
     */
   def findByUserAndClient(userId: UUID, clientId: String): Future[Expect[OAuthAccessToken]] = {
     Logger.trace(s"OAuthAccessTokenService.findByUserAndClient($userId, $clientId)")
-    ExceptionEither.safeDatabaseCall{ implicit c =>
+    ExceptionEither.TryBDCall{ implicit c =>
       oAuthAccessTokenDAO.findByUserAndClient(userId, clientId) match {
         case Some(r) => \/-(r)
         case None => -\/(FailError("Access token not found"))
@@ -63,7 +63,7 @@ class OAuthAccessTokenService @Inject() (oAuthAccessTokenDAO: OAuthAccessTokenDA
     */
   def findByRefreshToken(refreshToken: String): Future[Expect[OAuthAccessToken]] = {
     Logger.trace(s"OAuthAccessTokenService.findByRefreshToken($refreshToken)")
-    ExceptionEither.safeDatabaseCall{ implicit c =>
+    ExceptionEither.TryBDCall{ implicit c =>
       oAuthAccessTokenDAO.findByRefreshToken(refreshToken) match {
         case Some(r) => \/-(r)
         case None => -\/(FailError("Access token not found"))
@@ -79,7 +79,7 @@ class OAuthAccessTokenService @Inject() (oAuthAccessTokenDAO: OAuthAccessTokenDA
     */
   def insert(accessToken: OAuthAccessToken): Future[Expect[Boolean]] = {
     Logger.trace(s"OAuthAccessTokenService.insert($accessToken)")
-    ExceptionEither.safeDatabaseCall{ implicit c =>
+    ExceptionEither.TryBDCall{ implicit c =>
       oAuthAccessTokenDAO.insert(accessToken)
       \/-(true)
     }
@@ -118,21 +118,21 @@ class OAuthAccessTokenService @Inject() (oAuthAccessTokenDAO: OAuthAccessTokenDA
 
 
   def deleteByClientIdAndUserId(client_id: String, user_uuid: UUID): Future[Expect[Boolean]] = {
-    ExceptionEither.safeDatabaseCall{ implicit c =>
+    ExceptionEither.TryBDCall{ implicit c =>
       oAuthAccessTokenDAO.deleteByClientIdAndUserId(client_id, user_uuid)
       \/-(true)
     }
   }
 
   def deleteByRefreshToken(refreshToken: String): Future[Expect[Boolean]] = {
-    ExceptionEither.safeDatabaseCall{ implicit c =>
+    ExceptionEither.TryBDCall{ implicit c =>
       oAuthAccessTokenDAO.deleteByRefreshToken(refreshToken)
       \/-(true)
     }
   }
 
   def deleteByAccessToken(accessToken: String): Future[Expect[Boolean]] = {
-    ExceptionEither.safeDatabaseCall{ implicit c =>
+    ExceptionEither.TryBDCall{ implicit c =>
       oAuthAccessTokenDAO.deleteByAccessToken(accessToken)
       \/-(true)
     }
