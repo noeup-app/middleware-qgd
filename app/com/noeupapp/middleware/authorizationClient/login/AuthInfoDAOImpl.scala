@@ -11,6 +11,9 @@ import play.api.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
+import com.noeupapp.middleware.errorHandle.ExceptionEither._
+
+import scalaz.{-\/, \/-}
 
 abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads: Reads[T], override val classTag: ClassTag[T]) extends DelegableAuthInfoDAO[T] with CaseClassUtils {
 
@@ -22,9 +25,16 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     * @param loginInfo The linked login info.
     * @return The retrieved auth info or None if no auth info could be retrieved for the given login info.
     */
-  override def find(loginInfo: api.LoginInfo): Future[Option[T]] = {
-    Logger.error(s"AuthInfoDAOImpl.find($loginInfo)")
-    Future.successful(pool.withClient(_.get(loginInfo)) flatMap (r => r)) // TODO manage errors
+  override def find(loginInfo: api.LoginInfo): Future[Option[T]] = Future {
+    Logger.debug(s"AuthInfoDAOImpl.find($loginInfo)")
+    Try{
+      pool.withClient(_.get(loginInfo)) flatMap (r => r)
+    } match {
+      case \/-(res) => res
+      case -\/(e) =>
+        Logger.error("AuthInfoDAOImpl.find" + e.toString)
+        None
+    }
   }
 
   /**
@@ -33,10 +43,16 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     * @param loginInfo The login info for which the auth info should be removed.
     * @return A future to wait for the process to be completed.
     */
-  override def remove(loginInfo: api.LoginInfo): Future[Unit] ={
+  override def remove(loginInfo: api.LoginInfo): Future[Unit] = Future {
     Logger.error(s"AuthInfoDAOImpl.remove($loginInfo)")
     val serializedLoginInfo: String = loginInfo
-    Future.successful(pool.withClient(_.del(serializedLoginInfo))) // TODO manage errors
+    Try {
+      pool.withClient(_.del(serializedLoginInfo))
+    } match {
+      case \/-(_) =>
+      case -\/(e) =>
+        Logger.error("AuthInfoDAOImpl.find" + e.toString)
+    }
   }
 
   /**
@@ -53,7 +69,7 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     */
   override def save(loginInfo: api.LoginInfo, authInfo: T): Future[T] = {
     Logger.error(s"AuthInfoDAOImpl.save($loginInfo)")
-    find(loginInfo).flatMap {
+    find(loginInfo).flatMap { // TODO manage errors
       case Some(_) => update(loginInfo, authInfo)
       case None => add(loginInfo, authInfo)
     }
