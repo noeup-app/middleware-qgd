@@ -48,16 +48,4 @@ object User {
     // TODO Need to parse roles and scopes
   }
 
-
-  /**
-    * Encrypt the clear password using b-crypt
-    *
-    * @param password  the clear password to encrypt
-    * @return          the hashed password and the salt used
-    */
-  def encryptPassword(password: String): (String, Option[String]) = {
-    val salt = BCrypt.gensalt(10)
-    val hash = BCrypt.hashpw(password, salt)
-    (hash, Some(salt))
-  }
 }
