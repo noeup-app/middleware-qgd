@@ -8,7 +8,8 @@ import com.noeupapp.middleware.authorizationClient.login.{LoginInfo, PasswordInf
 import com.noeupapp.middleware.authorizationServer.authCode.{AuthCode, AuthCodeService}
 import com.noeupapp.middleware.authorizationServer.client.Client
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessToken, OAuthAccessTokenDAO, OAuthAccessTokenService}
-import com.noeupapp.middleware.entities.user.{User, UserService}
+import com.noeupapp.middleware.entities.user.User
+import com.noeupapp.middleware.entities.user.UserService
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError._
 import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config}

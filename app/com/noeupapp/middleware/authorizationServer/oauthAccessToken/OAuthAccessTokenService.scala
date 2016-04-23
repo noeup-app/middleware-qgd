@@ -5,7 +5,7 @@ import java.util.{Date, UUID}
 import anorm.SqlParser._
 import anorm._
 import com.google.inject.Inject
-import com.noeupapp.middleware.entities.user.{User, UserService}
+import com.noeupapp.middleware.entities.user.UserService
 import com.noeupapp.middleware.errorHandle.{ExceptionEither, FailError}
 import com.noeupapp.middleware.errorHandle.FailError._
 import play.api.Logger

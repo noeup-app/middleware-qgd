@@ -1,4 +1,4 @@
-package com.noeupapp.bypapi.entites.organisation
+package com.noeupapp.middleware.entities.organisation
 
 import java.util.UUID
 

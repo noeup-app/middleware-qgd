@@ -10,7 +10,8 @@ import play.api.i18n.MessagesApi
 import play.api.mvc.{Action, AnyContent, Result}
 import RoleAuthorization.WithRole
 import ScopeAuthorization.WithScope
-import com.noeupapp.middleware.entities.user.{Account, User}
+import com.noeupapp.middleware.entities.account.Account
+import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.utils.RequestHelper
 
 import scala.concurrent.Future

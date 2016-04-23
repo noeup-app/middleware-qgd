@@ -6,7 +6,8 @@ import com.mohiva.play.silhouette.api.Environment
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import com.noeupapp.middleware.authorizationClient.AuthorizationResult
-import com.noeupapp.middleware.entities.user.{Account, User}
+import com.noeupapp.middleware.entities.account.Account
+import com.noeupapp.middleware.entities.user.User
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.Result
 

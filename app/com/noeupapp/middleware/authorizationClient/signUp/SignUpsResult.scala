@@ -9,7 +9,7 @@ import play.api.data.Form
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.{AnyContent, Request, Result}
 import SignUpForm.Data
-import com.noeupapp.middleware.entities.user.{Account, User}
+import com.noeupapp.middleware.entities.account.Account
 
 /**
   * Define all HTTP results (Json/Html)

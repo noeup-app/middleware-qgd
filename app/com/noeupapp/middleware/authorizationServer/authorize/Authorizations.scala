@@ -10,7 +10,7 @@ import com.mohiva.play.silhouette.impl.providers.{CredentialsProvider, SocialPro
 import com.noeupapp.middleware.authorizationClient.login.Login
 import com.noeupapp.middleware.authorizationServer.authCode.{AuthCode, AuthCodeService}
 import com.noeupapp.middleware.authorizationServer.client.Client
-import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
+import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import play.api.db.DB
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.Action
