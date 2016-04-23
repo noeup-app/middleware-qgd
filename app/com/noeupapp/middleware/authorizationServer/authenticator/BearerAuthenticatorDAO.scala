@@ -17,18 +17,22 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class BearerAuthenticatorDAO(authAccessTokenService: OAuthAccessTokenService,
                              userService: UserService
                             ) extends AuthenticatorDAO[BearerTokenAuthenticator]{
+
   override def find(id: String): Future[Option[BearerTokenAuthenticator]] = {
     authAccessTokenService.find(id) flatMap {
       case \/-(accessToken) => {
         Logger.debug(s"BearerAuthenticatorDAO.find($id) -> authAccessTokenService.find -> $accessToken")
+        Logger.debug(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) ...")
         userService.findById(accessToken.userId).map{ _.map{ user =>
-          Logger.debug(s"BearerAuthenticatorDAO.find($id) -> $user")
-          BearerTokenAuthenticator(id,
+          Logger.debug(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) -> $user")
+          val a = BearerTokenAuthenticator(id,
             api.LoginInfo("credentials", user.email.getOrElse("")),
             new DateTime(),
             new DateTime(accessToken.createdAt).plus(accessToken.expiresIn.getOrElse(0l)),
             None
           )
+          Logger.info(s"BearerAuthenticatorDAO.find($id) -> $a")
+          a
         }}
       }
       case -\/(e) =>
@@ -38,17 +42,17 @@ class BearerAuthenticatorDAO(authAccessTokenService: OAuthAccessTokenService,
   }
 
   override def update(authenticator: BearerTokenAuthenticator): Future[BearerTokenAuthenticator] = {
-    println(s"====> AuthenticatorDAO.update($authenticator)")
+    Logger.warn(s"AuthenticatorDAO.update($authenticator)")
     Future.successful(authenticator)
   }
 
   override def remove(id: String): Future[Unit] = {
-    println(s"====> AuthenticatorDAO.remove")
+    Logger.warn(s"AuthenticatorDAO.remove")
     authAccessTokenService.deleteByAccessToken(id).map(_ => ())
   }
 
   override def add(authenticator: BearerTokenAuthenticator): Future[BearerTokenAuthenticator] = {
-    println(s"====> AuthenticatorDAO.add($authenticator)")
+    Logger.warn(s"AuthenticatorDAO.add($authenticator)")
     Future(authenticator)
   }
 }

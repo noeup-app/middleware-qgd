@@ -75,13 +75,18 @@ class UserService @Inject()(userDAO: UserDAO,
     * @param password non hashed pwd
     */
   def validateUser(email: String, password: String): Future[Option[User]] = {
+    Logger.debug(s"UserService.validateUser($email, ******)...")
     for{
       user         <- OptionT(findByEmail(email))
       passwordInfo <- OptionT(passwordInfoDAO.find(LoginInfo("credentials", email)))
     } yield {
       passwordHasher.matches(passwordInfo, password) match {
-        case true => Some(user)
-        case false => None
+        case true =>
+          Logger.debug(s"UserService.validateUser($email, ******) -> Some($user)")
+          Some(user)
+        case false =>
+          Logger.debug(s"UserService.validateUser($email, ******) -> None")
+          None
       }
     }
   }.run.map(_.flatten)
