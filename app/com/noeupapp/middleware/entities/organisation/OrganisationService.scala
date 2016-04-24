@@ -12,13 +12,13 @@ import scalaz.{-\/, \/-}
 
 
 class OrganisationService @Inject() (organisationDAO: OrganisationDAO){
-  def fetchOrganisation(organisationId: UUID): Future[Expect[Organisation]] =
-    TryBDCall({ implicit c =>
+  def fetchOrganisation(organisationId: UUID): Future[Expect[Option[Organisation]]] =
+    TryBDCall{ implicit c =>
       // TODO : limit result to own processes
       // var list = processDAO.getByAdmin()
       organisationDAO.findById(organisationId) match{
-        case Some(process) => \/-(process)
-        case None => -\/(FailError("Cannot find the organisation"))
+        case res @ Some(_) => \/-(res)
+        case None =>  \/-(None)
       }
-    })
+    }
 }
