@@ -34,20 +34,17 @@ class AccountService @Inject()(userService: UserService,
     * @return The retrieved user or None if no user could be retrieved for the given login info.
     */
   def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
-    userService.findByEmail(loginInfo.providerKey).map(_.map{ user =>
-//      organisationService.fetchOrganisation(user.id).map(_.map{ organisation =>
-        Account(loginInfo, user, None)
-//      })
-    })
-//      {
-//        for {
-//          user         <- EitherT(userService.findByEmail(loginInfo.providerKey))
-////          organisation <- EitherT(organisationService.fetchOrganisation(user.id))
-//        } yield Account(loginInfo, user, None)
-//      }.run map {
-//        case -\/(_) => None
-//        case \/-(res) => Some(res)
-//      }
+      {
+        for {
+          user         <- EitherT(userService.findByEmailEither(loginInfo.providerKey))
+          organisation <- EitherT(userService.findOrganisationByUserId(user.id))
+        } yield Account(loginInfo, user, organisation)
+      }.run map {
+        case -\/(e) =>
+          Logger.error(s"User not found $e")
+          None
+        case \/-(res) => Some(res)
+      }
   }
 
 
