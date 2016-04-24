@@ -44,4 +44,4 @@ POST        /oauth2/access_token                 com.noeupapp.middleware.authori
 
 
 # Entity
-GET         /entity/users/me                    com.noeupapp.middleware.entities.user.Users.me
+GET         /entity/accounts/me                  com.noeupapp.middleware.entities.account.Accounts.me

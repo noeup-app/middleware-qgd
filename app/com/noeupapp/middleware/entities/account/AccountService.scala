@@ -6,8 +6,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import com.noeupapp.middleware.entities.organisation.Organisation
-import com.noeupapp.middleware.entities.organisation.OrganisationService
+import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
 import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.entities.user.{User, UserService}
 import play.api.Logger
@@ -35,15 +34,20 @@ class AccountService @Inject()(userService: UserService,
     * @return The retrieved user or None if no user could be retrieved for the given login info.
     */
   def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
-      {
-        for {
-          user         <- EitherT(userService.findByEmail(loginInfo.providerKey))
-          organisation <- EitherT(organisationService.fetchOrganisation(user.id))
-        } yield Account(loginInfo, user, Some(organisation))
-      }.run.map{
-        case \/-(r) => Some(r)
-        case -\/(r) => None
-      }
+    userService.findByEmail(loginInfo.providerKey).map(_.map{ user =>
+//      organisationService.fetchOrganisation(user.id).map(_.map{ organisation =>
+        Account(loginInfo, user, None)
+//      })
+    })
+//      {
+//        for {
+//          user         <- EitherT(userService.findByEmail(loginInfo.providerKey))
+////          organisation <- EitherT(organisationService.fetchOrganisation(user.id))
+//        } yield Account(loginInfo, user, None)
+//      }.run map {
+//        case -\/(_) => None
+//        case \/-(res) => Some(res)
+//      }
   }
 
 
@@ -87,7 +91,7 @@ class AccountService @Inject()(userService: UserService,
     Logger.debug("AccountService.save(" + profile + ")")
 
     userService.findByEmail(profile.loginInfo.providerKey) flatMap  {
-      case \/-(user) => // Update user with profile
+      case Some(user) => // Update user with profile
         val account = Account(
           profile.loginInfo,
           user.copy(
@@ -99,7 +103,7 @@ class AccountService @Inject()(userService: UserService,
           None
         )
         save(account)
-      case -\/(_) => // Insert a new user
+      case None => // Insert a new user
         val account = Account(
           loginInfo = profile.loginInfo,
           user = User(
