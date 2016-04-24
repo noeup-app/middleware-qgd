@@ -16,7 +16,7 @@ class OrganisationDAO {
          WHERE id = {id}::UUID;""")
       .on(
         'id -> organisationId
-      ).as(Organisation.parse *).headOption
+      ).as(Organisation.parseDB *).headOption
   }
 
 
