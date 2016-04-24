@@ -13,7 +13,7 @@ class OrganisationDAO {
     SQL(
       """SELECT *
          FROM entity_organisations
-         WHERE id = {id};""")
+         WHERE id = {id}::UUID;""")
       .on(
         'id -> organisationId
       ).as(Organisation.parse *).headOption
