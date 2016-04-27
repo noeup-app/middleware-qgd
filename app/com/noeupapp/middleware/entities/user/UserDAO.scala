@@ -17,6 +17,19 @@ import scala.language.postfixOps
 class UserDAO extends GlobalReadsWrites {
 
   /**
+    * Finds all users in DB.
+    *
+    * @return
+    */
+  def findAll(implicit connection: Connection): List[User] = {
+    SQL(
+      """SELECT id, first_name, last_name, email, avatar_url, active, deleted
+         FROM entity_users
+      """)
+      .as(User.parse *)
+  }
+
+  /**
     * Finds a user by its login info.
     *
     * @param email user email

@@ -35,6 +35,17 @@ class UserService @Inject()(userDAO: UserDAO,
                             entityService: EntityService,
                             organisationService: OrganisationService) {
 
+  /**
+    * Search and get all users
+    *
+    * @return List of users
+    */
+  def findAll: Future[Expect[List[User]]] = {
+    TryBDCall[List[User]]{ implicit c =>
+      \/-(userDAO.findAll)
+    }
+  }
+
   // TODO merge findByEmail and findByEmailEither ?
   def findByEmail(email: String): Future[Option[User]] = {
     Future{
@@ -104,7 +115,7 @@ class UserService @Inject()(userDAO: UserDAO,
 
   /**
     * Add new user
- *
+    *
     * @param userInput
     * @return Complete user with UUID created
     */
@@ -147,7 +158,7 @@ class UserService @Inject()(userDAO: UserDAO,
 
   /**
     * Validate a user thanks to it email and password
- *
+    *
     * @param email user email
     * @param password non hashed pwd
     */

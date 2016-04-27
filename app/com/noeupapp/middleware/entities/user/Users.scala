@@ -2,6 +2,7 @@ package com.noeupapp.middleware.entities.user
 
 import java.util.UUID
 import javax.inject.Inject
+
 import scala.language.implicitConversions
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -60,5 +61,20 @@ class Users @Inject()(
         case -\/(_)           => InternalServerError("Error while creating process")
       }
   }
+
+
+  /**
+    * Find all users
+    *
+    * @return
+    */
+  def fetchAll = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
+    .async { implicit request =>
+      // TODO limit search to users I can admin
+      userService.findAll map {
+        case -\/(_) => InternalServerError(Json.toJson("Error while fetching users"))
+        case \/-(usersList) => Ok(Json.toJson(usersList.map(u => toUserOut(u))))
+      }
+    }
 
 }
