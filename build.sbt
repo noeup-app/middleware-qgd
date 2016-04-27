@@ -19,6 +19,9 @@ libraryDependencies ++= Seq(
   "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
   jdbc,
   //
+  // S3
+  "com.amazonaws" % "aws-java-sdk" % "1.10.72",
+  //
   // TESTS
   specs2 % Test,
   "com.mohiva" %% "play-silhouette-testkit" % "3.0.0" % "test",

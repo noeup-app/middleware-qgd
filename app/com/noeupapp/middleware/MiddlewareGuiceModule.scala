@@ -1,5 +1,8 @@
 package com.noeupapp.middleware
 
+import com.amazonaws.{ClientConfiguration, Protocol}
+import com.amazonaws.auth.BasicAWSCredentials
+import com.amazonaws.services.s3.AmazonS3Client
 import com.google.inject.{AbstractModule, Provides}
 import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
@@ -28,6 +31,7 @@ import com.noeupapp.middleware.authorizationClient.provider.QGDProvider
 import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthenticatorDAO
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
+import com.noeupapp.middleware.utils.s3.S3Config
 import org.joda.time.DateTime
 
 import scala.concurrent.Future
@@ -326,4 +330,19 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
 //    val settings = configuration.underlying.as[OpenIDSettings]("silhouette.yahoo")
 //    new YahooProvider(httpLayer, new PlayOpenIDService(client, settings), settings)
 //  }
+
+
+  @Provides
+  def provideS3Config(configuration: Configuration): S3Config = {
+    configuration.underlying.as[S3Config]("s3config")
+  }
+
+  @Provides
+  def provideAmazonS3Client(s3Config: S3Config): AmazonS3Client = {
+    val awsCredentials = new BasicAWSCredentials(s3Config.key, s3Config.secret)
+    val config = new ClientConfiguration
+    val s3 = new AmazonS3Client(awsCredentials, config.withProtocol(Protocol.HTTP))
+    s3.setEndpoint(s3Config.host)
+    s3
+  }
 }
