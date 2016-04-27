@@ -28,6 +28,21 @@ case class User(
                deleted: Boolean
                )
 
+case class UserIn(
+                 firstName: Option[String],
+                 lastName: Option[String],
+                 email: Option[String],
+                 avatarUrl: Option[String]
+               )
+
+case class UserOut(
+                 id: UUID,
+                 firstName: Option[String],
+                 lastName: Option[String],
+                 email: Option[String],
+                 avatarUrl: Option[String],
+                 active: Boolean
+               )
 
 object User {
 
@@ -47,5 +62,7 @@ object User {
     }
     // TODO Need to parse roles and scopes
   }
+
+  implicit def toUserOut(u:User):UserOut = UserOut(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.active)
 
 }

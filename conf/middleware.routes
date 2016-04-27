@@ -45,3 +45,4 @@ POST        /oauth2/access_token                 com.noeupapp.middleware.authori
 
 # Entity
 GET         /entity/users/me                    com.noeupapp.middleware.entities.user.Users.me
+POST        /entity/users                       com.noeupapp.middleware.entities.user.Users.add

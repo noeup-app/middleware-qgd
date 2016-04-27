@@ -2,13 +2,21 @@ package com.noeupapp.middleware.entities.user
 
 import java.util.UUID
 import javax.inject.Inject
-
+import scala.language.implicitConversions
 import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
+
+
+import com.noeupapp.middleware.errorHandle.ExceptionEither._
+import com.noeupapp.middleware.errorHandle.FailError.Expect
+
+import com.noeupapp.middleware.authorizationClient.ScopeAndRoleAuthorization
+import com.noeupapp.middleware.authorizationClient.RoleAuthorization.WithRole
+import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScope
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.RequestHelper
 import play.api.Logger
@@ -20,6 +28,8 @@ import play.api.mvc.{Action, AnyContent, Request, Result}
 import scala.concurrent.Future
 import com.noeupapp.middleware.entities.user.User._
 
+import scalaz.{-\/, \/-}
+
 /**
  * The user controller
  *
@@ -29,6 +39,7 @@ import com.noeupapp.middleware.entities.user.User._
 class Users @Inject()(
                          val messagesApi: MessagesApi,
                          val env: Environment[Account, BearerTokenAuthenticator],
+                         scopeAndRoleAuthorization: ScopeAndRoleAuthorization,
                          userService: UserService)
   extends Silhouette[Account, BearerTokenAuthenticator] {
 
@@ -38,6 +49,15 @@ class Users @Inject()(
       case None => NotFound("Cannot to fetch your data, not found")
       case Some(user) => Ok(Json.toJson(user))
     }
+  }
+
+  def add = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.Processes"*/), WithRole()))
+    .async(parse.json[UserIn]) { implicit request =>
+      val newUser = request.request.body
+      userService.add(newUser) map {
+        case \/-(createdUser)  => Ok(Json.toJson(createdUser))
+        case -\/(_)           => InternalServerError("Error while creating process")
+      }
   }
 
 }

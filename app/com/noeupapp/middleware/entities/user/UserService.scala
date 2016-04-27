@@ -3,6 +3,7 @@ package com.noeupapp.middleware.entities.user
 import java.sql.Connection
 import java.util.UUID
 import javax.inject.Inject
+import com.noeupapp.middleware.entities.user.{UserIn, User}
 
 import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -11,7 +12,7 @@ import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
 import com.noeupapp.middleware.authorizationClient.login.PasswordInfoDAO
 import com.noeupapp.middleware.entities.role.RoleService
-import com.noeupapp.middleware.errorHandle.FailError
+import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import play.api.Logger
 import play.api.Play.current
@@ -55,19 +56,28 @@ class UserService @Inject()(userDAO: UserDAO,
     }
   }
 
-  def add(user: User): Future[Boolean] = {
-    Future{
-      try {
-        DB.withConnection({ implicit c =>
-          userDAO.add(user)
-        })
-      } catch {
-        case e: Exception =>
-          Logger.error(s"UserService.add($user)", e)
-          false
-      }
+
+  /**
+    * Add new user
+    * @param userInput
+    * @return Complete user with UUID created
+    */
+  def add(userInput: UserIn): Future[Expect[UserOut]] = {
+    TryBDCall[UserOut]{ implicit c =>
+      val userId = UUID.randomUUID()
+      val user = User(  userId,
+                        userInput.firstName,
+                        userInput.lastName,
+                        userInput.email,
+                        userInput.avatarUrl,
+                        true,
+                        false
+                      )
+      userDAO.add(user)
+      \/-(user)
     }
   }
+
 
   /**
     * Validate a user thanks to it email and password
