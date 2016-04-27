@@ -16,7 +16,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import Login.authenticateFormat
-import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
+import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.{BodyParserHelper, RequestHelper}
 

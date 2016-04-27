@@ -14,7 +14,8 @@ import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import SignUpForm.signUpFormDataFormat
-import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
+import com.noeupapp.middleware.entities.account.{Account, AccountService}
+import com.noeupapp.middleware.entities.user.{UserService, UserIn, User}
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.{BodyParserHelper, RequestHelper}
 
@@ -32,7 +33,8 @@ import scala.concurrent.Future
 class SignUps @Inject()(
                          val messagesApi: MessagesApi,
                          val env: Environment[Account, BearerTokenAuthenticator],
-                         userService: AccountService,
+                         userService: UserService,
+                         accountService: AccountService,
                          authInfoRepository: AuthInfoRepository,
                          htmlSignUpsResult: HtmlSignUpsResult,
                          ajaxSignUpsResult: AjaxSignUpsResult,
@@ -96,32 +98,29 @@ class SignUps @Inject()(
   }
 
   def signUp(loginInfo: LoginInfo, data: SignUpForm.Data, authorizationResult: SignUpsResult)(implicit request: Request[Any]): Future[Result] = {
-    Logger.debug("SignUps.signUp")
-    userService.retrieve(loginInfo).flatMap {
+    accountService.retrieve(loginInfo).flatMap {
       case Some(user) =>
         Future.successful(authorizationResult.userAlreadyExists())
       case None =>
         val authInfo = passwordHasher.hash(data.password)
-        val user = User(
-          id = UUID.randomUUID(),
-          firstName = Some(data.firstName),
-          lastName = Some(data.lastName),
-          email = Some(data.email),
-          avatarUrl = None,
-          active = false,
-          deleted = false
-        )
+        val newUser = UserIn(
+                          firstName = Some(data.firstName),
+                          lastName = Some(data.lastName),
+                          email = Some(data.email),
+                          avatarUrl = None
+                        )
         for {
 //          avatar <- avatarService.retrieveURL(data.email)
-          user <- userService.save(Account(loginInfo, user/*.copy(avatarUrl = avatar)*/))
-          authInfo <- authInfoRepository.add(loginInfo, authInfo)
+          user          <- userService.simplyAdd(newUser) // TODO modify simplyAdd and generalise this type off call
+          account       <- accountService.save(Account(loginInfo, user, None))
+          authInfo      <- authInfoRepository.add(loginInfo, authInfo)
           authenticator <- env.authenticatorService.create(loginInfo)
-          value <- env.authenticatorService.init(authenticator)
-          result <- env.authenticatorService.embed(value, authorizationResult.userSuccessfullyCreated())
+          value         <- env.authenticatorService.init(authenticator)
+          result        <- env.authenticatorService.embed(value, authorizationResult.userSuccessfullyCreated())
         } yield {
           Logger.info("User successfully added")
-          env.eventBus.publish(SignUpEvent(user, request, request2Messages))
-          env.eventBus.publish(LoginEvent(user, request, request2Messages))
+          env.eventBus.publish(SignUpEvent(account, request, request2Messages))
+          env.eventBus.publish(LoginEvent(account, request, request2Messages))
           result
         }
     }.recover{

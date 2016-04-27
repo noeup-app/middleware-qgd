@@ -10,13 +10,14 @@ import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
 
-
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 
 import com.noeupapp.middleware.authorizationClient.ScopeAndRoleAuthorization
 import com.noeupapp.middleware.authorizationClient.RoleAuthorization.WithRole
 import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScope
+
+import com.noeupapp.middleware.entities.account.Account
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.RequestHelper
 import play.api.Logger
@@ -26,7 +27,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, Request, Result}
 
 import scala.concurrent.Future
-import com.noeupapp.middleware.entities.user.User._
+import User._
 
 import scalaz.{-\/, \/-}
 

@@ -2,8 +2,9 @@ package com.noeupapp.middleware.entities.role
 
 import javax.inject.Inject
 
+import com.noeupapp.middleware.entities.account.Account
 import com.noeupapp.middleware.entities.relationUserRole.RelationUserRoleDAO
-import com.noeupapp.middleware.entities.user.{Account, User}
+import com.noeupapp.middleware.entities.user.User
 import play.api.Play.current
 import play.api.db.DB
 

@@ -38,7 +38,9 @@ final case class FailError(message: String, cause: Option[\/[Throwable, Error]] 
 
   override def toString: String = s"Error($message, ${
     cause.map{
-      case -\/(exception) => exception.getStackTrace.toList.mkString("\n")
+      case -\/(exception) =>
+        "Exception message : " + exception.getMessage + "\n" +
+          exception.getStackTrace.toList.mkString("\n")
       case \/-(fail) => fail.toString
       //    cause
     }}, $origin)"
