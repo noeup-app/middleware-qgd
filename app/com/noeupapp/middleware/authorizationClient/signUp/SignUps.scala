@@ -14,7 +14,8 @@ import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import SignUpForm.signUpFormDataFormat
-import com.noeupapp.middleware.entities.user.{Account, AccountService, User}
+import com.noeupapp.middleware.entities.account.{Account, AccountService}
+import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.{BodyParserHelper, RequestHelper}
 
@@ -113,7 +114,7 @@ class SignUps @Inject()(
         )
         for {
 //          avatar <- avatarService.retrieveURL(data.email)
-          user <- userService.save(Account(loginInfo, user/*.copy(avatarUrl = avatar)*/))
+          user <- userService.save(Account(loginInfo, user, None))
           authInfo <- authInfoRepository.add(loginInfo, authInfo)
           authenticator <- env.authenticatorService.create(loginInfo)
           value <- env.authenticatorService.init(authenticator)

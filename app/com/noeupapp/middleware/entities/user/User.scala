@@ -1,0 +1,40 @@
+package com.noeupapp.middleware.entities.user
+
+import java.util.UUID
+
+import anorm.SqlParser._
+import anorm.~
+import play.api.libs.json.Json
+
+
+case class User(
+                 id: UUID,
+                 firstName: Option[String],
+                 lastName: Option[String],
+                 email: Option[String],
+                 avatarUrl: Option[String],
+                 active: Boolean,
+                 deleted: Boolean
+               )
+
+
+object User {
+
+  implicit val UserFormat = Json.format[User]
+
+  val parse = {
+    get[UUID]("id") ~
+      get[Option[String]]("first_name") ~
+      get[Option[String]]("last_name") ~
+      get[Option[String]]("email") ~
+      get[Option[String]]("avatar_url") ~
+      get[Boolean]("active") ~
+      get[Boolean]("deleted") map {
+      case id ~ firstName ~ lastName ~ email ~ avatarUrl ~ active ~ deleted => {
+        User(id, firstName, lastName, email, avatarUrl, active, deleted)
+      }
+    }
+    // TODO Need to parse roles and scopes
+  }
+
+}

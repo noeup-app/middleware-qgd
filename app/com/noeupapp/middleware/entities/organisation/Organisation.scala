@@ -1,4 +1,4 @@
-package com.noeupapp.bypapi.entites.organisation
+package com.noeupapp.middleware.entities.organisation
 
 import java.util.UUID
 
@@ -13,7 +13,7 @@ object Organisation extends GlobalReadsWrites {
 
   implicit val organisationFormat = Json.format[Organisation]
 
-  val parse = {
+  val parse = { // TODO check usage
     get[UUID]("id") ~
     get[String]("name") ~
     get[String]("sub_domain") ~
@@ -23,6 +23,17 @@ object Organisation extends GlobalReadsWrites {
     get[Boolean]("deleted") map {
       case id ~ name ~ sub_domain ~ logo_url ~ color ~ credits ~ deleted => Organisation(id, name, sub_domain, logo_url, color, credits, deleted)
     }
+  }
 
+  val parseDB = {
+    get[UUID]("id") ~
+    get[String]("name") ~
+    get[String]("subdomain") ~
+    get[Option[String]]("logo_url") ~
+    get[Option[String]]("color") ~
+    get[Long]("credits") ~
+    get[Option[Boolean]]("deleted") map { // TODO fix that (options)
+      case id ~ name ~ sub_domain ~ logo_url ~ color ~ credits ~ deleted => Organisation(id, name, sub_domain, logo_url.getOrElse(""), color.getOrElse("black"), credits, deleted.getOrElse(false))
+    }
   }
 }

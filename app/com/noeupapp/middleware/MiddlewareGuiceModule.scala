@@ -17,7 +17,7 @@ import com.mohiva.play.silhouette.impl.services._
 import com.mohiva.play.silhouette.impl.util._
 import com.noeupapp.middleware.authorizationClient.login._
 import com.noeupapp.middleware.authorizationClient.{ScopeAndRoleAuthorization, ScopeAndRoleAuthorizationImpl}
-import com.noeupapp.middleware.entities.user.{Account, AccountService, User, UserService}
+import com.noeupapp.middleware.entities.user.UserService
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
@@ -27,6 +27,7 @@ import play.api.libs.ws.WSClient
 import com.noeupapp.middleware.authorizationClient.provider.QGDProvider
 import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthenticatorDAO
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
+import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import org.joda.time.DateTime
 
 import scala.concurrent.Future

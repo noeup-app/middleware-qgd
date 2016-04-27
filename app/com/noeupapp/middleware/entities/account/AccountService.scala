@@ -1,25 +1,31 @@
-package com.noeupapp.middleware.entities.user
+package com.noeupapp.middleware.entities.account
 
-import java.sql.Connection
 import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
+import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
 import com.noeupapp.middleware.entities.role.RoleService
+import com.noeupapp.middleware.entities.user.{User, UserService}
 import play.api.Logger
 import play.api.Play.current
 import play.api.db.DB
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scalaz.{-\/, EitherT, OptionT, \/-}
+import com.noeupapp.middleware.utils.FutureFunctor._
 
 
 /**
   * Handles actions to users.
   */
-class AccountService @Inject()(userService: UserService, roleService: RoleService) extends IdentityService[Account] {
+class AccountService @Inject()(userService: UserService,
+                               roleService: RoleService,
+                               organisationService: OrganisationService)
+  extends IdentityService[Account] {
 
   /**
     * Retrieves a user that matches the specified login info.
@@ -28,18 +34,17 @@ class AccountService @Inject()(userService: UserService, roleService: RoleServic
     * @return The retrieved user or None if no user could be retrieved for the given login info.
     */
   def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
-    Logger.debug("------------------------AccountService.retrieve : " + loginInfo)
-    DB.withConnection({ implicit c =>
-      // Cas particulier de l'utilisation de l'Expect. gérer l'erreur avec eventbus et retourner une Future
-      userService.findByEmail(loginInfo.providerKey).map{
-        case Some(user) =>
-          Logger.debug("AccountService.retrieve : user found : " + user)
-          Some(Account(loginInfo, user))
-        case None =>
-          Logger.debug("AccountService.retrieve : no user found with " + loginInfo)
+      {
+        for {
+          user         <- EitherT(userService.findByEmailEither(loginInfo.providerKey))
+          organisation <- EitherT(userService.findOrganisationByUserId(user.id))
+        } yield Account(loginInfo, user, organisation)
+      }.run map {
+        case -\/(e) =>
+          Logger.error(s"User not found $e")
           None
+        case \/-(res) => Some(res)
       }
-    })
   }
 
 
@@ -91,7 +96,8 @@ class AccountService @Inject()(userService: UserService, roleService: RoleServic
             lastName = profile.lastName,
             email = profile.email,
             avatarUrl = profile.avatarURL
-          )
+          ),
+          None
         )
         save(account)
       case None => // Insert a new user
@@ -105,7 +111,8 @@ class AccountService @Inject()(userService: UserService, roleService: RoleServic
             avatarUrl = profile.avatarURL,
             active = false,
             deleted = false
-          )
+          ),
+          None
         )
         save(account)
     }
