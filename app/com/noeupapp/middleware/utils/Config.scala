@@ -60,7 +60,7 @@ object Config {
     lazy val jsonWebTokenPrivateKeyFilename = Play.configuration.getString("security.jsonWebToken.privateKeyFilename").get
     lazy val jsonWebTokenPublicKeyFilename = Play.configuration.getString("security.jsonWebToken.publicKeyFilename").get
 
-    lazy val accessTokenExpirationInSeconds: Int = Play.configuration.getInt("security.expireTimes.accessTokenInSeconds").getOrElse(50000 * 60 * 1000)
+    lazy val accessTokenExpirationInSeconds: Long = Play.configuration.getLong("security.expireTimes.accessTokenInSeconds").getOrElse(60 * 60 * 1000)
 
     lazy val signatureDateExpirationInMilliseconds = Play.configuration.getLong("security.expireTimes.signatureInSeconds").get * MILLIS_PER_SECOND
 
