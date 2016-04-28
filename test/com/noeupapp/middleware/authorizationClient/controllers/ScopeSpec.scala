@@ -8,7 +8,8 @@ import org.specs2.mock.Mockito
 import org.specs2.specification.Scope
 import play.api.test.PlaySpecification
 import ScopeAuthorization.{WithScope, WithScopes}
-import com.noeupapp.middleware.entities.user.{Account, User}
+import com.noeupapp.middleware.entities.account.Account
+import com.noeupapp.middleware.entities.user.User
 
 
 class ScopeSpec extends PlaySpecification with Mockito {
@@ -32,7 +33,8 @@ class ScopeSpec extends PlaySpecification with Mockito {
         avatarUrl = None,
         active = false,
         deleted = false
-      )
+      ),
+      None
     )
 
     def checkAND(ok: Boolean, required_scopes: List[String], user_scopes: List[String]): Unit ={

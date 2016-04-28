@@ -7,7 +7,8 @@ import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.noeupapp.middleware.authorizationClient.{FakeScopeAndRoleAuthorization, ScopeAndRoleAuthorization}
-import com.noeupapp.middleware.entities.user.{Account, User}
+import com.noeupapp.middleware.entities.account.Account
+import com.noeupapp.middleware.entities.user.User
 import net.codingwell.scalaguice.ScalaModule
 import org.specs2.matcher.Scope
 import play.api.Mode
@@ -47,7 +48,8 @@ trait Context extends Scope {
       avatarUrl = None,
       active = false,
       deleted = false
-    )
+    ),
+    None
   )
 
   /**
