@@ -139,7 +139,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     Logger.error("AuthorizationHandler.findUser")
     request match {
       case request: PasswordRequest =>
-        Logger.warn(request.username)
+        Logger.debug(s"AuthorizationHandler.findUser -> PasswordRequest -> ${request.username}")
         userService.validateUser(request.username, request.password)
       case request: ClientCredentialsRequest =>
         // Client credential cannot return any user and is just used to provide general information on client

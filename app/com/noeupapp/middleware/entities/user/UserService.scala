@@ -51,7 +51,9 @@ class UserService @Inject()(userDAO: UserDAO,
     Future{
       try {
         DB.withConnection({ implicit c =>
-          userDAO.find(email)
+          val res = userDAO.find(email)
+          Logger.debug(s"UserService.findByEmail($email) -> $res")
+          res
         })
       } catch {
         case e: Exception => Logger.error(s"UserService.findByEmail($email)", e)
