@@ -22,7 +22,7 @@
 
                         <div class="card bg-white">
                         @helper.form(action = com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.signUpAction()) {
-                            @helper.CSRF.formField
+                            @* @helper.CSRF.formField *@
                             <div class="card-content">
 
                                     @request.flash.get("error").map { msg =>

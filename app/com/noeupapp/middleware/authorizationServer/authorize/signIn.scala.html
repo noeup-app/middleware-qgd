@@ -28,7 +28,7 @@
                                 action = com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.authenticate(),
                                 'class -> "form-horizontal ng-pristine ng-valid") {
 
-                                @helper.CSRF.formField
+                                @* @helper.CSRF.formField *@
 
 
                                 <input type="hidden" value="@(signInForm("client_id").value)" name="client_id"/>
