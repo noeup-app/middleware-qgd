@@ -23,7 +23,7 @@ object ExceptionEither {
       })
     } match {
       case Failure(e) =>
-        Future.successful(-\/(FailError("Error while finding access token", e)))
+        Future.successful(-\/(FailError("Error while TryDBCall", e)))
       case Success(res) => Future.successful(res)
     }
   }
