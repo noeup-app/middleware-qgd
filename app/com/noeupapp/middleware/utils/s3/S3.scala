@@ -1,6 +1,6 @@
 package com.noeupapp.middleware.utils.s3
 
-import java.io.{File, FileOutputStream}
+import java.io.{ByteArrayInputStream, InputStream, File, FileOutputStream}
 import java.util.Date
 
 import com.amazonaws._
@@ -22,6 +22,56 @@ case class S3Config(host: String, key: String, secret: String, expirationSignedU
 
 
 class S3 @Inject() (s3: AmazonS3Client, s3Config: S3Config) {
+
+
+  def putStreamObject(content: AwsCellarS3): Future[Expect[String]] = {
+    manageS3Error {
+      //val tempFile = File.createTempFile(content.fileName, ".tmp")
+      //tempFile.deleteOnExit()
+      //val fos = new FileOutputStream(tempFile.getPath)
+      //fos.write(content.file)
+      //fos.close()
+
+      val stream: InputStream = new ByteArrayInputStream (content.file);
+
+
+      val meta: ObjectMetadata = new ObjectMetadata ()
+      meta.setContentLength (content.file.length.toLong)
+      meta.setContentType ("application/pdf")
+
+      s3.putObject(//new PutObjectRequest(
+        content.bucketName,
+        content.fileName,
+        stream,
+        meta
+      )//.withCannedAcl(CannedAccessControlList.PublicRead)//)
+      s3.setObjectAcl (content.bucketName, content.fileName, CannedAccessControlList.PublicRead)
+      val url = s3.getResourceUrl(content.bucketName, content.fileName)
+
+      //tempFile.delete()
+
+      \/-(url)
+    }
+
+//    String bucket = "bucketname.obliquid.com";
+//    String fileName = "2011/test/test.pdf";
+//    byte[] contents = new byte[] {
+//      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+//    };
+//    try {
+//      AmazonS3 client = new AmazonS3Client (
+//        new BasicAWSCredentials ("awsAccessKey", "awsSecretKey") );
+//      InputStream stream = new ByteArrayInputStream (contents);
+//      ObjectMetadata meta = new ObjectMetadata ();
+//      meta.setContentLength (contents.length);
+//      meta.setContentType ("application/pdf");
+//      client.putObject (bucket, fileName, stream, meta);
+//      client.setObjectAcl (bucket, fileName, CannedAccessControlList.PublicRead);
+//    } catch (Exception ex) {
+//      System.out.println (ex);
+//    }
+  }
+
 
   @Deprecated // TODO : check encoding
   def putObject(content: AwsCellarS3): Future[Expect[String]] = {
