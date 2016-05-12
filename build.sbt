@@ -52,7 +52,7 @@ resolvers ++= Seq(
   "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
   "sonatype releases" at "http://oss.sonatype.org/content/repositories/releases",
-  "google-sedis-fix" at "http://pk11-scratch.googlecode.com/svn/trunk"
+  "bintray Repository" at "https://dl.bintray.com/graingert/maven"
 )
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
