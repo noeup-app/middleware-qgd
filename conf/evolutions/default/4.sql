@@ -123,6 +123,16 @@ VALUES (
   '10000000-0000-0000-0000-000000000000'
 );
 
+INSERT INTO entity_users (id, first_name, last_name, email, avatar_url, active, deleted)
+VALUES (
+  '10000000-0000-0000-0000-000000000000',
+  'user 1',
+  'pass 1',
+  'user',
+  'super',
+  true,
+  false
+);
 
 ALTER TABLE public.auth_access_tokens ALTER COLUMN client_id TYPE TEXT USING client_id::TEXT;
 
