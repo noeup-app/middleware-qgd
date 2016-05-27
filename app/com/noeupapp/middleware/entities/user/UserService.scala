@@ -35,6 +35,8 @@ class UserService @Inject()(userDAO: UserDAO,
                             entityService: EntityService,
                             organisationService: OrganisationService) {
 
+  type ValidationFuture[A] = EitherT[Future, FailError, A]
+
   /**
     * Search and get all users
     *
@@ -47,18 +49,10 @@ class UserService @Inject()(userDAO: UserDAO,
   }
 
   // TODO merge findByEmail and findByEmailEither ?
-  def findByEmail(email: String): Future[Option[User]] = {
-    Future{
-      try {
-        DB.withConnection({ implicit c =>
-          val res = userDAO.find(email)
-          Logger.debug(s"UserService.findByEmail($email) -> $res")
-          res
-        })
-      } catch {
-        case e: Exception => Logger.error(s"UserService.findByEmail($email)", e)
-          None
-      }
+  def findByEmail(email: String): Future[Expect[Option[User]]] = {
+    TryBDCall{ implicit c =>
+      \/- (userDAO.find(email))
+
     }
   }
 
@@ -100,20 +94,12 @@ class UserService @Inject()(userDAO: UserDAO,
     case e: NoSuchElementException => \/-(None)
   }
 
-  def findById(id: UUID): Future[Option[User]] = {
-    Future{
-      try {
-        DB.withConnection({ implicit c =>
-          userDAO.find(id)
-        })
-      } catch {
-        case e: Exception =>
-          Logger.error(s"UserService.findById($id)", e)
-          None
-      }
+  def findById(id: UUID): Future[Expect[Option[User]]] = {
+    TryBDCall{ implicit c =>
+      \/- (userDAO.find(id))
+
     }
   }
-
 
   /**
     * Add new user
@@ -164,21 +150,30 @@ class UserService @Inject()(userDAO: UserDAO,
     * @param email user email
     * @param password non hashed pwd
     */
-  def validateUser(email: String, password: String): Future[Option[User]] = {
+  def validateUser(email: String, password: String): Future[Expect[Option[User]]] = {
     Logger.debug(s"UserService.validateUser($email, ******)...")
+
+
+    val result: ValidationFuture[Option[User]] =
     for{
-      user         <- OptionT(findByEmail(email))
-      passwordInfo <- OptionT(passwordInfoDAO.find(LoginInfo("credentials", email)))
+      user         <- EitherT(findByEmail(email))
+      passwordInfo <- EitherT(passwordInfoDAO.find(LoginInfo("credentials", email)).map(option2Expect))
     } yield {
       passwordHasher.matches(passwordInfo, password) match {
         case true =>
           Logger.debug(s"UserService.validateUser($email, ******) -> Some($user)")
-          Some(user)
+          user
         case false =>
           Logger.debug(s"UserService.validateUser($email, ******) -> None")
           None
       }
     }
-  }.run.map(_.flatten)
-
+    result.run
+  }
+  def option2Expect[T](opt: Option[T]): Expect[T] = {
+    opt match {
+      case Some(r) => \/-(r)
+      case None => -\/(FailError("None"))
+    }
+  }
 }

@@ -88,7 +88,7 @@ class AccountService @Inject()(userService: UserService,
     Logger.debug("AccountService.save(" + profile + ")")
 
     userService.findByEmail(profile.loginInfo.providerKey) flatMap  {
-      case Some(user) => // Update user with profile
+      case \/-(Some(user)) => // Update user with profile
         val account = Account(
           profile.loginInfo,
           user.copy(
@@ -100,7 +100,7 @@ class AccountService @Inject()(userService: UserService,
           None
         )
         save(account)
-      case None => // Insert a new user
+      case _ => // Insert a new user
         val account = Account(
           loginInfo = profile.loginInfo,
           user = User(
@@ -114,6 +114,7 @@ class AccountService @Inject()(userService: UserService,
           ),
           None
         )
+
         save(account)
     }
   })}

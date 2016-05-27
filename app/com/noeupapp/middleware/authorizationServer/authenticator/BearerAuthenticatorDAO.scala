@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.impl.daos.AuthenticatorDAO
 import com.noeupapp.middleware.authorizationClient.login.LoginInfo
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.user.{UserDAO, UserService}
+import com.noeupapp.middleware.errorHandle.FailError.Expect
 import org.joda.time.DateTime
 import play.api.Logger
 
@@ -23,8 +24,10 @@ class BearerAuthenticatorDAO(authAccessTokenService: OAuthAccessTokenService,
       case \/-(accessToken) => {
         Logger.debug(s"BearerAuthenticatorDAO.find($id) -> authAccessTokenService.find -> $accessToken")
         Logger.debug(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) ...")
-        userService.findById(accessToken.userId).map{ _.map{ user =>
-          Logger.debug(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) -> $user")
+        userService.findById(accessToken.userId).map({
+          case \/-(Some(user)) => Some(user)
+          case _ => None
+        }).map(x=>x.map({user => Logger.debug(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) -> $user")
           val a = BearerTokenAuthenticator(id,
             api.LoginInfo("credentials", user.email.getOrElse("")),
             new DateTime(),
@@ -32,14 +35,30 @@ class BearerAuthenticatorDAO(authAccessTokenService: OAuthAccessTokenService,
             None
           )
           Logger.info(s"BearerAuthenticatorDAO.find($id) -> $a")
-          a
-        }}
-      }
+          a}))}
+
       case -\/(e) =>
         Logger.debug(s"BearerAuthenticatorDAO.find($id) -> authAccessTokenService.find -> nothing found - $e")
         Future.successful(None)
     }
   }
+
+  /*
+          userService.findById(accessToken.userId).map({
+          case \/-(Some(user)) =>
+            Logger.debug(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) -> $user")
+            val a = BearerTokenAuthenticator(id,
+              api.LoginInfo("credentials", user.email.getOrElse("")),
+              new DateTime(),
+              new DateTime(accessToken.createdAt).plus(accessToken.expiresIn.getOrElse(0l)),
+              None
+            )
+            Logger.info(s"BearerAuthenticatorDAO.find($id) -> $a")
+            a
+
+          case _ => None
+        })}
+   */
 
   override def update(authenticator: BearerTokenAuthenticator): Future[BearerTokenAuthenticator] = {
     Logger.warn(s"AuthenticatorDAO.update($authenticator)")
