@@ -12,11 +12,11 @@ import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.entities.user.UserService
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError._
-import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config}
-import com.noeupapp.middleware.utils.NamedLogger
+import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config, NamedLogger, TypeConversion}
 import play.api.Logger
 import redis.clients.util.Pool
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
+
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import scalaoauth2.provider._
@@ -162,13 +162,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
 
   // Refresh token grant
 
-  def expectOption2Expect[T](opt: Expect[Option[T]]): Expect[T] = {
-    opt match {
-      case \/-(Some(r)) => \/-(r)
-      case \/-(None) => -\/(FailError("None"))
-      case -\/(_) => -\/(FailError("request failed"))
-    }
-  }
+
   /**
     * // TODO DOC
  *
@@ -181,7 +175,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
 
     for{
       accessToken <- EitherT(accessTokenService.findByRefreshToken(refreshToken))
-      user        <- EitherT(userService.findById(accessToken.userId).map(expectOption2Expect))
+      user        <- EitherT(userService.findById(accessToken.userId).map(TypeConversion.expectOption2Expect))
 
     } yield AuthInfo[User](user, Some(accessToken.clientId), accessToken.scope, None)
   }.run map {
