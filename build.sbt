@@ -35,7 +35,7 @@ libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % "7.1.0",
   "net.codingwell" %% "scala-guice" % "4.0.0",
   "net.ceedubs" %% "ficus" % "1.1.2",
-  "com.typesafe.play" %% "play-mailer" % "3.0.1",
+  "com.typesafe.play" %% "play-mailer" % "4.0.0",
   ws,
   cache,
   //
