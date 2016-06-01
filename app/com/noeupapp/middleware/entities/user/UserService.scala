@@ -3,8 +3,8 @@ package com.noeupapp.middleware.entities.user
 import java.sql.Connection
 import java.util.UUID
 import javax.inject.Inject
-import com.noeupapp.middleware.entities.user._
 
+import com.noeupapp.middleware.entities.user._
 import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
@@ -27,6 +27,7 @@ import scala.util.Try
 import scalaz.{-\/, EitherT, OptionT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
+import com.noeupapp.middleware.utils.TypeConversion
 
 
 class UserService @Inject()(userDAO: UserDAO,
@@ -101,6 +102,32 @@ class UserService @Inject()(userDAO: UserDAO,
     }
   }
 
+
+  def findLastName(user: User): Future[Expect[String]] = {
+    user.lastName match {
+      case Some(name) => Future.successful(\/-(name))
+      case _ => Future.successful(-\/(FailError("User name not found")))
+    }
+
+  }
+
+  def findFirstName(user: User): Future[Expect[String]] = {
+    user.firstName match {
+      case Some(name) => Future.successful(\/-(name))
+      case _ => Future.successful(-\/(FailError("User name not found")))
+    }
+
+  }
+
+  def findEmail(user: User): Future[Expect[String]] = {
+    user.email match {
+      case Some(email) => Future.successful(\/-(email))
+      case _ => Future.successful(-\/(FailError("User email not found")))
+    }
+
+  }
+
+
   /**
     * Add new user
     *
@@ -157,7 +184,7 @@ class UserService @Inject()(userDAO: UserDAO,
     val result: ValidationFuture[Option[User]] =
     for{
       user         <- EitherT(findByEmail(email))
-      passwordInfo <- EitherT(passwordInfoDAO.find(LoginInfo("credentials", email)).map(option2Expect))
+      passwordInfo <- EitherT(passwordInfoDAO.find(LoginInfo("credentials", email)).map(TypeConversion.option2Expect))
     } yield {
       passwordHasher.matches(passwordInfo, password) match {
         case true =>
@@ -170,10 +197,5 @@ class UserService @Inject()(userDAO: UserDAO,
     }
     result.run
   }
-  def option2Expect[T](opt: Option[T]): Expect[T] = {
-    opt match {
-      case Some(r) => \/-(r)
-      case None => -\/(FailError("None"))
-    }
-  }
+
 }
