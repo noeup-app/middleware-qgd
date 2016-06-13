@@ -49,38 +49,11 @@ class UserService @Inject()(userDAO: UserDAO,
     }
   }
 
-  // TODO merge findByEmail and findByEmailEither ?
   def findByEmail(email: String): Future[Expect[Option[User]]] = {
     TryBDCall{ implicit c =>
       \/- (userDAO.find(email))
     }
   }
-
-//  def findByEmailEither(email: String): Future[Expect[User]] = {
-//    TryBDCall{ implicit c =>
-//      userDAO.find(email) match {
-//        case Some(user) => \/-(user)
-//        case None       => -\/(FailError("User not found"))
-//      }
-//    }
-//  }
-
-  def findByEmailEither(email: String): Future[Expect[User]] = {
-    Future{
-      try {
-        DB.withConnection({ implicit c =>
-          userDAO.find(email) match {
-            case Some(user) => \/-(user)
-            case None => -\/(FailError("Cannot find user"))
-          }
-        })
-      } catch {
-        case e: Exception =>
-          -\/(FailError("Error whole finding user", e))
-      }
-    }
-  }
-
 
   def findOrganisationByUserId(userId: UUID): Future[Expect[Option[Organisation]]] = {
     {
@@ -97,7 +70,6 @@ class UserService @Inject()(userDAO: UserDAO,
   def findById(id: UUID): Future[Expect[Option[User]]] = {
     TryBDCall{ implicit c =>
       \/- (userDAO.find(id))
-
     }
   }
 
