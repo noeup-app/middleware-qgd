@@ -1,6 +1,6 @@
 package com.noeupapp.middleware.authorizationServer.oauth2
 
-import java.util.Date
+import java.util.{Date, NoSuchElementException}
 
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api
@@ -30,8 +30,6 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
                                       userService: UserService,
                                       authCodeService: AuthCodeService) extends DataHandler[User] with NamedLogger {
 
-  type ValidationFuture[A] = EitherT[Future, FailError, A]
-
   /**
     * Validate Client if client & secret matches and grantType is in the authorized list // TODO check RFC about refresh token
     *
@@ -39,21 +37,20 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def validateClient(request: AuthorizationRequest): Future[Boolean] = Future.successful {
-    Logger.error("AuthorizationHandler.validateClient...")
+    Logger.debug("AuthorizationHandler.validateClient...")
     val clientCredential = request.clientCredential.get // TODO manage None
     val grantType = request.grantType
-    Logger.error("Client credential: "+clientCredential)
-    Logger.error("grantType: "+ grantType)
+    Logger.debug("Client credential: "+clientCredential)
+    Logger.debug("grantType: "+ grantType)
 
 
-    logger.error(s"given : id = ${clientCredential.clientId} , secret = ${clientCredential.clientSecret}, grantType = $grantType")
+    logger.debug(s"given : id = ${clientCredential.clientId} , secret = ${clientCredential.clientSecret}, grantType = $grantType")
 
     val isValid = Client.validateClient(clientCredential.clientId, clientCredential.clientSecret, grantType)
 
-    logger.error(s"Client isValid : $isValid")
+    logger.debug(s"Client isValid : $isValid")
     isValid
   }
-
 
   /**
     * Creates a bearer/access token
@@ -62,7 +59,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     */
   def createAccessToken(authInfo: AuthInfo[User]): Future[AccessToken]  = {
 
-    Logger.error("AuthorizationHandler.createAccessToken")
+    Logger.debug("AuthorizationHandler.createAccessToken")
 
     val refreshToken = Some(BearerTokenGenerator.generateToken)
     //val jsonWebToken = JsonWebTokenGenerator.generateToken(authInfo)
@@ -103,7 +100,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   override def getStoredAccessToken(authInfo: AuthInfo[User]): Future[Option[AccessToken]] = {
-    Logger.error("AuthorizationHandler.getStoredAccessToken")
+    Logger.debug("AuthorizationHandler.getStoredAccessToken")
     authInfo.clientId match {
       case Some(clientId) =>
           accessTokenService.findByUserAndClient(authInfo.user.id, clientId).map{
@@ -151,7 +148,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
         }
       case request: ClientCredentialsRequest =>
         // Client credential cannot return any user and is just used to provide general information on client
-        logger.debug("ClientCredentialsRequest : no user defined")
+        logger.error("ClientCredentialsRequest : no user defined")
         Future.successful(None)
       case _ =>
         logger.warn("Unauthorized request grant type")
@@ -170,17 +167,20 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def findAuthInfoByRefreshToken(refreshToken: String): Future[Option[AuthInfo[User]]] = {
-    Logger.error("AuthorizationHandler.findAuthInfoByRefreshToken")
+    {
+    Logger.debug("AuthorizationHandler.findAuthInfoByRefreshToken")
     // TODO : this is a fix because userService.findById returns expect[option] instead of expect
 
     for{
       accessToken <- EitherT(accessTokenService.findByRefreshToken(refreshToken))
-      user        <- EitherT(userService.findById(accessToken.userId).map(TypeConversion.expectOption2Expect))
+      user        <- EitherT(userService.findById(accessToken.userId))
 
-    } yield AuthInfo[User](user, Some(accessToken.clientId), accessToken.scope, None)
+    } yield AuthInfo[User](user.get, Some(accessToken.clientId), accessToken.scope, None)
   }.run map {
     case -\/(_) => None
     case \/-(e) => Some(e)
+  }}.recover{
+    case e: NoSuchElementException => None
   }
 
   /**
@@ -191,7 +191,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def refreshAccessToken(authInfo: AuthInfo[User], refreshToken: String): Future[AccessToken] = {
-    Logger.error("AuthorizationHandler.refreshAccessToken")
+    Logger.debug("AuthorizationHandler.refreshAccessToken")
     val newToken = BearerTokenGenerator.generateToken
     val expiresIn = Some(Config.OAuth2.accessTokenExpirationInSeconds.toLong)
     for {
@@ -227,18 +227,17 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
   def findAuthInfoByCode(code: String): Future[Option[AuthInfo[User]]] = {
     authCodeService.find(code) flatMap {
       case \/-(Some(authCode)) if ! authCode.isExpired =>
-        userService.findById(authCode.userId).map({
+        userService.findById(authCode.userId).map{
           case \/-(Some(user)) => Some(user)
           case _ => None
-        }).map({x=>x.map{user=>
+        }.map{_.map{user=>
 
             val authInfo = AuthInfo(user, Some(authCode.clientId), authCode.scope, authCode.redirectUri)
             logger.debug(s"findAuthInfoByCode: $code -> authInfo: $authInfo")
             authInfo
-        }})
+        }}
 
       case _ => Future.successful(None)
-
     }
   }
 
@@ -250,7 +249,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def deleteAuthCode(code: String): Future[Unit] = {
-    Logger.error("AuthorizationHandler.deleteAuthCode (TODO)")
+    Logger.debug("AuthorizationHandler.deleteAuthCode (TODO)")
     //authAccessService.deleteAuthCode(code)
     Future.successful(None)
   }
@@ -265,7 +264,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def findAccessToken(token: String): Future[Option[AccessToken]] = {
-    Logger.error("AuthorizationHandler.findAccessToken (TODO)")
+    Logger.debug("AuthorizationHandler.findAccessToken (TODO)")
     Future.successful(None)
     /*    logger.debug(s"findAccessToken: $token")
         //authAccessService.findAccessToken(token)
@@ -282,7 +281,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def findAuthInfoByAccessToken(accessToken: AccessToken): Future[Option[AuthInfo[User]]] = {
-    Logger.error("AuthorizationHandler.findAuthInfoByAccessToken (TODO)")
+    Logger.debug("AuthorizationHandler.findAuthInfoByAccessToken (TODO)")
     Future.successful(None)
     /*// TODO MANAGE FUTURE IN HIGHER LEVEL!
     logger.debug(s"findAuthInfoByAccessToken: $accessToken")
