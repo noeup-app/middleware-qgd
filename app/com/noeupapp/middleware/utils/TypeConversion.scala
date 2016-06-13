@@ -11,7 +11,7 @@ object TypeConversion {
     opt match {
       case \/-(Some(r)) => \/-(r)
       case \/-(None) => -\/(FailError("None"))
-      case -\/(_) => -\/(FailError("request failed"))
+      case e @ -\/(_) => e
     }
   }
 
