@@ -53,7 +53,6 @@ class UserService @Inject()(userDAO: UserDAO,
   def findByEmail(email: String): Future[Expect[Option[User]]] = {
     TryBDCall{ implicit c =>
       \/- (userDAO.find(email))
-
     }
   }
 
@@ -101,32 +100,6 @@ class UserService @Inject()(userDAO: UserDAO,
 
     }
   }
-
-
-  def findLastName(user: User): Future[Expect[String]] = {
-    user.lastName match {
-      case Some(name) => Future.successful(\/-(name))
-      case _ => Future.successful(-\/(FailError("User name not found")))
-    }
-
-  }
-
-  def findFirstName(user: User): Future[Expect[String]] = {
-    user.firstName match {
-      case Some(name) => Future.successful(\/-(name))
-      case _ => Future.successful(-\/(FailError("User name not found")))
-    }
-
-  }
-
-  def findEmail(user: User): Future[Expect[String]] = {
-    user.email match {
-      case Some(email) => Future.successful(\/-(email))
-      case _ => Future.successful(-\/(FailError("User email not found")))
-    }
-
-  }
-
 
   /**
     * Add new user
