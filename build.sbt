@@ -41,7 +41,9 @@ libraryDependencies ++= Seq(
   //
   // FRONT
   "com.adrianhurt" %% "play-bootstrap3" % "0.4.4-P24",
-  "org.webjars" %% "webjars-play" % "2.4.0-1"
+  "org.webjars" %% "webjars-play" % "2.4.0-1",
+  //HTTP
+  ws
 )
 
 resolvers := ("Atlassian Releases" at "https://maven.atlassian.com/public/") +: resolvers.value
