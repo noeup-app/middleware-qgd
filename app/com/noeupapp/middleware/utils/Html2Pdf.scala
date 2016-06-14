@@ -6,7 +6,7 @@ import javax.inject.Inject
 
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError._
-
+import play.api.Logger
 import play.api.libs.ws._
 import play.api.libs.iteratee._
 
@@ -15,10 +15,10 @@ import scalaz._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.implicitConversions
 
-/**
-  * Created by Raphael on 14/06/2016.
-  */
-class Html2Pdf @Inject()(ws: WSClient){
+case class Html2PdfConfig(url: String, timeout: Long)
+
+class Html2Pdf @Inject()(ws: WSClient,
+                         html2PdfConfig: Html2PdfConfig){
 
   def html2PdfWS(html: String,
                  sens: Option[String] = None,
@@ -30,21 +30,22 @@ class Html2Pdf @Inject()(ws: WSClient){
                  backtop: Option[String] = None,
                  backbottom: Option[String] = None): Future[Expect[Array[Byte]]] = {
 
-    val requestPdf: WSRequest = ws.url(/*"http://html2bypdf.cleverapps.io/"*/"http://html2bypdf.local/")
+    val requestPdf: WSRequest = ws.url(html2PdfConfig.url)
     val complexRequest: WSRequest =
       requestPdf
         .withMethod("POST")
+        .withHeaders("Content-Type" -> "application/x-wwww-form-urlencoded")
         .withBody(Map("body" -> Seq(html),
           "sens" -> Seq(sens.getOrElse("P")),
           "format" -> Seq(format.getOrElse("A4")),
           "langue" -> Seq(langue.getOrElse("fr")),
           "marges" -> Seq(marges.getOrElse("[10, 10, 10, 10]")),
           "header" -> Seq(header.getOrElse("<page_header> <h1>No page header</h1> </page_header>")),
-          "footer" -> Seq(footer.getOrElse("<page_footer> <h1>No page footer</h1> </page_footer>")),
+          "footer" -> Seq(footer.getOrElse("<page_footer> <h1>This is a page footer</h1> </page_footer>")),
           "backtop" -> Seq(backtop.getOrElse("15%")),
           "backbottom" -> Seq(backbottom.getOrElse("15%"))
         ))
-        .withRequestTimeout(10000)
+        .withRequestTimeout(html2PdfConfig.timeout)
 
     val futureResponse: Future[(WSResponseHeaders, Enumerator[Array[Byte]])] =
       complexRequest.stream()
@@ -52,6 +53,7 @@ class Html2Pdf @Inject()(ws: WSClient){
     val status = futureResponse map {
       case (a,_) => a.status
     }
+    Logger.error("Response status = "+ s"$status")
     status flatMap {
       case it if it >= 200 && it <= 299 =>
         val resultFile = futureResponse.flatMap {
