@@ -7,4 +7,5 @@ stages:
 
 test:
   script:
+    - dropdb qgd_test && createdb qgd_test
     - ./activator clean compile test -Dsbt.global.base=./cache/sbt -Dsbt.ivy.home=./cache/ivy -Divy.home=./cache/ivy -DHOME=.
