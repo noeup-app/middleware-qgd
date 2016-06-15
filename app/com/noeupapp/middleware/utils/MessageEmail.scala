@@ -23,7 +23,19 @@ import scalaz._
 
 class MessageEmail @Inject()(mailerClient: MailerClient){
 
-
+  /**
+    * Send an email using MailerClient
+    *
+    * @param senderName
+    * @param senderEmail
+    * @param receiverName
+    * @param receiverEmail
+    * @param subject
+    * @param text
+    * @param appName
+    * @param bcc
+    * @return
+    */
   def sendEmail(senderName: Option[String], senderEmail: String, receiverName: String, receiverEmail: String,
                  subject: String, text: String, appName: String, bcc: List[String] = Nil): Future[Expect[String]] = {
 
