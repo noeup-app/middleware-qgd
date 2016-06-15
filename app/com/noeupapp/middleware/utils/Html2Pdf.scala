@@ -40,7 +40,7 @@ class Html2Pdf @Inject()(ws: WSClient,
           "langue" -> Seq(langue.getOrElse("fr")),
           "marges" -> Seq(marges.getOrElse("[10, 10, 10, 10]")),
           "header" -> Seq(header.getOrElse("<page_header> <h1>No page header</h1> </page_header>")),
-          "footer" -> Seq(footer.getOrElse("<page_footer> <h1>This is a page footer</h1> </page_footer>")),
+          "footer" -> Seq(footer.getOrElse("<page_footer> <h1>No page footer</h1> </page_footer>")),
           "backtop" -> Seq(backtop.getOrElse("15%")),
           "backbottom" -> Seq(backbottom.getOrElse("15%"))
         ))
