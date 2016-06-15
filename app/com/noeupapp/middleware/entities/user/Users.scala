@@ -48,8 +48,9 @@ class Users @Inject()(
 
   def me = SecuredAction.async { implicit request =>
     userService.findById(request.identity.user.id) map {
-      case None => NotFound("Cannot to fetch your data, not found")
-      case Some(user) => Ok(Json.toJson(user))
+      case \/-(None) => NotFound("Cannot to fetch your data, not found")
+      case \/-(user) => Ok(Json.toJson(user))
+      case -\/(e) =>  InternalServerError("Error while creating process" + e)
     }
   }
 

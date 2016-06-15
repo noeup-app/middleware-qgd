@@ -7,12 +7,15 @@ import com.google.inject.Inject
 import com.noeupapp.middleware.authorizationServer.client.Client
 import com.noeupapp.middleware.utils.AuthCodeGenerator
 import play.api.db.DB
+import com.noeupapp.middleware.errorHandle.ExceptionEither._
 
 import scala.concurrent.Future
 import scala.util.Try
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.Play.current
+import com.noeupapp.middleware.errorHandle.FailError.Expect
 
+import scalaz.\/-
 class AuthCodeService @Inject() (authCodeDAO: AuthCodeDAO) {
 
 
@@ -53,12 +56,10 @@ class AuthCodeService @Inject() (authCodeDAO: AuthCodeDAO) {
   }
 
 
-  def find(code: String): Future[Option[AuthCode]] = Future.successful {
-    Try{
-      DB.withTransaction({ implicit c =>
-        authCodeDAO.find(code)
-      })
-    }.toOption.flatten
-  }
+  def find(code: String): Future[Expect[Option[AuthCode]]] =
+    TryBDCall[Option[AuthCode]]{ implicit c =>
+        \/-(authCodeDAO.find(code))
+      }
+   // }.toOption.flatten
 
 }
