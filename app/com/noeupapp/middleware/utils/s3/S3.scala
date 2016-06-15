@@ -32,7 +32,7 @@ class S3 @Inject() (s3: AmazonS3Client, s3Config: S3Config) {
       //fos.write(content.file)
       //fos.close()
 
-      val stream: InputStream = new ByteArrayInputStream (content.file);
+      val stream: InputStream = new ByteArrayInputStream (content.file)
 
 
       val meta: ObjectMetadata = new ObjectMetadata ()
@@ -126,9 +126,10 @@ class S3 @Inject() (s3: AmazonS3Client, s3Config: S3Config) {
       val expirationSignedUrlInMili = s3Config.expirationSignedUrlInMinutes * ratioMiliMinute
       expiration.setTime(msec + expirationSignedUrlInMili)
 
-      val generatePreSignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, fileName)
-      generatePreSignedUrlRequest.setMethod(httpMethod)
+      val generatePreSignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, fileName, httpMethod)
       generatePreSignedUrlRequest.setExpiration(expiration)
+
+      Logger.debug("key =" + generatePreSignedUrlRequest.getKey())
 
       val url =
         s3
