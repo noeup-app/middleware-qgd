@@ -34,7 +34,6 @@ class Html2Pdf @Inject()(ws: WSClient,
     val complexRequest: WSRequest =
       requestPdf
         .withMethod("POST")
-        .withHeaders("Content-Type" -> "application/x-wwww-form-urlencoded")
         .withBody(Map("body" -> Seq(html),
           "sens" -> Seq(sens.getOrElse("P")),
           "format" -> Seq(format.getOrElse("A4")),
@@ -53,7 +52,7 @@ class Html2Pdf @Inject()(ws: WSClient,
     val status = futureResponse map {
       case (a,_) => a.status
     }
-    Logger.error("Response status = "+ s"$status")
+    status.map(s => Logger.debug(s"Html2Pdf ws response code : ${s.toString}"))
     status flatMap {
       case it if it >= 200 && it <= 299 =>
         val resultFile = futureResponse.flatMap {
