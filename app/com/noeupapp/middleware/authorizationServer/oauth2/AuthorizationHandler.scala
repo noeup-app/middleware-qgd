@@ -1,6 +1,6 @@
 package com.noeupapp.middleware.authorizationServer.oauth2
 
-import java.util.Date
+import java.util.{Date, NoSuchElementException}
 
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api
@@ -12,10 +12,10 @@ import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.entities.user.UserService
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError._
-import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config}
-import com.noeupapp.middleware.utils.NamedLogger
+import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config, NamedLogger, TypeConversion}
 import play.api.Logger
 import redis.clients.util.Pool
+import com.noeupapp.middleware.errorHandle.ExceptionEither._
 
 import scala.concurrent.Future
 import scala.language.implicitConversions
@@ -37,9 +37,12 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def validateClient(request: AuthorizationRequest): Future[Boolean] = Future.successful {
-    Logger.error("AuthorizationHandler.validateClient...")
+    Logger.debug("AuthorizationHandler.validateClient...")
     val clientCredential = request.clientCredential.get // TODO manage None
     val grantType = request.grantType
+    Logger.debug("Client credential: "+clientCredential)
+    Logger.debug("grantType: "+ grantType)
+
 
     logger.debug(s"given : id = ${clientCredential.clientId} , secret = ${clientCredential.clientSecret}, grantType = $grantType")
 
@@ -49,7 +52,6 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     isValid
   }
 
-
   /**
     * Creates a bearer/access token
     *
@@ -57,7 +59,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     */
   def createAccessToken(authInfo: AuthInfo[User]): Future[AccessToken]  = {
 
-    Logger.error("AuthorizationHandler.createAccessToken")
+    Logger.debug("AuthorizationHandler.createAccessToken")
 
     val refreshToken = Some(BearerTokenGenerator.generateToken)
     //val jsonWebToken = JsonWebTokenGenerator.generateToken(authInfo)
@@ -98,7 +100,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   override def getStoredAccessToken(authInfo: AuthInfo[User]): Future[Option[AccessToken]] = {
-    Logger.error("AuthorizationHandler.getStoredAccessToken")
+    Logger.debug("AuthorizationHandler.getStoredAccessToken")
     authInfo.clientId match {
       case Some(clientId) =>
           accessTokenService.findByUserAndClient(authInfo.user.id, clientId).map{
@@ -140,10 +142,13 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     request match {
       case request: PasswordRequest =>
         Logger.debug(s"AuthorizationHandler.findUser -> PasswordRequest -> ${request.username}")
-        userService.validateUser(request.username, request.password)
+        userService.validateUser(request.username, request.password) map {
+          case \/-(user) => user
+          case _ => None
+        }
       case request: ClientCredentialsRequest =>
         // Client credential cannot return any user and is just used to provide general information on client
-        logger.debug("ClientCredentialsRequest : no user defined")
+        logger.error("ClientCredentialsRequest : no user defined")
         Future.successful(None)
       case _ =>
         logger.warn("Unauthorized request grant type")
@@ -162,21 +167,20 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def findAuthInfoByRefreshToken(refreshToken: String): Future[Option[AuthInfo[User]]] = {
-    Logger.error("AuthorizationHandler.findAuthInfoByRefreshToken")
-    // TODO : this is a fix because userService.findById returns option instead of expect
-    def option2Expect[T](opt: Option[T]): Expect[T] = {
-      opt match {
-        case Some(r) => \/-(r)
-        case None => -\/(FailError("None"))
-      }
-    }
+    {
+    Logger.debug("AuthorizationHandler.findAuthInfoByRefreshToken")
+    // TODO : this is a fix because userService.findById returns expect[option] instead of expect
+
     for{
       accessToken <- EitherT(accessTokenService.findByRefreshToken(refreshToken))
-      user        <- EitherT(userService.findById(accessToken.userId).map(option2Expect))
-    } yield AuthInfo[User](user, Some(accessToken.clientId), accessToken.scope, None)
+      user        <- EitherT(userService.findById(accessToken.userId))
+
+    } yield AuthInfo[User](user.get, Some(accessToken.clientId), accessToken.scope, None)
   }.run map {
     case -\/(_) => None
     case \/-(e) => Some(e)
+  }}.recover{
+    case e: NoSuchElementException => None
   }
 
   /**
@@ -187,7 +191,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def refreshAccessToken(authInfo: AuthInfo[User], refreshToken: String): Future[AccessToken] = {
-    Logger.error("AuthorizationHandler.refreshAccessToken")
+    Logger.debug("AuthorizationHandler.refreshAccessToken")
     val newToken = BearerTokenGenerator.generateToken
     val expiresIn = Some(Config.OAuth2.accessTokenExpirationInSeconds.toLong)
     for {
@@ -219,20 +223,24 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @param code
     * @return
     */
-  def findAuthInfoByCode(code: String): Future[Option[AuthInfo[User]]] = {
-    Logger.error("AuthorizationHandler.findAuthInfoByCode")
-    authCodeService.find(code) flatMap {
-      case Some(authCode) if ! authCode.isExpired =>
-        logger.debug("valid code found!")
-        userService.findById(authCode.userId).map(_.map{ user =>
-          val authInfo = AuthInfo(user, Some(authCode.clientId), authCode.scope, authCode.redirectUri)
-          logger.debug(s"findAuthInfoByCode: $code -> authInfo: $authInfo")
-          authInfo
-        })
-      case _ => Future.successful(None)
 
+  def findAuthInfoByCode(code: String): Future[Option[AuthInfo[User]]] = {
+    authCodeService.find(code) flatMap {
+      case \/-(Some(authCode)) if ! authCode.isExpired =>
+        userService.findById(authCode.userId).map{
+          case \/-(Some(user)) => Some(user)
+          case _ => None
+        }.map{_.map{user=>
+
+            val authInfo = AuthInfo(user, Some(authCode.clientId), authCode.scope, authCode.redirectUri)
+            logger.debug(s"findAuthInfoByCode: $code -> authInfo: $authInfo")
+            authInfo
+        }}
+
+      case _ => Future.successful(None)
     }
   }
+
 
   /**
     * // TODO DOC
@@ -241,7 +249,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def deleteAuthCode(code: String): Future[Unit] = {
-    Logger.error("AuthorizationHandler.deleteAuthCode (TODO)")
+    Logger.debug("AuthorizationHandler.deleteAuthCode (TODO)")
     //authAccessService.deleteAuthCode(code)
     Future.successful(None)
   }
@@ -256,7 +264,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def findAccessToken(token: String): Future[Option[AccessToken]] = {
-    Logger.error("AuthorizationHandler.findAccessToken (TODO)")
+    Logger.debug("AuthorizationHandler.findAccessToken (TODO)")
     Future.successful(None)
     /*    logger.debug(s"findAccessToken: $token")
         //authAccessService.findAccessToken(token)
@@ -273,7 +281,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @return
     */
   def findAuthInfoByAccessToken(accessToken: AccessToken): Future[Option[AuthInfo[User]]] = {
-    Logger.error("AuthorizationHandler.findAuthInfoByAccessToken (TODO)")
+    Logger.debug("AuthorizationHandler.findAuthInfoByAccessToken (TODO)")
     Future.successful(None)
     /*// TODO MANAGE FUTURE IN HIGHER LEVEL!
     logger.debug(s"findAuthInfoByAccessToken: $accessToken")

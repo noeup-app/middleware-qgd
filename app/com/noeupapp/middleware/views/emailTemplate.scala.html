@@ -1,0 +1,182 @@
+@(title: String, content: String, receiverName: String, senderName: Option[String], appName: String)(implicit messages: Messages)
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+            <!--[if !mso]><!-->
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+            <!--<![endif]-->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>@title</title>
+            <!--[if (gte mso 9)|(IE)]>
+        <style type="text/css">
+        table {border-collapse: collapse !important;}
+        </style>
+        <![endif]-->
+        <style type="text/css">
+
+        body {
+            margin: 0 !important;
+            padding: 0;
+            background-color: #ffffff;
+        }
+        table {
+            border-spacing: 0;
+            font-family: sans-serif;
+            color: #333333;
+        }
+        td {
+            padding: 0;
+        }
+        img {
+            border: 0;
+        }
+        div[style*="margin: 16px 0"] {
+            margin:0 !important;
+        }
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        .webkit {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .outer {
+            Margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
+        }
+        .logo-image img {
+            width: 60%;
+            max-width: 600px;
+            height: auto;
+        }
+        .full-width-image img {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+        }
+        .inner {
+            padding: 10px;
+        }
+        p {
+            Margin: 0;
+        }
+        a {
+            color: #ee6a56;
+            text-decoration: underline;
+        }
+        .h1 {
+            font-size: 21px;
+            Margin-bottom: 18px;
+        }
+        .mail {
+            font-size: 14px;
+            color: #5c5858;
+            Margin-bottom: 12px;
+        }
+        .one-column .contents {
+            text-align: left;
+        }
+        .one-column p {
+            font-size: 14px;
+            Margin-bottom: 10px;
+        }
+
+        .footer-text {
+            font-family: sans-serif;
+            font-size: 12px;
+            color: #ffffff;
+        }
+
+        </style>
+    </head>
+    <body style="margin-top:0 !important;margin-bottom:0 !important;margin-right:0 !important;margin-left:0 !important;padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;background-color:#ffffff;" >
+        <center class="wrapper" style="width:100%;table-layout:fixed;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;" >
+            <div class="webkit" style="max-width:600px;margin-top:0;margin-bottom:0;margin-right:auto;margin-left:auto;" >
+                    <!--[if (gte mso 9)|(IE)]>
+                <table width="600" align="center" style="border-spacing:0;font-family:sans-serif;color:#333333;" >
+                <tr>
+                <td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;" >
+                <![endif]-->
+                <table class="outer" align="center" style="border-spacing:0;font-family:sans-serif;color:#333333;Margin:0 auto;width:100%;max-width:600px;" >
+                    <tr>
+                        <td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;" >
+                            <table class="outer" align="center" style="border-spacing:0;font-family:sans-serif;color:#333333;Margin:0 auto;width:100%;max-width:600px;" >
+                                <tr>
+                                    <td class="logo-image" align="center" style="padding-top:40px;padding-bottom:40px;padding-right:0;padding-left:0;" >
+                                        <img src="http://www.noeupapp.com/images/mail/logo.png" width="360" alt="" style="border-width:0;width:60%;max-width:600px;height:auto;display:block !important;" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                <tr>
+                    <td class="one-column" style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;" >
+                        <table width="100%" style="border-spacing:0;font-family:sans-serif;color:#333333;" >
+                            <tr>
+                                <td class="inner contents" style="padding-top:10px;padding-bottom:10px;padding-right:10px;padding-left:10px;text-align:left;" >
+                                    <p class="h1" style="Margin:0;font-size:14px;Margin-bottom:10px;" >Welcome @receiverName, you just received the following email@Html(senderName.map(" from " + "<b>"+ _ + "</b>").getOrElse("")), via the <b>@appName</b> application:</p></td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+                    <tr>
+                        <td class="inner one-column" style="padding-top:10px;padding-bottom:10px;padding-right:10px;padding-left:10px;" >
+                            <table width="100%" style="border-spacing:0;font-family:sans-serif;color:#333333;" >
+                                <tr>
+                                    <td class="inner contents" style="padding-top:10px;padding-bottom:10px;padding-right:10px;padding-left:10px;text-align:left;" >
+                                        <p class = "mail" style="Margin:0;color:#5c5858;font-size:14px;Margin-bottom:10px;" >@Html(content)</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="one-column" style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;" >
+                            <table width="100%" style="border-spacing:0;font-family:sans-serif;color:#333333;" >
+                                <tr>
+                                    <td class="inner contents" style="padding-top:0;padding-bottom:35px;padding-right:0;padding-left:10px;text-align:left;" >
+                                        <p class="h1" style="Margin:0;font-size:14px;Margin-bottom:10px;" >Best regards,</p>
+                                        <p class="h1" style="Margin:0;font-size:14px;Margin-bottom:10px;" >The noeup'App team</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;" >
+                            <table class="outer" align="center" style="border-spacing:0;font-family:sans-serif;color:#333333;margin-top:0;margin-bottom:0;margin-right:auto;margin-left:auto;width:100%;max-width:600px;Margin:0 auto;" >
+                                <tr>
+                                    <td class="full-width-image" align="center" style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;" >
+                                        <img src="http://www.noeupapp.com/images/mail/bannerPapp.png" width="600" alt="" style="border-width:0;width:100%;max-width:600px;height:auto;display:block !important;" />
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;" >
+                            <table class="outer" style="background-color:#f88370;border-spacing:0;font-family:sans-serif;color:#333333;margin-top:0;margin-bottom:0;margin-right:auto;margin-left:auto;width:100%;max-width:600px;Margin:0 auto;" >
+                                <tr>
+                                    <td class= "footer-text" align="center" style="padding-top:0;padding-bottom:25px;padding-right:0;padding-left:0;font-family:sans-serif;font-size:12px;color:#ffffff;" >
+                                        <p style="Margin:0;" >Legal information</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+
+                    <!--[if (gte mso 9)|(IE)]>
+                 </td>
+                 </tr>
+                 </table>
+                 <![endif]-->
+            </div>
+        </center>
+    </body>
+</html>

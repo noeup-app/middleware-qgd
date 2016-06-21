@@ -31,6 +31,7 @@ import com.noeupapp.middleware.authorizationClient.provider.QGDProvider
 import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthenticatorDAO
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
+import com.noeupapp.middleware.utils.Html2PdfConfig
 import com.noeupapp.middleware.utils.s3.S3Config
 import org.joda.time.DateTime
 
@@ -344,5 +345,10 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
     val s3 = new AmazonS3Client(awsCredentials, config.withProtocol(Protocol.HTTP))
     s3.setEndpoint(s3Config.host)
     s3
+  }
+
+  @Provides
+  def provideHtml2PdfConfig(configuration: Configuration): Html2PdfConfig = {
+    configuration.underlying.as[Html2PdfConfig]("html2Pdf")
   }
 }

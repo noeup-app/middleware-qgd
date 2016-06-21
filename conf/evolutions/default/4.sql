@@ -155,5 +155,3 @@ DROP TABLE IF EXISTS entity_relation_users_groups CASCADE;
 DROP TABLE IF EXISTS entity_entities CASCADE;
 DROP TABLE IF EXISTS entity_properties CASCADE;
 
-
-
