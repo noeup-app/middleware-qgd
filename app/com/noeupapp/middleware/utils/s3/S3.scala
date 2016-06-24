@@ -1,9 +1,10 @@
 package com.noeupapp.middleware.utils.s3
 
-import java.io.{ByteArrayInputStream, InputStream, File, FileOutputStream}
+import java.io.{ByteArrayInputStream, File, FileOutputStream, InputStream}
 import java.util.Date
 
 import com.amazonaws._
+import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.s3.model._
 import com.google.inject.Inject
@@ -20,11 +21,20 @@ case class AwsCellarS3(bucketName:String, folder: String, file: Array[Byte], fil
 
 case class S3Config(host: String, key: String, secret: String, expirationSignedUrlInMinutes: Long, bucket: String)
 
+case class S3CoweboConfig(host: String, key: String, secret: String, expirationSignedUrlInMinutes: Long, bucket: String)
 
-class S3 @Inject() (s3: AmazonS3Client, s3Config: S3Config) {
+class AmazonS3CoweboClient(awsCredentials: AWSCredentials, clientConfiguration: ClientConfiguration) extends AmazonS3Client(awsCredentials, clientConfiguration) {
+
+}
+
+class S3 @Inject() (s3: AmazonS3Client,
+                    s3Config: S3Config,
+                    s3CoweboConfig: S3CoweboConfig,
+                    s3Cowebo: AmazonS3CoweboClient
+                    ) {
 
 
-  def putStreamObject(content: AwsCellarS3): Future[Expect[String]] = {
+  def putStreamObject(content: AwsCellarS3, contentType: String): Future[Expect[String]] = {
     manageS3Error {
       //val tempFile = File.createTempFile(content.fileName, ".tmp")
       //tempFile.deleteOnExit()
@@ -32,27 +42,37 @@ class S3 @Inject() (s3: AmazonS3Client, s3Config: S3Config) {
       //fos.write(content.file)
       //fos.close()
 
+      //switch horrible en attendant mieux (vu par Guillaume)
       val stream: InputStream = new ByteArrayInputStream (content.file)
-
 
       val meta: ObjectMetadata = new ObjectMetadata ()
       meta.setContentLength (content.file.length.toLong)
-      meta.setContentType ("application/pdf")
+      meta.setContentType (contentType)
+      content.bucketName match {
+        case "thumb-cowebo-com" =>
+          s3Cowebo.putObject(//new PutObjectRequest(
+            content.bucketName,
+            content.fileName,
+            stream,
+            meta
+          )//.withCannedAcl(CannedAccessControlList.PublicRead)//)
+          s3Cowebo.setObjectAcl (content.bucketName, content.fileName, CannedAccessControlList.PublicRead)
+          val url = s3Cowebo.getResourceUrl(content.bucketName, content.fileName)
+          \/-(url)
 
-      s3.putObject(//new PutObjectRequest(
-        content.bucketName,
-        content.fileName,
-        stream,
-        meta
-      )//.withCannedAcl(CannedAccessControlList.PublicRead)//)
-      s3.setObjectAcl (content.bucketName, content.fileName, CannedAccessControlList.PublicRead)
-      val url = s3.getResourceUrl(content.bucketName, content.fileName)
-
+        case _ =>
+          s3.putObject(//new PutObjectRequest(
+            content.bucketName,
+            content.fileName,
+            stream,
+            meta
+          )//.withCannedAcl(CannedAccessControlList.PublicRead)//)
+          s3.setObjectAcl (content.bucketName, content.fileName, CannedAccessControlList.PublicRead)
+          val url = s3.getResourceUrl(content.bucketName, content.fileName)
+          \/-(url)
+      }
       //tempFile.delete()
-
-      \/-(url)
     }
-
 //    String bucket = "bucketname.obliquid.com";
 //    String fileName = "2011/test/test.pdf";
 //    byte[] contents = new byte[] {
