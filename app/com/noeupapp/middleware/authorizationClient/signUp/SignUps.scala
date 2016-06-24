@@ -15,11 +15,12 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import SignUpForm.signUpFormDataFormat
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
-import com.noeupapp.middleware.entities.user.{UserService, UserIn, User}
+import com.noeupapp.middleware.entities.user.{User, UserIn, UserService}
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.{BodyParserHelper, RequestHelper}
 
 import scala.concurrent.Future
+import scalaz.{-\/, EitherT, \/-}
 
 /**
  * The sign up controller.
@@ -39,7 +40,9 @@ class SignUps @Inject()(
                          htmlSignUpsResult: HtmlSignUpsResult,
                          ajaxSignUpsResult: AjaxSignUpsResult,
                          avatarService: AvatarService,
-                         passwordHasher: PasswordHasher)
+                         passwordHasher: PasswordHasher,
+                         forgotPasswordService: ForgotPasswordService
+                         )
   extends Silhouette[Account, BearerTokenAuthenticator] {
 
 
@@ -131,7 +134,84 @@ class SignUps @Inject()(
     }
   }
 
-  def forgotPassword = Action {
-    NotImplemented // TODO
+  def forgotPasswordGet() = Action { implicit request =>
+    val form = ForgotPasswordForm.form
+    Ok(com.noeupapp.middleware.authorizationClient.signUp.html.forgotPassword(form))
   }
+
+  def forgotPasswordAction = Action.async(jsonOrAnyContent[ForgotPasswordForm.Data]) { implicit request =>
+      ForgotPasswordForm.form.bindFromRequest.fold(
+        form => {
+          Future.successful(
+            BadRequest(com.noeupapp.middleware.authorizationClient.signUp.html.forgotPassword(form))
+          )
+        },
+        data => {
+          val domain = RequestHelper.getFullDomain
+          forgotPasswordService.sendForgotPasswordEmail(data.email, domain) map {
+            case -\/(e) =>
+              Logger.error(e.toString)
+              Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.forgotPasswordGet())
+                .flashing("error" -> "An internal server error occurred. You should try again later.")
+            case \/-(_) =>
+              Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
+                .flashing("info" -> s"An email has been sent to ${data.email}, check your mailbox.")
+          }
+        }
+      )
+  }
+
+
+  def forgotPasswordAskNewPasswordGet(token: String) = Action.async { implicit request =>
+    forgotPasswordService.checkTokenValidity(token).map{
+      case \/-(Some(_)) =>
+        val form = ForgotPasswordAskNewPasswordForm.form
+        Ok(com.noeupapp.middleware.authorizationClient.signUp.html.forgotPasswordAskNewPassword(form, token))
+      case \/-(None) =>
+        NotFound("Page not found. Your token should be expired. Try again.")
+      case -\/(_) =>
+        InternalServerError("InternalServerError")
+    }
+  }
+
+  def forgotPasswordAskNewPassword(token: String) = Action.async { implicit request =>
+    ForgotPasswordAskNewPasswordForm.form.bindFromRequest.fold(
+      form => Future.successful(BadRequest("BadRequest")),
+      data => {
+        /*forgotPasswordService.checkTokenValidity(token).map{
+          case \/-(Some(user)) =>
+            if(data.isPasswordEquals){
+              userService.changePassword(user.email.getOrElse(""), data.password).map{
+                case \/-(_) =>
+                  Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
+                    .flashing("info" -> "Password successfully changed !")
+                case -\/(e) =>
+                  Logger.error(e.toString)
+                  Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.forgotPasswordAskNewPasswordGet(token))
+                    .flashing("error" -> "An error occured. Please try again")
+              }
+            }else{
+              Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.forgotPasswordAskNewPasswordGet(token))
+                .flashing("error" -> "Passwords are different")
+            }
+          case \/-(None) =>
+            Future.successful(NotFound("Page not found. Your token should be expired. Try again."))
+          case -\/(_) =>
+            Future.successful(InternalServerError("InternalServerError"))
+        }*/
+
+        forgotPasswordService.changePassword(token, data).map{
+          case \/-(_) =>
+            Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
+              .flashing("info" -> "Password successfully changed !")
+          case -\/(e) =>
+            Logger.error(e.toString)
+            Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.forgotPasswordAskNewPasswordGet(token))
+              .flashing("error" -> e.message)
+        }
+      }
+    )
+  }
+
+
 }

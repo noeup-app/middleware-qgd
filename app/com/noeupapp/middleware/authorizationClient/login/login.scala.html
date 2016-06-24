@@ -39,6 +39,12 @@
                                             @msg
                                         </div>
                                     }
+                                    @request.flash.get("info").map { msg =>
+                                        <div class="alert ng-isolate-scope alert-info alert-dismissible">
+                                            <a href="#" class="close" data-dismiss="alert">&times;</a>
+                                            @msg
+                                        </div>
+                                    }
 
 
                                     <div>
@@ -70,7 +76,7 @@
 
 
                                             <div class="form-group">
-                                                <a href="@com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.forgotPassword()" class="text-muted text-small">Forgot your password?</a>
+                                                <a href="@com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.forgotPasswordGet()" class="text-muted text-small">Forgot your password?</a>
                                             </div>
 
                                             <div class="divider"></div>

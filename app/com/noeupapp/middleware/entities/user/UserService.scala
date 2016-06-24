@@ -8,7 +8,7 @@ import com.noeupapp.middleware.entities.user._
 import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import com.mohiva.play.silhouette.api.util.PasswordHasher
+import com.mohiva.play.silhouette.api.util.{PasswordHasher, PasswordInfo}
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
 import com.noeupapp.middleware.authorizationClient.login.PasswordInfoDAO
 import com.noeupapp.middleware.entities.entity.EntityService
@@ -35,6 +35,7 @@ class UserService @Inject()(userDAO: UserDAO,
                             passwordHasher: PasswordHasher,
                             entityService: EntityService,
                             organisationService: OrganisationService) {
+
 
   type ValidationFuture[A] = EitherT[Future, FailError, A]
 
@@ -141,6 +142,15 @@ class UserService @Inject()(userDAO: UserDAO,
       }
     }
     result.run
+  }
+
+
+  def changePassword(email: String, password: String): Future[Expect[Unit]] = {
+    TryBDCall{ implicit c =>
+      val loginInfo = LoginInfo("credentials", email)
+      val passwordInfo = passwordHasher.hash(password)
+      \/-(passwordInfoDAO.update(loginInfo, passwordInfo))
+    }
   }
 
 }
