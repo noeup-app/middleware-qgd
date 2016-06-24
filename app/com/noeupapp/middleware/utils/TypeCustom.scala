@@ -8,8 +8,9 @@ import scala.concurrent.Future
 import scalaz.{-\/, \/-}
 import scala.language.implicitConversions
 
-object BooleanCustom {
+object TypeCustom {
   implicit def asBooleanCustom(boolean: Boolean): BooleanCustom = new BooleanCustom(boolean)
+  implicit def asOptionCustom[T](option: Option[T]): OptionCustom[T] = new OptionCustom(option)
 }
 
 class BooleanCustom(boolean: Boolean) {
@@ -31,9 +32,34 @@ class BooleanCustom(boolean: Boolean) {
     */
   def |>(message: String): Future[Expect[Unit]] = {
     if(boolean){
-      Future(\/-(()))
+      Future.successful(\/-(()))
     }else{
-      Future(-\/(FailError(message)))
+      Future.successful(-\/(FailError(message)))
+    }
+  }
+}
+
+class OptionCustom[T](option: Option[T]) {
+
+
+  /**
+    * This is a method change an option into a Future[Expect].
+    *   if false return message given in FailError
+    *
+    * How to use ?
+    *   for {
+    *     // ...
+    *     _ <- EitherT(myOption |> "Error message returned if myOption is None")
+    *     // ...
+    *   } yield // ...
+    *
+    * @param message message returned if option is None
+    * @return
+    */
+  def |>(message: String): Future[Expect[T]] = {
+    option match {
+      case Some(e) => Future.successful(\/-(e))
+      case None    => Future.successful(-\/(FailError(message)))
     }
   }
 }
