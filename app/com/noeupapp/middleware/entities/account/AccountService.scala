@@ -47,7 +47,9 @@ class AccountService @Inject()(userService: UserService,
         case \/-(res) => Some(res)
       }
   }.recover{
-         case e: NoSuchElementException => None
+         case e: NoSuchElementException =>
+           Logger.info(s"User ${loginInfo.providerKey} not found $e")
+           None
       }
 
 

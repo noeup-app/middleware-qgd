@@ -2,6 +2,7 @@ package com.noeupapp.middleware.authorizationClient.signUp
 
 import com.google.inject.Inject
 import com.noeupapp.middleware.entities.user.{User, UserService}
+import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import play.api.Logger
@@ -9,33 +10,69 @@ import play.api.Logger
 import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
-import com.noeupapp.middleware.utils.MessageEmail
+import com.noeupapp.middleware.utils.{BearerTokenGenerator, CaseClassUtils, MessageEmail}
+
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.noeupapp.middleware.utils.BooleanCustom._
+import com.noeupapp.middleware.utils.TypeCustom._
+import org.sedis.Pool
+import play.api.libs.json.Json
+import com.noeupapp.middleware.authorizationClient.signUp.ForgotPassword._
+import com.noeupapp.middleware.entities.user.User.UserFormat
 
-class ForgotPasswordService @Inject() (messageEmail: MessageEmail, userService: UserService){
+
+class ForgotPasswordService @Inject() (messageEmail: MessageEmail,
+                                       userService: UserService,
+                                       pool: Pool,
+                                       forgotPasswordConfig: ForgotPasswordConfig) extends CaseClassUtils{
 
 
-  /**
-    * The aim of this method
-    *
-    * @param token
-    */
-  def checkTokenValidity(token: String): Future[Expect[Option[User]]] = {
-    Future.successful(\/-(None))
+
+  def generateAndSaveToken(user: User): Future[Expect[String]] = {
+    val token = BearerTokenGenerator.generateToken(forgotPasswordConfig.tokenLength)
+    try{
+      pool.withClient(_.set(ForgotPasswordKey(token), user))
+      pool.withClient(_.expire(ForgotPasswordKey(token), forgotPasswordConfig.tokenExpiresInSeconds))
+      Future.successful(\/-(token))
+    }catch {
+      case e: Exception =>
+        val failError = FailError(e.getMessage, e)
+        Logger.error("ForgotPasswordService.generateAndSaveToken " + failError.toString)
+        Future.successful(-\/(failError))
+    }
+  }
+
+  def checkTokenValidity(token: String): Future[Expect[Option[User]]] = Future {
+    Try{
+      pool.withClient(_.get(ForgotPasswordKey(token))) flatMap (r => stringToCaseClass[User](r))
+    } match {
+      case res @ \/-(_) => res
+      case error @ -\/(e) =>
+        Logger.error("ForgotPasswordService.checkTokenValidity" + e.toString)
+        error
+    }
+  }
+
+  def dropToken(token: String): Future[Expect[Unit]] = Future {
+    val key: String = ForgotPasswordKey(token)
+    Try{
+      pool.withClient(_.del(key))
+    } match {
+      case \/-(_) => \/-(())
+      case error @ -\/(e) =>
+        Logger.error("ForgotPasswordService.dropToken" + e.toString)
+        error
+    }
   }
 
 
-  def generateAndSaveToken(): Future[Expect[String]] = {
-    Future.successful(\/-("token"))
-  }
 
 
   def sendForgotPasswordEmail(email: String, domain: String): Future[Expect[Unit]] = {
     for{
-      token <- EitherT(this.generateAndSaveToken())
-      _     <- EitherT(userService.findByEmail(email))
-      email <- EitherT{
+      userOpt <- EitherT(userService.findByEmail(email))
+      user    <- EitherT(userOpt |> "This is not user with this email")
+      token   <- EitherT(this.generateAndSaveToken(user))
+      email   <- EitherT{
         val correctDomain = if (domain.endsWith("/")) domain else domain + "/"
         val link = correctDomain + "forgotPassword/" + token
         val content =
@@ -43,6 +80,8 @@ class ForgotPasswordService @Inject() (messageEmail: MessageEmail, userService: 
             |Hello,
             |
             |You asked a new password, click on this link to change your password <a href="$link">$link</a>.
+            |
+            |This link could be used only during few minutes and once.
             |
             |If you have not requested a new password, just ignore this mail.
             |
@@ -61,7 +100,7 @@ class ForgotPasswordService @Inject() (messageEmail: MessageEmail, userService: 
         )
       }
     } yield {
-      Logger.error("Email sent")
+      Logger.info("Password recovery email sent")
       ()
     }
   }.run
@@ -69,15 +108,14 @@ class ForgotPasswordService @Inject() (messageEmail: MessageEmail, userService: 
 
   def changePassword(token: String, formData: ForgotPasswordAskNewPasswordForm.Data): Future[Expect[Unit]] = {
     for{
-      user <- EitherT(this.checkTokenValidity(token))
-      _    <- EitherT(user.isDefined |> "This is not user with this email")
-      _    <- EitherT(formData.arePasswordsEqual |> "Password are not equals")
-      _    <- EitherT(userService.changePassword(user.get.email.get, formData.password))
+      user  <- EitherT(this.checkTokenValidity(token))
+      _     <- EitherT(user.isDefined |> "This is not user with this email")
+      _     <- EitherT(formData.arePasswordsEqual |> "Password are not equals")
+      email <- EitherT(user.get.email |> "Internal server error")
+      _     <- EitherT(userService.changePassword(email, formData.password))
+      _     <- EitherT(this.dropToken(token))
     } yield ()
   }.run
-    .recover{
-      case e: Exception => -\/(FailError(e.getMessage, e))
-    }
 
 
 

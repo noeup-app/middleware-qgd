@@ -168,9 +168,11 @@ class SignUps @Inject()(
         val form = ForgotPasswordAskNewPasswordForm.form
         Ok(com.noeupapp.middleware.authorizationClient.signUp.html.forgotPasswordAskNewPassword(form, token))
       case \/-(None) =>
-        NotFound("Page not found. Your token should be expired. Try again.")
+        Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
+          .flashing("error" -> "Page not found. Your token should be expired or already used. please try again.")
       case -\/(_) =>
-        InternalServerError("InternalServerError")
+        Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
+          .flashing("error" -> "Internal server error, please try later.")
     }
   }
 
