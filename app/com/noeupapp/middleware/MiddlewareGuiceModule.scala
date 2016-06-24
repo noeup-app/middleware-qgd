@@ -28,7 +28,7 @@ import play.api.{Configuration, Logger}
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 import com.noeupapp.middleware.authorizationClient.provider.QGDProvider
-import com.noeupapp.middleware.authorizationClient.signUp.ForgotPasswordConfig
+import com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswordConfig
 import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthenticatorDAO
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.account.{Account, AccountService}

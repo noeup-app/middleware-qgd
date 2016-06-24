@@ -15,10 +15,10 @@ GET         /signUp                              com.noeupapp.middleware.authori
 POST        /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.signUpAction
 
 GET         /logout                              com.noeupapp.middleware.authorizationClient.login.Logins.logOut
-GET         /forgotPassword                      com.noeupapp.middleware.authorizationClient.signUp.SignUps.forgotPasswordGet
-POST        /forgotPassword                      com.noeupapp.middleware.authorizationClient.signUp.SignUps.forgotPasswordAction
-GET         /forgotPassword/:token               com.noeupapp.middleware.authorizationClient.signUp.SignUps.forgotPasswordAskNewPasswordGet(token: String)
-POST        /forgotPassword/:token               com.noeupapp.middleware.authorizationClient.signUp.SignUps.forgotPasswordAskNewPassword(token: String)
+GET         /forgotPassword                      com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswords.forgotPasswordGet
+POST        /forgotPassword                      com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswords.forgotPasswordAction
+GET         /forgotPassword/:token               com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswords.forgotPasswordAskNewPasswordGet(token: String)
+POST        /forgotPassword/:token               com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswords.forgotPasswordAskNewPassword(token: String)
 
 
 GET         /authenticate/:provider              com.noeupapp.middleware.authorizationClient.socialAuth.SocialAuths.authenticateAction(provider)

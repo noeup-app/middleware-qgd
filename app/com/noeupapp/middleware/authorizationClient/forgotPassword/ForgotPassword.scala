@@ -1,4 +1,4 @@
-package com.noeupapp.middleware.authorizationClient.signUp
+package com.noeupapp.middleware.authorizationClient.forgotPassword
 
 import play.api.libs.json.Json
 

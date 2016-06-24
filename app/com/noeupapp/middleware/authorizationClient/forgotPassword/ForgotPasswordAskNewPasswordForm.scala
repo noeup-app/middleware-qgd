@@ -1,29 +1,28 @@
-package com.noeupapp.middleware.authorizationClient.signUp
+package com.noeupapp.middleware.authorizationClient.forgotPassword;
 
 import play.api.data.Form
 import play.api.data.Forms._
 import play.api.libs.json.Json
 
+
 /**
  * The form which handles the sign up process.
  */
-object ForgotPasswordForm {
+object ForgotPasswordAskNewPasswordForm {
 
   /**
    * A play framework form.
    */
   val form = Form(
     mapping(
-      "email" -> email
+      "password" -> nonEmptyText,
+      "passwordConfirm" -> nonEmptyText
     )(Data.apply)(Data.unapply)
   )
 
-  /**
-   * The form data.
-   *
-   * @param email The email of the user.
-   */
-  case class Data(email: String)
+  case class Data(password: String, passwordConfirm: String){
+    lazy val arePasswordsEqual = password.equals(passwordConfirm)
+  }
 
   implicit val forgotPasswordFormDataFormat = Json.format[Data]
 }

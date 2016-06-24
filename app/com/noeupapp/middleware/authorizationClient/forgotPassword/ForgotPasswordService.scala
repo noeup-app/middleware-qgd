@@ -1,23 +1,22 @@
-package com.noeupapp.middleware.authorizationClient.signUp
+package com.noeupapp.middleware.authorizationClient.forgotPassword
 
 import com.google.inject.Inject
+import com.noeupapp.middleware.entities.user.User.UserFormat
 import com.noeupapp.middleware.entities.user.{User, UserService}
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
+import com.noeupapp.middleware.utils.FutureFunctor._
+import com.noeupapp.middleware.utils.TypeCustom._
+import com.noeupapp.middleware.utils.{BearerTokenGenerator, CaseClassUtils, MessageEmail}
+import org.sedis.Pool
 import play.api.Logger
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
-import com.noeupapp.middleware.utils.FutureFunctor._
-import com.noeupapp.middleware.utils.{BearerTokenGenerator, CaseClassUtils, MessageEmail}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import com.noeupapp.middleware.utils.TypeCustom._
-import org.sedis.Pool
-import play.api.libs.json.Json
-import com.noeupapp.middleware.authorizationClient.signUp.ForgotPassword._
-import com.noeupapp.middleware.entities.user.User.UserFormat
+import com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPassword._
+import com.noeupapp.middleware.entities.user.User._
 
 
 class ForgotPasswordService @Inject() (messageEmail: MessageEmail,
