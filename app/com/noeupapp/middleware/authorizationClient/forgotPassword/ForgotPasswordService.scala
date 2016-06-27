@@ -66,26 +66,23 @@ class ForgotPasswordService @Inject() (messageEmail: MessageEmail,
 
 
 
-  def sendForgotPasswordEmail(email: String, domain: String): Future[Expect[Unit]] = {
+  def sendForgotPasswordEmail(email: String, domain: String, prefix: String = ""): Future[Expect[Unit]] = {
     for{
       userOpt <- EitherT(userService.findByEmail(email))
       user    <- EitherT(userOpt |> "This is not user with this email")
       token   <- EitherT(this.generateAndSaveToken(user))
       email   <- EitherT{
         val correctDomain = if (domain.endsWith("/")) domain else domain + "/"
-        val link = correctDomain + "forgotPassword/" + token
+        val link = correctDomain + prefix + "forgotPassword/" + token
         val content =
            s"""
-            |Hello,
+            |<p>Hello,<p>
             |
-            |You asked a new password, click on this link to change your password <a href="$link">$link</a>.
+            |<p>You asked a new password, click on this link to change your password <a href="$link">$link</a>.</p>
             |
-            |This link could be used only during few minutes and once.
+            |<p>This link could be used only during few minutes and once.</p>
             |
-            |If you have not requested a new password, just ignore this mail.
-            |
-            |Regards,
-            |noeup'App team
+            |<p>If you have not requested a new password, just ignore this mail.</p>
           """.stripMargin
 
         messageEmail.sendEmail(

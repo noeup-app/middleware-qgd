@@ -40,25 +40,37 @@ class ForgotPasswords @Inject()(
   }
 
   def forgotPasswordAction = Action.async(jsonOrAnyContent[ForgotPasswordForm.Data]) { implicit request =>
-    ForgotPasswordForm.form.bindFromRequest.fold(
-      form => {
-        Future.successful(
-          BadRequest(com.noeupapp.middleware.authorizationClient.forgotPassword.html.forgotPassword(form))
+    val domain = RequestHelper.getFullDomain
+    RequestHelper.isJson(request) match {
+      case false =>
+        ForgotPasswordForm.form.bindFromRequest.fold(
+        form => {
+            Future.successful(
+            BadRequest(com.noeupapp.middleware.authorizationClient.forgotPassword.html.forgotPassword(form))
+            )
+          },
+        data => {
+            forgotPasswordService.sendForgotPasswordEmail(data.email, domain) map {
+              case -\/(e) =>
+                Logger.error(e.toString)
+                Redirect(com.noeupapp.middleware.authorizationClient.forgotPassword.routes.ForgotPasswords.forgotPasswordGet())
+                  .flashing("error" -> "An internal server error occurred. You should try again later.")
+              case \/-(_) =>
+                Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
+                  .flashing("info" -> s"An email has been sent to ${data.email}, check your mailbox.")
+            }
+          }
         )
-      },
-      data => {
-        val domain = RequestHelper.getFullDomain
-        forgotPasswordService.sendForgotPasswordEmail(data.email, domain) map {
+      case true =>
+        val data = request.body.asInstanceOf[ForgotPasswordForm.Data]
+        forgotPasswordService.sendForgotPasswordEmail(data.email, domain, prefix = "#/") map {
           case -\/(e) =>
             Logger.error(e.toString)
-            Redirect(com.noeupapp.middleware.authorizationClient.forgotPassword.routes.ForgotPasswords.forgotPasswordGet())
-              .flashing("error" -> "An internal server error occurred. You should try again later.")
+            InternalServerError("An internal server error occurred. You should try again later.")
           case \/-(_) =>
-            Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
-              .flashing("info" -> s"An email has been sent to ${data.email}, check your mailbox.")
+            Ok(s"An email has been sent to ${data.email}, check your mailbox.")
         }
-      }
-    )
+    }
   }
 
 
@@ -76,21 +88,34 @@ class ForgotPasswords @Inject()(
     }
   }
 
-  def forgotPasswordAskNewPassword(token: String) = Action.async { implicit request =>
-    ForgotPasswordAskNewPasswordForm.form.bindFromRequest.fold(
-      form => Future.successful(BadRequest("BadRequest")),
-      data => {
+  def forgotPasswordAskNewPassword(token: String) = Action.async(jsonOrAnyContent[ForgotPasswordAskNewPasswordForm.Data]) { implicit request =>
+
+    RequestHelper.isJson(request) match {
+      case false =>
+        ForgotPasswordAskNewPasswordForm.form.bindFromRequest.fold(
+          form => Future.successful(BadRequest("BadRequest")),
+          data => {
+            forgotPasswordService.changePassword(token, data).map{
+              case \/-(_) =>
+                Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
+                  .flashing("info" -> "Password successfully changed !")
+              case -\/(e) =>
+                Logger.error(e.toString)
+                Redirect(com.noeupapp.middleware.authorizationClient.forgotPassword.routes.ForgotPasswords.forgotPasswordAskNewPasswordGet(token))
+                  .flashing("error" -> e.message)
+            }
+          }
+        )
+      case true =>
+        val data = request.body.asInstanceOf[ForgotPasswordAskNewPasswordForm.Data]
         forgotPasswordService.changePassword(token, data).map{
           case \/-(_) =>
-            Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
-              .flashing("info" -> "Password successfully changed !")
+            Ok("Password successfully changed !")
           case -\/(e) =>
             Logger.error(e.toString)
-            Redirect(com.noeupapp.middleware.authorizationClient.forgotPassword.routes.ForgotPasswords.forgotPasswordAskNewPasswordGet(token))
-              .flashing("error" -> e.message)
+            InternalServerError(e.message)
         }
-      }
-    )
+    }
   }
 
 }
