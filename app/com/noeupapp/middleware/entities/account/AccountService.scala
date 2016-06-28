@@ -1,6 +1,6 @@
 package com.noeupapp.middleware.entities.account
 
-import java.util.UUID
+import java.util.{NoSuchElementException, UUID}
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
@@ -9,6 +9,7 @@ import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
 import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
 import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.entities.user.{User, UserService}
+import com.noeupapp.middleware.errorHandle.FailError
 import play.api.Logger
 import play.api.Play.current
 import play.api.db.DB
@@ -34,18 +35,23 @@ class AccountService @Inject()(userService: UserService,
     * @return The retrieved user or None if no user could be retrieved for the given login info.
     */
   def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
-      {
+    {
         for {
-          user         <- EitherT(userService.findByEmailEither(loginInfo.providerKey))
-          organisation <- EitherT(userService.findOrganisationByUserId(user.id))
-        } yield Account(loginInfo, user, organisation)
+          user         <- EitherT(userService.findByEmail(loginInfo.providerKey))
+          organisation <- EitherT(userService.findOrganisationByUserId(user.get.id))
+        } yield Account(loginInfo, user.get, organisation)
       }.run map {
         case -\/(e) =>
           Logger.error(s"User not found $e")
           None
         case \/-(res) => Some(res)
       }
-  }
+  }.recover{
+         case e: NoSuchElementException =>
+           Logger.info(s"User ${loginInfo.providerKey} not found $e")
+           None
+      }
+
 
 
   /**
@@ -88,7 +94,7 @@ class AccountService @Inject()(userService: UserService,
     Logger.debug("AccountService.save(" + profile + ")")
 
     userService.findByEmail(profile.loginInfo.providerKey) flatMap  {
-      case Some(user) => // Update user with profile
+      case \/-(Some(user)) => // Update user with profile
         val account = Account(
           profile.loginInfo,
           user.copy(
@@ -100,7 +106,7 @@ class AccountService @Inject()(userService: UserService,
           None
         )
         save(account)
-      case None => // Insert a new user
+      case _ => // Insert a new user
         val account = Account(
           loginInfo = profile.loginInfo,
           user = User(
@@ -114,6 +120,7 @@ class AccountService @Inject()(userService: UserService,
           ),
           None
         )
+
         save(account)
     }
   })}

@@ -3,12 +3,12 @@ package com.noeupapp.middleware.entities.user
 import java.sql.Connection
 import java.util.UUID
 import javax.inject.Inject
-import com.noeupapp.middleware.entities.user._
 
+import com.noeupapp.middleware.entities.user._
 import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
-import com.mohiva.play.silhouette.api.util.PasswordHasher
+import com.mohiva.play.silhouette.api.util.{PasswordHasher, PasswordInfo}
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
 import com.noeupapp.middleware.authorizationClient.login.PasswordInfoDAO
 import com.noeupapp.middleware.entities.entity.EntityService
@@ -27,6 +27,7 @@ import scala.util.Try
 import scalaz.{-\/, EitherT, OptionT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
+import com.noeupapp.middleware.utils.TypeConversion
 
 
 class UserService @Inject()(userDAO: UserDAO,
@@ -34,6 +35,9 @@ class UserService @Inject()(userDAO: UserDAO,
                             passwordHasher: PasswordHasher,
                             entityService: EntityService,
                             organisationService: OrganisationService) {
+
+
+  type ValidationFuture[A] = EitherT[Future, FailError, A]
 
   /**
     * Search and get all users
@@ -46,47 +50,11 @@ class UserService @Inject()(userDAO: UserDAO,
     }
   }
 
-  // TODO merge findByEmail and findByEmailEither ?
-  def findByEmail(email: String): Future[Option[User]] = {
-    Future{
-      try {
-        DB.withConnection({ implicit c =>
-          val res = userDAO.find(email)
-          Logger.debug(s"UserService.findByEmail($email) -> $res")
-          res
-        })
-      } catch {
-        case e: Exception => Logger.error(s"UserService.findByEmail($email)", e)
-          None
-      }
+  def findByEmail(email: String): Future[Expect[Option[User]]] = {
+    TryBDCall{ implicit c =>
+      \/- (userDAO.find(email))
     }
   }
-
-//  def findByEmailEither(email: String): Future[Expect[User]] = {
-//    TryBDCall{ implicit c =>
-//      userDAO.find(email) match {
-//        case Some(user) => \/-(user)
-//        case None       => -\/(FailError("User not found"))
-//      }
-//    }
-//  }
-
-  def findByEmailEither(email: String): Future[Expect[User]] = {
-    Future{
-      try {
-        DB.withConnection({ implicit c =>
-          userDAO.find(email) match {
-            case Some(user) => \/-(user)
-            case None => -\/(FailError("Cannot find user"))
-          }
-        })
-      } catch {
-        case e: Exception =>
-          -\/(FailError("Error whole finding user", e))
-      }
-    }
-  }
-
 
   def findOrganisationByUserId(userId: UUID): Future[Expect[Option[Organisation]]] = {
     {
@@ -100,20 +68,11 @@ class UserService @Inject()(userDAO: UserDAO,
     case e: NoSuchElementException => \/-(None)
   }
 
-  def findById(id: UUID): Future[Option[User]] = {
-    Future{
-      try {
-        DB.withConnection({ implicit c =>
-          userDAO.find(id)
-        })
-      } catch {
-        case e: Exception =>
-          Logger.error(s"UserService.findById($id)", e)
-          None
-      }
+  def findById(id: UUID): Future[Expect[Option[User]]] = {
+    TryBDCall{ implicit c =>
+      \/- (userDAO.find(id))
     }
   }
-
 
   /**
     * Add new user
@@ -164,21 +123,34 @@ class UserService @Inject()(userDAO: UserDAO,
     * @param email user email
     * @param password non hashed pwd
     */
-  def validateUser(email: String, password: String): Future[Option[User]] = {
+  def validateUser(email: String, password: String): Future[Expect[Option[User]]] = {
     Logger.debug(s"UserService.validateUser($email, ******)...")
+
+
+    val result: ValidationFuture[Option[User]] =
     for{
-      user         <- OptionT(findByEmail(email))
-      passwordInfo <- OptionT(passwordInfoDAO.find(LoginInfo("credentials", email)))
+      user         <- EitherT(findByEmail(email))
+      passwordInfo <- EitherT(passwordInfoDAO.find(LoginInfo("credentials", email)).map(TypeConversion.option2Expect))
     } yield {
       passwordHasher.matches(passwordInfo, password) match {
         case true =>
           Logger.debug(s"UserService.validateUser($email, ******) -> Some($user)")
-          Some(user)
+          user
         case false =>
           Logger.debug(s"UserService.validateUser($email, ******) -> None")
           None
       }
     }
-  }.run.map(_.flatten)
+    result.run
+  }
+
+
+  def changePassword(email: String, password: String): Future[Expect[Unit]] = {
+    TryBDCall{ implicit c =>
+      val loginInfo = LoginInfo("credentials", email)
+      val passwordInfo = passwordHasher.hash(password)
+      \/-(passwordInfoDAO.update(loginInfo, passwordInfo))
+    }
+  }
 
 }

@@ -126,3 +126,5 @@ crashlytics-build.properties
 sftp-config.json
 
 # Created by .ignore support plugin (hsz.mobi)
+
+!activator-launch-1.3.7.jar

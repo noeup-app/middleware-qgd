@@ -2,7 +2,7 @@ package com.noeupapp.middleware.utils
 
 import java.util.Locale
 
-import play.api.mvc.RequestHeader
+import play.api.mvc.{Request, RequestHeader}
 
 object RequestHelper {
 
@@ -19,6 +19,12 @@ object RequestHelper {
       case _ =>
         false
     }
+  }
+
+
+  def getFullDomain(implicit request: RequestHeader): String = {
+    val secure = if(request.secure) "s" else ""
+    s"http$secure://${request.host}/"
   }
 
 }
