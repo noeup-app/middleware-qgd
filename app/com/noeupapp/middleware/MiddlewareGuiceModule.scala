@@ -339,7 +339,7 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
   def provideForgotPasswordConfig(configuration: Configuration): ForgotPasswordConfig = {
     configuration.underlying.as[ForgotPasswordConfig]("forgotPasswordConfig")
   }
-  :wq
+
   @Provides
   def provideS3Config(configuration: Configuration): S3Config = {
     configuration.underlying.as[S3Config]("s3config")
