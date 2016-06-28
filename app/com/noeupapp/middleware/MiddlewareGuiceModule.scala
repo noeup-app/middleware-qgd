@@ -33,7 +33,7 @@ import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthentic
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.utils.Html2PdfConfig
-import com.noeupapp.middleware.utils.s3.S3Config
+import com.noeupapp.middleware.utils.s3.{AmazonS3CoweboClient, S3Config, S3CoweboConfig}
 import org.joda.time.DateTime
 
 import scala.concurrent.Future
@@ -334,14 +334,29 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
 //  }
 
 
+
+  @Provides
+  def provideForgotPasswordConfig(configuration: Configuration): ForgotPasswordConfig = {
+    configuration.underlying.as[ForgotPasswordConfig]("forgotPasswordConfig")
+  }
+  :wq
   @Provides
   def provideS3Config(configuration: Configuration): S3Config = {
     configuration.underlying.as[S3Config]("s3config")
   }
 
   @Provides
-  def provideForgotPasswordConfig(configuration: Configuration): ForgotPasswordConfig = {
-    configuration.underlying.as[ForgotPasswordConfig]("forgotPasswordConfig")
+  def provideS3CoweboConfig(configuration: Configuration): S3CoweboConfig = {
+    configuration.underlying.as[S3CoweboConfig]("s3CoweboConfig")
+  }
+
+  @Provides
+  def provideAmazonS3CoweboClient(s3CoweboConfig: S3CoweboConfig): AmazonS3CoweboClient = {
+    val awsCredentials = new BasicAWSCredentials(s3CoweboConfig.key, s3CoweboConfig.secret)
+    val config = new ClientConfiguration
+    val s3 = new AmazonS3CoweboClient(awsCredentials, config.withProtocol(Protocol.HTTP))
+    s3.setEndpoint(s3CoweboConfig.host)
+    s3
   }
 
   @Provides
