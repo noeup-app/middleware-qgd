@@ -1,7 +1,7 @@
 package com.noeupapp.middleware.utils.s3
 
 import java.io.{ByteArrayInputStream, File, FileOutputStream, InputStream}
-import java.util.Date
+import java.util.{Date, UUID}
 
 import com.amazonaws._
 import com.amazonaws.auth.AWSCredentials
@@ -135,10 +135,10 @@ class S3 @Inject() (s3: AmazonS3Client,
   def getSignedUrlToGetAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
     getSignedUrl(HttpMethod.GET, bucketName, fileName)
 
-  def getSignedUrlToPutAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
-    getSignedUrl(HttpMethod.PUT, bucketName, fileName) // TODO set uploadable only once
+  def getSignedUrlToPutAFile(bucketName: String, fileName: String, documentInstanceId: UUID): Future[Expect[UrlS3]] =
+    getSignedUrl(HttpMethod.PUT, bucketName, fileName, Some(documentInstanceId)) // TODO set uploadable only once
 
-  def getSignedUrl(httpMethod: HttpMethod, bucketName: String, fileName: String): Future[Expect[UrlS3]] = {
+  def getSignedUrl(httpMethod: HttpMethod, bucketName: String, fileName: String, documentInstanceId: Option[UUID] = None): Future[Expect[UrlS3]] = {
     manageS3Error {
       val expiration = new Date()
       val msec = expiration.getTime
@@ -149,13 +149,13 @@ class S3 @Inject() (s3: AmazonS3Client,
       val generatePreSignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, fileName, httpMethod)
       generatePreSignedUrlRequest.setExpiration(expiration)
 
-      Logger.debug("key =" + generatePreSignedUrlRequest.getKey())
+      Logger.debug("key = " + generatePreSignedUrlRequest.getKey())
 
       val url =
         s3
         .generatePresignedUrl(generatePreSignedUrlRequest)
         .toString
-      \/-(UrlS3(url, s3Config.expirationSignedUrlInMinutes))
+      \/-(UrlS3(url, s3Config.expirationSignedUrlInMinutes, documentInstanceId))
     }
   }
 
