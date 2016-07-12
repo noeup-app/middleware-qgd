@@ -3,6 +3,7 @@ package com.noeupapp.middleware.entities.group
 import java.util.{NoSuchElementException, UUID}
 import javax.inject.Inject
 
+import com.noeupapp.middleware.entities.group.Group._
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.FutureFunctor._
@@ -74,6 +75,25 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     }
   }
 
+  def findMembersFlow(groupId: UUID, userId: UUID): Future[Expect[List[GroupMember]]] = {
+    for {
+      admin <- EitherT(isAdmin(userId))
+
+      findGroup <- EitherT(findById(groupId, userId, admin))
+
+      group <- EitherT(findGroup |> "Couldn't find this group")
+
+      members <- EitherT(findMembers(groupId))
+    } yield members
+  }.run
+
+  def findMembers(groupId: UUID): Future[Expect[List[GroupMember]]] = {
+    TryBDCall { implicit c =>
+      val members = groupDAO.findMembers(groupId)
+      \/-(members)
+    }
+  }
+
   def addEntitiesFlow(groupId: UUID, userId: UUID, entities: Array[UUID]): Future[Expect[Group]] = {
     for {
       admin <- EitherT(isAdmin(userId))
@@ -90,7 +110,6 @@ class GroupService @Inject()(groupDAO: GroupDAO,
   }.run
 
   def addEntities(groupId: UUID, entities: Array[UUID]): Future[Expect[Array[UUID]]] = {
-
 
     Try {
       entities.foreach { entity =>
@@ -118,7 +137,6 @@ class GroupService @Inject()(groupDAO: GroupDAO,
       }
     }
   }
-
 
   def deleteGroupFlow(groupId: UUID, userId: UUID): Future[Expect[Group]] = {
     for {

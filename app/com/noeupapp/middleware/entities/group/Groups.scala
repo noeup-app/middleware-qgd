@@ -49,6 +49,18 @@ class Groups @Inject()(
       }
     }
 
+  def fetchMembers(groupId: UUID)= SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
+    .async { implicit request =>
+      val user = request.identity.user.id
+      groupService.findMembersFlow(groupId, user) map {
+        case -\/(error) =>
+          Logger.error(error.toString)
+          InternalServerError(Json.toJson("Error while fetching groups"))
+        case \/-(members) => Ok(Json.toJson(members))
+      }
+    }
+
+
   def addGroup() = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async(parse.json[GroupIn]) { implicit request =>
       val groupIn = request.request.body

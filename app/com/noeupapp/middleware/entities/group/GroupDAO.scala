@@ -59,6 +59,24 @@ class GroupDAO extends GlobalReadsWrites {
     ).as(Entity.parse *)
   }
 
+  def findMembers(groupId: UUID)(implicit connection: Connection): List[GroupMember] = {
+    SQL(
+      """
+          SELECT ent.id, first_name, last_name, org.name AS organisation_name, gro.name AS group_name
+          FROM entity_entities ent
+          INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
+          INNER JOIN entity_groups grou ON grou.id = hi.parent
+          LEFT JOIN entity_users user ON ent.id = user.id
+          LEFT JOIN entity_organisations org ON org.id = ent.id
+          LEFT JOIN entity_groups gro ON gro.id = ent.id
+          WHERE grou.id = {id}::UUID
+          AND grou.deleted = false
+      """
+    ).on(
+      'id -> groupId
+    ).as(Group.parseMember *)
+  }
+
   def add(group: Group)(implicit connection: Connection): Boolean = {
     SQL(
       """
