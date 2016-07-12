@@ -52,3 +52,8 @@ GET         /entity/accounts/me                 com.noeupapp.middleware.entities
 
 GET         /entity/users                       com.noeupapp.middleware.entities.user.Users.fetchAll
 POST        /entity/users                       com.noeupapp.middleware.entities.user.Users.add
+
+GET         /entity/groups                      com.noeupapp.middleware.entities.group.Groups.fetchAll
+GET         /entity/groups/:groupId             com.noeupapp.middleware.entities.group.Groups.fetchById(groupId: java.util.UUID)
+POST        /entity/groups                      com.noeupapp.middleware.entities.group.Groups.addGroup
+POST        /entity/groups/:groupId/add         com.noeupapp.middleware.entities.group.Groups.addEntities(groupId: java.util.UUID)

@@ -11,25 +11,44 @@ import com.noeupapp.middleware.utils.TypeCustom._
 import org.joda.time.DateTime
 import java.sql.Connection
 
+import com.noeupapp.middleware.entities.entity.EntityService
+import com.noeupapp.middleware.errorHandle.FailError
+
 import scalaz._
 import play.api.Logger
 
-
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.concurrent.Future
 
-class GroupService @Inject()(groupDAO: GroupDAO){
+class GroupService @Inject()(groupDAO: GroupDAO,
+                             entityService: EntityService){
 
-  def findById(groupId: UUID, userId: UUID): Future[Expect[Option[Group]]] = {
+  def findByIdFlow(groupId: UUID, userId: UUID): Future[Expect[Option[Group]]] = {
+    for {
+      admin <- EitherT(isAdmin(userId))
+
+      group <- EitherT(findById(groupId, userId, admin))
+    } yield group
+  }.run
+
+  def findById(groupId: UUID, userId: UUID, admin: Boolean): Future[Expect[Option[Group]]] = {
     TryBDCall { implicit c =>
-      \/-(groupDAO.getById(groupId, userId))
+      \/-(groupDAO.getById(groupId, userId, admin))
     }
   }
 
-  def findAll(userId: UUID): Future[Expect[List[Group]]] = {
+  def findAllFlow(userId: UUID): Future[Expect[List[Group]]] = {
+    for {
+
+      admin <- EitherT(isAdmin(userId))
+
+      groups <- EitherT(findAll(userId, admin))
+    } yield groups
+  }.run
+
+  def findAll(userId: UUID, admin: Boolean): Future[Expect[List[Group]]] = {
     TryBDCall { implicit c =>
-      \/-(groupDAO.getAll(userId))
+      \/-(groupDAO.getAll(userId, admin))
     }
   }
 
@@ -55,6 +74,42 @@ class GroupService @Inject()(groupDAO: GroupDAO){
     }
   }
 
+  def addEntitiesFlow(groupId: UUID, userId: UUID, entities: Array[UUID]): Future[Expect[Group]] = {
+    for {
+      admin <- EitherT(isAdmin(userId))
+
+      validUser <- EitherT(admin |> "You are not authorized to add groups")
+
+      findGroup <- EitherT(findById(groupId, userId, admin))
+
+      group <- EitherT(findGroup |> "Couldn't find this group")
+
+      members <- EitherT(addEntities(groupId, entities))
+
+    } yield group
+  }.run
+
+  def addEntities(groupId: UUID, entities: Array[UUID]): Future[Expect[Array[UUID]]] = {
+
+
+    Try {
+      entities.foreach { entity =>
+        entityService.findById(entity)
+        addHierarchy(groupId, entity)
+      }
+    } match {
+      case -\/(_) => Future.successful(-\/(FailError("Error while adding entity")))
+      case \/-(_) => Future.successful(\/-(entities))
+    }
+  }
+
+  def addHierarchy(groupId: UUID, entityId: UUID): Future[Expect[UUID]] = {
+    TryBDCall { implicit c =>
+      groupDAO.addHierarchy(groupId, entityId)
+      \/-(entityId)
+    }
+  }
+
   def isAdmin(userId: UUID): Future[Expect[Boolean]] = {
     TryBDCall { implicit c =>
       groupDAO.findAdmin.filter(entity => entity.id.equals(userId)) match {
@@ -65,12 +120,28 @@ class GroupService @Inject()(groupDAO: GroupDAO){
   }
 
 
-  def deleteGroup(groupId: UUID, userId: UUID): Future[Expect[Option[Group]]] = {
+  def deleteGroupFlow(groupId: UUID, userId: UUID): Future[Expect[Group]] = {
+    for {
+
+      admin <- EitherT(isAdmin(userId))
+
+      validUser <- EitherT(admin |> "You are not authorized to add groups")
+
+      findGroup <- EitherT(findById(groupId, userId, admin))
+
+      groupToDelete <- EitherT(findGroup |> "Couldn't find this group")
+
+      group <- EitherT(deleteGroup(groupToDelete))
+
+    } yield group
+  }.run
+
+  def deleteGroup(group: Group): Future[Expect[Group]] = {
     TryBDCall { implicit c =>
-      \/-(groupDAO.getById(groupId, userId) map { group =>
-        groupDAO.delete(groupId)
-        group.copy(deleted = true)
-      })
+
+        groupDAO.delete(group.id)
+        \/-(group.copy(deleted = true))
+
     }
   }
 }

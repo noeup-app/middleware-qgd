@@ -29,9 +29,8 @@ class Groups @Inject()(
 
   def fetchById(groupId: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async { implicit request =>
-      // TODO limit search to users I can admin
       val user = request.identity.user.id
-      groupService.findById(groupId, user) map {
+      groupService.findByIdFlow(groupId, user) map {
         case -\/(error) =>
           Logger.error(error.toString)
           InternalServerError(Json.toJson("Error while fetching group"))
@@ -41,9 +40,8 @@ class Groups @Inject()(
 
   def fetchAll = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async { implicit request =>
-      // TODO limit search to users I can admin
       val user = request.identity.user.id
-      groupService.findAll(user) map {
+      groupService.findAllFlow(user) map {
         case -\/(error) =>
           Logger.error(error.toString)
           InternalServerError(Json.toJson("Error while fetching groups"))
@@ -53,13 +51,24 @@ class Groups @Inject()(
 
   def addGroup() = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async(parse.json[GroupIn]) { implicit request =>
-      // TODO limit search to users I can admin
       val groupIn = request.request.body
       val user = request.identity.user.id
       groupService.addGroupCheck(user, groupIn) map {
         case -\/(error) =>
           Logger.error(error.toString)
-          InternalServerError(Json.toJson("Error while creating groups"))
+          InternalServerError(Json.toJson("Error while creating group"))
+        case \/-(group) => Ok(Json.toJson(group))
+      }
+    }
+
+  def addEntities(groupId: UUID)= SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
+    .async(parse.json[Array[UUID]]) { implicit request =>
+      val entities = request.request.body
+      val user = request.identity.user.id
+      groupService.addEntitiesFlow(groupId, user, entities) map {
+        case -\/(error) =>
+          Logger.error(error.toString)
+          InternalServerError(Json.toJson("Error while creating group"))
         case \/-(group) => Ok(Json.toJson(group))
       }
     }
@@ -67,12 +76,11 @@ class Groups @Inject()(
   def deleteGroup(groupId: UUID) = SecuredAction(WithScope(/*"builder.groups"*/))
     .async { implicit request =>
       val user = request.identity.user.id
-      groupService.deleteGroup(groupId, user) map {
+      groupService.deleteGroupFlow(groupId, user) map {
         case -\/(error)          =>
           Logger.error(error.toString)
           InternalServerError("Error while deleting call")
-        case \/-(None)       => NotFound("Error while deleting call, call not found")
-        case \/-(Some(group)) => Ok(Json.toJson(group))
+        case \/-(group) => Ok(Json.toJson(group))
       }
     }
 

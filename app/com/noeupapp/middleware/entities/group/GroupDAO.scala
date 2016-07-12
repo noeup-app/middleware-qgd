@@ -13,7 +13,7 @@ import scala.language.postfixOps
 
 class GroupDAO extends GlobalReadsWrites {
 
-  def getById(groupId: UUID, userId: UUID)(implicit connection: Connection): Option[Group] = {
+  def getById(groupId: UUID, userId: UUID, admin: Boolean)(implicit connection: Connection): Option[Group] = {
     SQL(
       """
           SELECT grou.id, grou.name, owner, grou.deleted
@@ -21,39 +21,29 @@ class GroupDAO extends GlobalReadsWrites {
           INNER JOIN entity_entities ent ON ent.id = grou.id
           INNER JOIN entity_hierarchy hi ON hi.parent = ent.id
           WHERE grou.id = {id}::UUID
-          AND (owner = {user}:UUID OR hi.entity = {user}:UUID OR {user}::UUID IN (
-            SELECT ent.id
-                 FROM entity_entities ent
-                 INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
-                 INNER JOIN entity_groups grou ON hi.parent = grou.id OR hi.entity = grou.owner
-                 WHERE grou.name = 'Admin'
-            ))
+          AND (owner = {user}:UUID OR hi.entity = {user}:UUID OR {admin} = 'true'
           AND grou.deleted = false
       """
     ).on(
       'id -> groupId,
-      'user -> userId
+      'user -> userId,
+      'admin -> admin
     ).as(Group.parse *).headOption
   }
 
-  def getAll(userId: UUID)(implicit connection: Connection): List[Group] = {
+  def getAll(userId: UUID, admin: Boolean)(implicit connection: Connection): List[Group] = {
     SQL(
       """
           SELECT grou.id, grou.name, owner, grou.deleted
           FROM entity_groups grou
           INNER JOIN entity_entities ent ON ent.id = grou.id
           INNER JOIN entity_hierarchy hi ON hi.parent = ent.id
-          WHERE owner = {user}:UUID OR hi.entity = {user}:UUID OR {user}::UUID IN (
-                    SELECT ent.id
-                         FROM entity_entities ent
-                         INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
-                         INNER JOIN entity_groups grou ON hi.parent = grou.id OR hi.entity = grou.owner
-                         WHERE grou.name = 'Admin'
-                    )
+          WHERE owner = {user}:UUID OR hi.entity = {user}:UUID OR {admin} = 'true'
           AND grou.deleted = false
       """
     ).on(
-      'user -> userId
+      'user -> userId,
+      'admin -> admin
     ).as(Group.parse *)
   }
 
@@ -83,6 +73,19 @@ class GroupDAO extends GlobalReadsWrites {
       'name -> group.name,
       'owner -> group.owner,
       'deleted -> group.deleted
+    ).execute()
+  }
+
+  def addHierarchy(groupId: UUID, entityId: UUID)(implicit connection: Connection): Boolean = {
+    SQL(
+      """
+          INSERT INTO entity_hierarchy (entity, parent)
+          VALUES ({entity}::UUID,
+                  {parent}::UUID)
+      """
+    ).on(
+      'entity -> entityId,
+      'parent -> groupId
     ).execute()
   }
 
