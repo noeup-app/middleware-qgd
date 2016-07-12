@@ -4,6 +4,8 @@ package com.noeupapp.middleware.entities.group
 import java.sql.Connection
 import java.util.UUID
 
+import com.noeupapp.middleware.entities.entity.Entity
+
 import anorm._
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 
@@ -55,19 +57,16 @@ class GroupDAO extends GlobalReadsWrites {
     ).as(Group.parse *)
   }
 
-  def isAdmin(userId: UUID)(implicit connection: Connection): Boolean = {
+  def findAdmin(implicit connection: Connection): List[Entity] = {
     SQL(
       """
-         SELECT ent.id
+         SELECT *
                  FROM entity_entities ent
                  INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
                  INNER JOIN entity_groups grou ON hi.parent = grou.id OR hi.entity = grou.owner
                  WHERE grou.name = 'Admin'
-                 AND ent.id = {user}:UUID
       """
-    ).on(
-      'user -> userId
-    ).execute()
+    ).as(Entity.parse *)
   }
 
   def add(group: Group)(implicit connection: Connection): Boolean = {

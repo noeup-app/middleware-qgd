@@ -56,7 +56,7 @@ class Groups @Inject()(
       // TODO limit search to users I can admin
       val groupIn = request.request.body
       val user = request.identity.user.id
-      groupService.addGroup(user, groupIn) map {
+      groupService.addGroupCheck(user, groupIn) map {
         case -\/(error) =>
           Logger.error(error.toString)
           InternalServerError(Json.toJson("Error while creating groups"))

@@ -33,12 +33,23 @@ class GroupService @Inject()(groupDAO: GroupDAO){
     }
   }
 
-  def addGroup(userId: UUID, groupIn: GroupIn): Future[Expect[Group]] = {
+  def addGroupCheck(userId: UUID, groupIn: GroupIn): Future[Expect[Group]] = {
+    for {
+
+      admin <- EitherT(isAdmin(userId))
+
+      validUser <- EitherT(admin |> "You are not authorized to add groups")
+
+      group <- EitherT(addGroup(Group(UUID.randomUUID(),
+                                      groupIn.name,
+                                      userId,
+                                      deleted = false
+                                      )))
+    } yield group
+  }.run
+
+  def addGroup(group: Group): Future[Expect[Group]] = {
     TryBDCall { implicit c =>
-      val group = Group(UUID.randomUUID(),
-                        groupIn.name,
-                        userId,
-                        deleted = false)
       groupDAO.add(group)
       \/-(group)
     }
@@ -46,10 +57,13 @@ class GroupService @Inject()(groupDAO: GroupDAO){
 
   def isAdmin(userId: UUID): Future[Expect[Boolean]] = {
     TryBDCall { implicit c =>
-      \/-(groupDAO.isAdmin(userId))
+      groupDAO.findAdmin.filter(entity => entity.id.equals(userId)) match {
+        case Nil => \/-(false)
+        case entity => \/-(true)
       }
     }
-  
+  }
+
 
   def deleteGroup(groupId: UUID, userId: UUID): Future[Expect[Option[Group]]] = {
     TryBDCall { implicit c =>
