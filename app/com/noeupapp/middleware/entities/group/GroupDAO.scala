@@ -19,9 +19,9 @@ class GroupDAO extends GlobalReadsWrites {
           SELECT grou.id, grou.name, owner, grou.deleted
           FROM entity_groups grou
           INNER JOIN entity_entities ent ON ent.id = grou.id
-          INNER JOIN entity_hierarchy hi ON hi.parent = ent.id
+          LEFT JOIN entity_hierarchy hi ON hi.parent = ent.id
           WHERE grou.id = {id}::UUID
-          AND (owner = {user}:UUID OR hi.entity = {user}:UUID OR {admin} = 'true'
+          AND (owner = {user}::UUID OR hi.entity = {user}::UUID OR {admin} = 'true')
           AND grou.deleted = false
       """
     ).on(
@@ -34,11 +34,11 @@ class GroupDAO extends GlobalReadsWrites {
   def getAll(userId: UUID, admin: Boolean)(implicit connection: Connection): List[Group] = {
     SQL(
       """
-          SELECT grou.id, grou.name, owner, grou.deleted
+          SELECT DISTINCT grou.id, grou.name, owner, grou.deleted
           FROM entity_groups grou
           INNER JOIN entity_entities ent ON ent.id = grou.id
-          INNER JOIN entity_hierarchy hi ON hi.parent = ent.id
-          WHERE owner = {user}:UUID OR hi.entity = {user}:UUID OR {admin} = 'true'
+          LEFT JOIN entity_hierarchy hi ON hi.parent = ent.id
+          WHERE owner = {user}::UUID OR hi.entity = {user}::UUID OR {admin} = 'true'
           AND grou.deleted = false
       """
     ).on(
@@ -50,11 +50,11 @@ class GroupDAO extends GlobalReadsWrites {
   def findAdmin(implicit connection: Connection): List[Entity] = {
     SQL(
       """
-         SELECT *
-                 FROM entity_entities ent
-                 INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
-                 INNER JOIN entity_groups grou ON hi.parent = grou.id OR hi.entity = grou.owner
-                 WHERE grou.name = 'Admin'
+         SELECT ent.id, ent.parent, ent.type, ent.account_type
+         FROM entity_entities ent
+         INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
+         INNER JOIN entity_groups grou ON hi.parent = grou.id OR hi.entity = grou.owner
+         WHERE grou.name = 'Admin'
       """
     ).as(Entity.parse *)
   }
@@ -66,7 +66,7 @@ class GroupDAO extends GlobalReadsWrites {
           FROM entity_entities ent
           INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
           INNER JOIN entity_groups grou ON grou.id = hi.parent
-          LEFT JOIN entity_users user ON ent.id = user.id
+          LEFT JOIN entity_users use ON ent.id = use.id
           LEFT JOIN entity_organisations org ON org.id = ent.id
           LEFT JOIN entity_groups gro ON gro.id = ent.id
           WHERE grou.id = {id}::UUID
@@ -111,10 +111,10 @@ class GroupDAO extends GlobalReadsWrites {
     SQL(
       """
          UPDATE entity_groups
-         SET(
+         SET
             name = {name},
             owner = {owner}::UUID,
-            deleted = {deleted})
+            deleted = {deleted}
          WHERE id = {id}::UUID
       """
     ).on(
@@ -136,6 +136,4 @@ class GroupDAO extends GlobalReadsWrites {
       'id -> groupId
     ).execute()
   }
-
-
 }

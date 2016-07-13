@@ -47,6 +47,7 @@ class GroupService @Inject()(groupDAO: GroupDAO,
 
   def findAll(userId: UUID, admin: Boolean): Future[Expect[List[Group]]] = {
     TryBDCall { implicit c =>
+      Logger.debug(admin.toString)
       \/-(groupDAO.getAll(userId, admin))
     }
   }
@@ -154,6 +155,7 @@ class GroupService @Inject()(groupDAO: GroupDAO,
 
   def isAdmin(userId: UUID): Future[Expect[Boolean]] = {
     TryBDCall { implicit c =>
+      Logger.debug(userId.toString)
       groupDAO.findAdmin.filter(entity => entity.id.equals(userId)) match {
         case Nil => \/-(false)
         case entity => \/-(true)
