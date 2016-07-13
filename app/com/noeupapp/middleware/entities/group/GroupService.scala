@@ -1,6 +1,6 @@
 package com.noeupapp.middleware.entities.group
 
-import java.util.{NoSuchElementException, UUID}
+import java.util.UUID
 import javax.inject.Inject
 
 import com.noeupapp.middleware.entities.group.Group._
@@ -9,8 +9,6 @@ import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.TypeConversion
 import com.noeupapp.middleware.utils.TypeCustom._
-import org.joda.time.DateTime
-import java.sql.Connection
 
 import com.noeupapp.middleware.entities.entity.EntityService
 import com.noeupapp.middleware.errorHandle.FailError
@@ -98,7 +96,7 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     for {
       admin <- EitherT(isAdmin(userId))
 
-      validUser <- EitherT(admin |> "You are not authorized to add groups")
+      validUser <- EitherT(admin |> "You are not authorized to add members to group")
 
       findGroup <- EitherT(findById(groupId, userId, admin))
 
@@ -129,6 +127,31 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     }
   }
 
+  def updateGroupFlow(groupId: UUID, userId: UUID, groupUpdate: GroupUpdate): Future[Expect[Group]] = {
+    for {
+      admin <- EitherT(isAdmin(userId))
+
+      validUser <- EitherT(admin |> "You are not authorized to update groups")
+
+      findGroup <- EitherT(findById(groupId, userId, admin))
+
+      groupToUpdate <- EitherT(findGroup |> "Couldn't find this group")
+
+      group <- EitherT(updateGroup(Group(groupId,
+                                         groupUpdate.name.getOrElse(groupToUpdate.name),
+                                         groupUpdate.owner.getOrElse(groupToUpdate.owner),
+                                         deleted = false
+                                         )))
+    } yield group
+  }.run
+
+  def updateGroup(group: Group): Future[Expect[Group]] = {
+    TryBDCall { implicit c =>
+      groupDAO.update(group)
+      \/-(group)
+    }
+  }
+
   def isAdmin(userId: UUID): Future[Expect[Boolean]] = {
     TryBDCall { implicit c =>
       groupDAO.findAdmin.filter(entity => entity.id.equals(userId)) match {
@@ -143,7 +166,7 @@ class GroupService @Inject()(groupDAO: GroupDAO,
 
       admin <- EitherT(isAdmin(userId))
 
-      validUser <- EitherT(admin |> "You are not authorized to add groups")
+      validUser <- EitherT(admin |> "You are not authorized to delete groups")
 
       findGroup <- EitherT(findById(groupId, userId, admin))
 

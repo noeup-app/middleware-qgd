@@ -60,7 +60,6 @@ class Groups @Inject()(
       }
     }
 
-
   def addGroup() = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async(parse.json[GroupIn]) { implicit request =>
       val groupIn = request.request.body
@@ -81,6 +80,18 @@ class Groups @Inject()(
         case -\/(error) =>
           Logger.error(error.toString)
           InternalServerError(Json.toJson("Error while creating group"))
+        case \/-(group) => Ok(Json.toJson(group))
+      }
+    }
+
+  def updateGroup(groupId: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
+    .async(parse.json[GroupUpdate]) { implicit request =>
+      val groupUp = request.request.body
+      val user = request.identity.user.id
+      groupService.updateGroupFlow(groupId, user, groupUp) map {
+        case -\/(error) =>
+          Logger.error(error.toString)
+          InternalServerError(Json.toJson("Error while updating group"))
         case \/-(group) => Ok(Json.toJson(group))
       }
     }

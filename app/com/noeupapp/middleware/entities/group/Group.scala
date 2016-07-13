@@ -18,6 +18,12 @@ case class Group(
 case class GroupIn(
                   name: String
                   )
+
+case class GroupUpdate(
+                      name: Option[String],
+                      owner: Option[UUID]
+                      )
+
 case class GroupMember(
                  entityId: UUID,
                  firstName: Option[String],
@@ -28,7 +34,8 @@ case class GroupMember(
 object Group{
   implicit val GroupFormat = Json.format[Group]
   implicit val GroupInFormat = Json.format[GroupIn]
-  implicit val groupMemberFormat = Json.format[GroupMember]
+  implicit val GroupMemberFormat = Json.format[GroupMember]
+  implicit val GroupUpdateFormat = Json.format[GroupUpdate]
 
   val parse = {
     get[UUID]("id") ~

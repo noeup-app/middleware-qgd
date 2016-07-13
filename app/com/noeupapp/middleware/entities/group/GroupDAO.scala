@@ -107,6 +107,24 @@ class GroupDAO extends GlobalReadsWrites {
     ).execute()
   }
 
+  def update(group: Group)(implicit connection: Connection): Boolean = {
+    SQL(
+      """
+         UPDATE entity_groups
+         SET(
+            name = {name},
+            owner = {owner}::UUID,
+            deleted = {deleted})
+         WHERE id = {id}::UUID
+      """
+    ).on(
+      'id -> group.id,
+      'name -> group.name,
+      'owner -> group.owner,
+      'deleted -> group.deleted
+    ).execute()
+  }
+
   def delete(groupId: UUID)(implicit connection: Connection): Boolean = {
     SQL(
       """
