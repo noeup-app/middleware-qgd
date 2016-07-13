@@ -27,6 +27,12 @@ class Groups @Inject()(
                        groupService: GroupService)
   extends Silhouette[Account, BearerTokenAuthenticator] {
 
+  /**
+    * Fetch group information knowing its ID
+    *
+    * @param groupId
+    * @return
+    */
   def fetchById(groupId: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async { implicit request =>
       val user = request.identity.user.id
@@ -38,6 +44,11 @@ class Groups @Inject()(
       }
     }
 
+  /**
+    * Fetch all groups user can see
+    *
+    * @return
+    */
   def fetchAll = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async { implicit request =>
       val user = request.identity.user.id
@@ -49,6 +60,12 @@ class Groups @Inject()(
       }
     }
 
+  /**
+    * Fetch members of a group
+    *
+    * @param groupId
+    * @return
+    */
   def fetchMembers(groupId: UUID)= SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async { implicit request =>
       val user = request.identity.user.id
@@ -60,6 +77,12 @@ class Groups @Inject()(
       }
     }
 
+  /**
+    * Add a new group
+    * Admin only
+    *
+    * @return
+    */
   def addGroup() = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async(parse.json[GroupIn]) { implicit request =>
       val groupIn = request.request.body
@@ -72,6 +95,13 @@ class Groups @Inject()(
       }
     }
 
+  /**
+    * Add new members to a group
+    * Admin only
+    *
+    * @param groupId
+    * @return
+    */
   def addEntities(groupId: UUID)= SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async(parse.json[Array[UUID]]) { implicit request =>
       val entities = request.request.body
@@ -84,6 +114,13 @@ class Groups @Inject()(
       }
     }
 
+  /**
+    * Update a group's name or owner
+    * Admin only
+    *
+    * @param groupId
+    * @return
+    */
   def updateGroup(groupId: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async(parse.json[GroupUpdate]) { implicit request =>
       val groupUp = request.request.body
@@ -96,6 +133,13 @@ class Groups @Inject()(
       }
     }
 
+  /**
+    * Delete a group
+    * Admin only
+    *
+    * @param groupId
+    * @return
+    */
   def deleteGroup(groupId: UUID) = SecuredAction(WithScope(/*"builder.groups"*/))
     .async { implicit request =>
       val user = request.identity.user.id
@@ -106,5 +150,4 @@ class Groups @Inject()(
         case \/-(group) => Ok(Json.toJson(group))
       }
     }
-
 }

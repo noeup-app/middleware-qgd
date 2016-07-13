@@ -13,6 +13,15 @@ import scala.language.postfixOps
 
 class GroupDAO extends GlobalReadsWrites {
 
+  /**
+    * Get a group by its ID if user is either an admin, a member or the group's owner
+    *
+    * @param groupId
+    * @param userId
+    * @param admin
+    * @param connection
+    * @return
+    */
   def getById(groupId: UUID, userId: UUID, admin: Boolean)(implicit connection: Connection): Option[Group] = {
     SQL(
       """
@@ -31,6 +40,15 @@ class GroupDAO extends GlobalReadsWrites {
     ).as(Group.parse *).headOption
   }
 
+  /**
+    * Get all groups if user is admin
+    * Otherwise, get only groups where user is a member or the owner
+    *
+    * @param userId
+    * @param admin
+    * @param connection
+    * @return
+    */
   def getAll(userId: UUID, admin: Boolean)(implicit connection: Connection): List[Group] = {
     SQL(
       """
@@ -47,6 +65,12 @@ class GroupDAO extends GlobalReadsWrites {
     ).as(Group.parse *)
   }
 
+  /**
+    * Find all entities member of "Admin" group
+    *
+    * @param connection
+    * @return
+    */
   def findAdmin(implicit connection: Connection): List[Entity] = {
     SQL(
       """
@@ -59,6 +83,13 @@ class GroupDAO extends GlobalReadsWrites {
     ).as(Entity.parse *)
   }
 
+  /**
+    * Find all entities member of a group and return their name
+    *
+    * @param groupId
+    * @param connection
+    * @return
+    */
   def findMembers(groupId: UUID)(implicit connection: Connection): List[GroupMember] = {
     SQL(
       """
@@ -77,6 +108,13 @@ class GroupDAO extends GlobalReadsWrites {
     ).as(Group.parseMember *)
   }
 
+  /**
+    * Add a new group
+    *
+    * @param group
+    * @param connection
+    * @return
+    */
   def add(group: Group)(implicit connection: Connection): Boolean = {
     SQL(
       """
@@ -94,6 +132,15 @@ class GroupDAO extends GlobalReadsWrites {
     ).execute()
   }
 
+
+  /**
+    * Add a new hierarchy between an entity and a parent group
+    *
+    * @param groupId
+    * @param entityId
+    * @param connection
+    * @return
+    */
   def addHierarchy(groupId: UUID, entityId: UUID)(implicit connection: Connection): Boolean = {
     SQL(
       """
@@ -107,6 +154,13 @@ class GroupDAO extends GlobalReadsWrites {
     ).execute()
   }
 
+  /**
+    * Update a group
+    *
+    * @param group
+    * @param connection
+    * @return
+    */
   def update(group: Group)(implicit connection: Connection): Boolean = {
     SQL(
       """
@@ -125,6 +179,13 @@ class GroupDAO extends GlobalReadsWrites {
     ).execute()
   }
 
+  /**
+    * Delete a group
+    *
+    * @param groupId
+    * @param connection
+    * @return
+    */
   def delete(groupId: UUID)(implicit connection: Connection): Boolean = {
     SQL(
       """

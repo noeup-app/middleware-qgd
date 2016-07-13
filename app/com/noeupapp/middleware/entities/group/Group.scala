@@ -8,6 +8,15 @@ import anorm._
 
 import scala.language.{implicitConversions, postfixOps}
 
+
+/**
+  * A group of entities
+  *
+  * @param id
+  * @param name
+  * @param owner
+  * @param deleted
+  */
 case class Group(
                  id: UUID,
                  name: String,
@@ -15,15 +24,35 @@ case class Group(
                  deleted: Boolean = false
                 )
 
+/**
+  * Input to create a group
+  *
+  * @param name
+  */
 case class GroupIn(
                   name: String
                   )
 
+/**
+  * Input to update a group
+  *
+  * @param name
+  * @param owner
+  */
 case class GroupUpdate(
                       name: Option[String],
                       owner: Option[UUID]
                       )
 
+/**
+  * Output for  group members
+  *
+  * @param entityId
+  * @param firstName
+  * @param lastName
+  * @param organisationName
+  * @param groupName
+  */
 case class GroupMember(
                  entityId: UUID,
                  firstName: Option[String],
@@ -31,6 +60,7 @@ case class GroupMember(
                  organisationName: Option[String],
                  groupName: Option[String]
                  )
+
 object Group{
   implicit val GroupFormat = Json.format[Group]
   implicit val GroupInFormat = Json.format[GroupIn]
