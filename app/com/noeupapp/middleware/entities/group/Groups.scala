@@ -89,8 +89,13 @@ class Groups @Inject()(
       val user = request.identity.user.id
       groupService.addGroupCheck(user, groupIn) map {
         case -\/(error) =>
-          Logger.error(error.toString)
-          InternalServerError(Json.toJson("Error while creating group"))
+          if (error.message.contains("authorized"))
+            {Logger.error(error.message)
+            Forbidden(Json.toJson("Error, only an admin can add a new group"))}
+          else
+            {Logger.error(error.toString)
+            InternalServerError(Json.toJson("Error while creating group"))}
+
         case \/-(group) => Ok(Json.toJson(group))
       }
     }
@@ -108,8 +113,13 @@ class Groups @Inject()(
       val user = request.identity.user.id
       groupService.addEntitiesFlow(groupId, user, entities) map {
         case -\/(error) =>
-          Logger.error(error.toString)
-          InternalServerError(Json.toJson("Error while creating group"))
+          if (error.message.contains("authorized"))
+            {Logger.error(error.message)
+            Forbidden(Json.toJson("Error, only an admin can add members to group"))}
+          else
+            {Logger.error(error.toString)
+            InternalServerError(Json.toJson("Error while adding members"))}
+
         case \/-(group) => Ok(Json.toJson(group))
       }
     }
@@ -127,8 +137,13 @@ class Groups @Inject()(
       val user = request.identity.user.id
       groupService.updateGroupFlow(groupId, user, groupUp) map {
         case -\/(error) =>
-          Logger.error(error.toString)
-          InternalServerError(Json.toJson("Error while updating group"))
+          if (error.message.contains("authorized"))
+            {Logger.error(error.message)
+            Forbidden(Json.toJson("Error, only an admin can update a group"))}
+          else
+            {Logger.error(error.toString)
+            InternalServerError(Json.toJson("Error while updating group"))}
+
         case \/-(group) => Ok(Json.toJson(group))
       }
     }
@@ -145,8 +160,13 @@ class Groups @Inject()(
       val user = request.identity.user.id
       groupService.deleteGroupFlow(groupId, user) map {
         case -\/(error)          =>
-          Logger.error(error.toString)
-          InternalServerError("Error while deleting call")
+          if (error.message.contains("authorized"))
+            {Logger.error(error.message)
+            Forbidden(Json.toJson("Error, only an admin can delete a group"))}
+          else
+            {Logger.error(error.toString)
+            InternalServerError(Json.toJson("Error while deleting group"))}
+
         case \/-(group) => Ok(Json.toJson(group))
       }
     }
