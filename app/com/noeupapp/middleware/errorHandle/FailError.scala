@@ -11,6 +11,14 @@ import scalaz._
 
 final case class FailError(message: String, cause: Option[\/[Throwable, Error]] = None, errorType: Status = InternalServerError) {
 
+  def getException = {
+    cause match {
+      case Some(-\/(e)) => throw e
+      case Some(\/-(e)) => throw e
+      case _ => throw new FailErrorException(message)
+    }
+  }
+
   val fullStackTrace = Thread.currentThread().getStackTrace
 
   val origin: Option[String] = ExceptionEither.TryToOption(fullStackTrace.toList.mkString("\n"))
@@ -46,12 +54,16 @@ final case class FailError(message: String, cause: Option[\/[Throwable, Error]] 
     }}, $origin)"
 }
 
+class FailErrorException(msg: String) extends Exception(msg)
+
 object FailError {
 
   type Expect[T] = \/[FailError, T]
 
   // Alternative constructor to simplify error creation
   def apply(message: String, cause: Throwable): FailError = FailError(message, Some(-\/(cause)))
+
+  def apply(exception: Throwable): FailError = FailError(exception.getMessage, exception)
 
 
 }
