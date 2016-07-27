@@ -63,6 +63,20 @@ class Users @Inject()(
       }
   }
 
+  /**
+    * Find user by ID
+    *
+    * @return
+    */
+  def fetchById(id: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
+    .async { implicit request =>
+      // TODO limit search to users I can admin
+      userService.findById(id) map {
+        case -\/(_) => InternalServerError(Json.toJson("Error while fetching users"))
+        case \/-(Some(user)) => Ok(Json.toJson(toUserOut(user)))
+        case \/-(None) => NoContent
+      }
+    }
 
   /**
     * Find all users
