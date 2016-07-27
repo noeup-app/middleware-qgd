@@ -21,10 +21,10 @@ class BearerAuthenticatorDAO(authAccessTokenService: OAuthAccessTokenService,
 
   override def find(id: String): Future[Option[BearerTokenAuthenticator]] = {
     authAccessTokenService.find(id) flatMap {
-      case \/-(accessToken) => {
+      case \/-(accessToken) if accessToken.userId.isDefined => {
         Logger.debug(s"BearerAuthenticatorDAO.find($id) -> authAccessTokenService.find -> $accessToken")
         Logger.debug(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) ...")
-        userService.findById(accessToken.userId).map{
+        userService.findById(accessToken.userId.get).map{
           case \/-(Some(user)) => Some(user)
           case _ => None
         }.map(_.map{user =>
@@ -39,6 +39,10 @@ class BearerAuthenticatorDAO(authAccessTokenService: OAuthAccessTokenService,
           a
         })
       }
+
+      case \/-(accessToken) if accessToken.userId.isEmpty =>
+        Logger.error("accessToken.userId.isEmpty")
+        Future.successful(None)
 
       case -\/(e) =>
         Logger.debug(s"BearerAuthenticatorDAO.find($id) -> authAccessTokenService.find -> nothing found - $e")

@@ -30,7 +30,7 @@ case class OAuthAccessToken(
                         refreshToken: Option[String],
                         clientId: String,
                         // client: Option[Client] = None
-                        userId: UUID,
+                        userId: Option[UUID],
                         // account: Option[OauthIdentity] = None
 //                        token_type: String,
                         scope: Option[String],
@@ -68,7 +68,7 @@ object OAuthAccessToken {
     get[String]("token") ~
     get[Option[String]]("refresh_token") ~
     get[String]("client_id") ~
-    get[UUID]("user_uuid") ~
+    get[Option[UUID]]("user_uuid") ~
     get[Option[String]]("scope") ~
     get[Option[Long]]("expires_in") ~
     get[Date]("created_at") map {
