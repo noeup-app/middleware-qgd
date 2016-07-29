@@ -10,6 +10,8 @@ import play.api.db.DB
 import play.api.libs.json.Json
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
+
+import scalaoauth2.provider.AccessToken
 //import scalaoauth2.provider.AccessToken
 import scala.language.postfixOps
 import scalaz._
@@ -37,12 +39,11 @@ case class OAuthAccessToken(
                         expiresIn: Option[Long],
                         createdAt: Date
                         // TODO missing 'state' value to be returned
-                      ) {
-  def isExpired = {
-    val codeTime = createdAt.getTime - expiresIn.getOrElse(0).asInstanceOf[Long]
-    val now = new Date().getTime
-    codeTime < now
-  }
+                      )  {
+
+  def isExpired = toAccessToken.isExpired
+
+  lazy val toAccessToken: AccessToken = AccessToken(accessToken, refreshToken, scope, expiresIn, createdAt)
 }
 
 object OAuthAccessToken {

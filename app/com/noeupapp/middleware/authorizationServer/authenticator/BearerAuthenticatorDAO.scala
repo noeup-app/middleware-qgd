@@ -32,7 +32,7 @@ class BearerAuthenticatorDAO(authAccessTokenService: OAuthAccessTokenService,
           val a = BearerTokenAuthenticator(id,
             api.LoginInfo("credentials", user.email.getOrElse("")),
             new DateTime(),
-            new DateTime(accessToken.createdAt).plus(accessToken.expiresIn.getOrElse(0l)),
+            new DateTime(accessToken.createdAt).plus(accessToken.expiresIn.getOrElse(0l) * 1000),
             None
           )
           Logger.info(s"BearerAuthenticatorDAO.find($id) -> $a")
@@ -56,8 +56,9 @@ class BearerAuthenticatorDAO(authAccessTokenService: OAuthAccessTokenService,
   }
 
   override def remove(id: String): Future[Unit] = {
-    Logger.warn(s"AuthenticatorDAO.remove")
-    authAccessTokenService.deleteByAccessToken(id).map(_ => ())
+    //Logger.warn(s"AuthenticatorDAO.remove")
+    //authAccessTokenService.deleteByAccessToken(id).map(_ => ())
+    Future.successful(()) // Do not remove here because, it's removes the access token and the refresh (we don't want to delete the refresh
   }
 
   override def add(authenticator: BearerTokenAuthenticator): Future[BearerTokenAuthenticator] = {

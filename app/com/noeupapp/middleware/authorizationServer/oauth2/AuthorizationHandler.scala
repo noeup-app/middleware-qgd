@@ -113,9 +113,9 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     Logger.debug("AuthorizationHandler.getStoredAccessToken")
     authInfo.clientId match {
       case Some(clientId) =>
-          accessTokenService.findByUserAndClient(authInfo.user.id, clientId).map{
-            case -\/(_) => None
-            case \/-(res) => Some(res)
+          accessTokenService.findByUserAndClient(authInfo.user.id, clientId) map {
+            case -\/(_)     => None
+            case \/-(token) => Some(token)
           }
       case None => Future.successful(None)
     }
