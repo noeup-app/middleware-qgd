@@ -53,5 +53,5 @@ GET         /entity/users/:userId               com.noeupapp.middleware.entities
 GET         /entity/users                       com.noeupapp.middleware.entities.user.Users.fetchAll
 POST        /entity/users                       com.noeupapp.middleware.entities.user.Users.add
 
-
 GET         /evolution/:n                       com.noeupapp.middleware.evolution.Evolution.apply(n: Int)
+
