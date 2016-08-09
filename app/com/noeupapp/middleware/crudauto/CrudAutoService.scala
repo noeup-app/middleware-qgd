@@ -29,7 +29,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO,
     for {
       name <- EitherT(getClassName(model))
 
-      classe = Class.forName("com.noeupapp.middleware.entities.entity."+"Entity$")
+      classe = Class.forName("com.noeupapp.middleware.entities.entity."+name+"$")
       found <- EitherT(findById(classe, id))
 
       json <- EitherT(toJsValue(found, name))
@@ -43,20 +43,16 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO,
     }
   }
 
-  def findById[T](classe: T, id: UUID): Future[Expect[Option[T]]] = {
+  def findById[T](model: T, id: UUID): Future[Expect[Option[T]]] = {
     TryBDCall{ implicit c=>
-      val clas = Class.forName("com.noeupapp.middleware.entities.entity."+"Entity$")
-      Logger.debug("class = " + classe.toString)
-      Logger.debug(Entity.toString)
-      Logger.debug(Class.forName("com.noeupapp.middleware.entities.entity."+"Entity").getDeclaredFields.toSeq.toString())
-      Logger.debug(classe.getClass.getName)
-      Logger.debug(clas.getDeclaredFields.toSeq.toString())
-      Logger.debug(Entity.getClass.getName)
-      val table = clas.asInstanceOf[Class[T]].getDeclaredField("tableName")
+      val classe = model.asInstanceOf[Class[T]]
+      val const = classe.getDeclaredConstructors()(0)
+      const.setAccessible(true)
+      val obj = const.newInstance()
+      val table = classe.getDeclaredField("tableName")
       table.setAccessible(true)
-      val name =  table.get(Entity).asInstanceOf[String]
-      Logger.debug(name)
-    val newEntity = crudAutoDAO.findById(clas.asInstanceOf[Class[T]], id, "entity_entities").asInstanceOf[T]
+      val name =  table.get(classe.cast(obj)).asInstanceOf[String]
+    val newEntity = crudAutoDAO.findById(classe, id, name).asInstanceOf[T]
     \/-(Some(newEntity))
     }
   }
