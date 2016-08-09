@@ -14,7 +14,7 @@ import com.noeupapp.middleware.entities.account.Account
 import play.api.Logger
 import play.api.http.Writeable
 import play.api.i18n.MessagesApi
-import play.api.libs.json.Json
+import play.api.libs.json._
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -26,15 +26,15 @@ class CrudAutos @Inject()(crudAutoService: CrudAutoService,
                           scopeAndRoleAuthorization: ScopeAndRoleAuthorization
                          ) extends Silhouette[Account, BearerTokenAuthenticator] {
 
-  /*def fetchById(model: String, id: UUID) = Action.async { implicit request =>
+  def fetchById(model: String, id: UUID) = Action.async { implicit request =>
 
-      crudAutoService.findById(id) map {
-        case -\/(error) =>
-          Logger.error(error.toString)
-          InternalServerError(Json.toJson("Error while fetching entity"))
-        case \/-(json) =>  Ok(Json.toJson(json))
-      }
-    }*/
+    crudAutoService.findByIdFlow(model, id) map {
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while fetching entity"))
+      case \/-(json) =>  Ok(Json.toJson(json))
+    }
+  }
 
   def fetchName(model: String) = Action.async { implicit request =>
 

@@ -15,6 +15,6 @@ object CrudAuto {
 
   implicit val crudAutoFormat = Json.format[CrudAuto]
 
-  val supportedClasses = Array("Entity")
+  val supportedClasses = Array("Entity", "User", "Class")
 
 }
