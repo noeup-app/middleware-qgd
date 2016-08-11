@@ -14,7 +14,7 @@ import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.StringUtils._
 import org.joda.time.DateTime
-import play.api.libs.json.{Format, JsObject, JsValue, Json}
+import play.api.libs.json._
 import com.noeupapp.middleware.utils.FutureFunctor._
 import play.api.Logger
 
@@ -95,7 +95,8 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO,
       val classe = model.asInstanceOf[Class[T]]
       Logger.debug(model.asInstanceOf[Class[T]].getName)
       implicit val reads = format
-      val entity:T = json.as[T]
+      val entity:T = (json+(("id", JsString(UUID.randomUUID().toString)))).as[T]
+      Logger.debug(entity.toString)
       crudAutoDAO.add(entity, tableName) match {
         case true => \/-(Some(entity))
         case false => -\/(FailError("couldn't add entity to database"))
