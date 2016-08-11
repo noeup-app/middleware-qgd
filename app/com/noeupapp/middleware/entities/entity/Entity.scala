@@ -23,5 +23,15 @@ object Entity {
     }
   }
 
+  def getDBParam(value: String): Option[String] = {
+    value match {
+      case "id" => Some("id")
+      case "parent" => Some("parent")
+      case "entityType" => Some("type")
+      case "accountType" => Some("account_type")
+      case _ => None
+    }
+  }
+
   val tableName = "entity_entities"
 }
