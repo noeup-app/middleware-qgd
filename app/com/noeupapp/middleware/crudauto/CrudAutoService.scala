@@ -122,13 +122,19 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO,
 
   def concatValue(values: List[(AnyRef, String)], value: String = ""): String = {
     values match {
-      case x::xs => x._2 match {
-        case "java.util.UUID" => concatValue(xs, value + "'" + x._1.toString + "'::UUID, ")
-        case t if t.contains("scala.Option") => if (x._1.toString.contains("Some")) {
-                                                    val entry = x._1.toString.splitAt(5)
-                                                    concatValue(xs, value + "'" + entry._2.splitAt(entry._2.length-1)._1 + "', ")
-                                                   }
-                                                else {concatValue(xs, value + "null, ")}
+      case x::xs => x match {
+        case (y, "java.util.UUID") => concatValue(xs, value + "'" + y.toString + "'::UUID, ")
+
+        case (y,z) if z.contains("scala.Option") && z.contains("UUID") && y.toString.contains("Some")  =>
+          val entry = x._1.toString.splitAt(5)
+          concatValue(xs, value + "'" + entry._2.splitAt(entry._2.length-1)._1 + "'::UUID, ")
+
+        case (y,z) if z.contains("scala.Option") && y.toString.contains("Some") =>
+             val entry = x._1.toString.splitAt(5)
+             concatValue(xs, value + "'" + entry._2.splitAt(entry._2.length-1)._1 + "', ")
+
+        case (y,z) if z.contains("scala.Option") && !y.toString.contains("Some") => concatValue(xs, value + "null, ")
+
         case _ => concatValue(xs, value + "'" + x._1.toString + "', ")
       }
       case Nil => value.splitAt(value.length -2)._1
