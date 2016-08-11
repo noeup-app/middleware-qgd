@@ -15,6 +15,13 @@ object CrudAuto {
 
   implicit val crudAutoFormat = Json.format[CrudAuto]
 
-  val supportedClasses = Array("Entity", "User", "Class")
+  val supportedClasses = Array("Entity", "Course")
 
+  def toSingular(model: String): Option[String] = {
+    model match {
+      case "courses" => Some("course")
+      case "entities" => Some("entity")
+      case _ => None
+    }
+  }
 }

@@ -25,23 +25,4 @@ object StringUtils {
 
     domain
   }
-
-  /**
-    * Convert an english word to singular
-    *
-    * @param word an english word
-    * @return
-    */
-  def toSingular(word: String): String = {
-    word.splitAt(word.length-2) match {
-      case (name, "es") => name.last match {
-        case 'i' => name.splitAt(name.length-1)._1+"y"
-        case _ => name
-      }
-      case (_, _) => word.last match {
-        case 's' => word.splitAt(word.length-1)._1
-        case _ => word
-      }
-    }
-  }
 }
