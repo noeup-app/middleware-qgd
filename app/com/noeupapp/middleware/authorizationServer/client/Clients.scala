@@ -14,20 +14,30 @@ import com.noeupapp.middleware.entities.user.User
 import play.api.i18n.MessagesApi
 import play.api.mvc.Action
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
+import play.api.Logger
+import play.api.data.Form
 
+import scala.concurrent.Future
 import scalaz.{-\/, \/-}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 // TODO implement switch json/html
 
 class Clients @Inject()(
                          val messagesApi: MessagesApi,
                          val env: Environment[Account, BearerTokenAuthenticator],
-                         scopeAndRoleAuthorization: ScopeAndRoleAuthorization
+                         scopeAndRoleAuthorization: ScopeAndRoleAuthorization,
+                         clientService: ClientService
                        ) extends Silhouette[Account, BearerTokenAuthenticator] {
 
-  def list = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
-    val allClients = client.Client.list()
-    Ok(com.noeupapp.middleware.authorizationServer.client.html.list(allClients, None))
+  def list = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))).async { implicit request =>
+    clientService.findAll() map {
+      case \/-(clients) =>
+        Ok(com.noeupapp.middleware.authorizationServer.client.html.list(clients, None))
+      case -\/(e) =>
+        Logger.error(e.toString)
+        InternalServerError("Internal server error")
+    }
   }
 
   def create() = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
@@ -41,108 +51,108 @@ class Clients @Inject()(
       Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None))
   }
 
-  def edit(id: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
-    val clientOpt = client.Client.findByClientId(id)
-    clientOpt match {
-      case None => NotFound
-      case Some(client) =>
-        val boundForm = ClientForm.form.bind( // TODO extract form
-          Map("id"          -> client.clientId,
-              "name"        -> client.clientName,
-              "secret"      -> client.clientSecret,
-              "grantType"   -> client.authorizedGrantTypes.getOrElse(""),
+  def edit(id: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))).async { implicit request =>
+    clientService.findByClientId(id) map {
+      case -\/(e) =>
+        Logger.error(e.toString)
+        InternalServerError("Internal server error")
+      case \/-(None) => NotFound("Client is not found")
+      case \/-(Some(client)) =>
+        val boundForm = ClientForm.form.bind(// TODO extract form
+          Map("id" -> client.clientId,
+              "name" -> client.clientName,
+              "secret" -> client.clientSecret,
+              "grantType" -> client.authorizedGrantTypes.getOrElse(""),
               "description" -> client.description,
               "redirectUri" -> client.redirect_uri,
-              "scope"       -> client.defaultScope.getOrElse(""))
+              "scope" -> client.defaultScope.getOrElse(""))
         )
         Ok(com.noeupapp.middleware.authorizationServer.client.html.edit_client(boundForm, None))
     }
   }
 
-  def get(id: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
-    val clientOpt = client.Client.findByClientId(id)
-    clientOpt match {
-      case None => NotFound
-      case Some(client) =>
+
+  def get(id: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))).async { implicit request =>
+    clientService.findByClientId(id) map {
+      case -\/(e) =>
+        Logger.error(e.toString)
+        InternalServerError("Internal server error")
+      case \/-(None) => NotFound("Client is not found")
+      case \/-(Some(client)) =>
         Ok(com.noeupapp.middleware.authorizationServer.client.html.show_client(client, None))
     }
   }
 
-  def delete(id: String) = Action {NotImplemented}
 
-
-  def add = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
-    request.method match {
-      case "POST" =>
-        val boundForm = ClientForm.form.bindFromRequest
-        boundForm.fold(
-
-          formWithErrors => {
-            logger.debug("Form has errors")
-            logger.debug(formWithErrors.errors.toString)
-            Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(formWithErrors, None))
-              .flashing("error" -> "Form has errors. Please enter correct values.")
-          },
-
-          client => {
-            // check for duplicate
-            Client.findByClientId(client.clientId) match {
-              case None =>
-                logger.debug("Saving new client")
-                Try(Client.insert(client)) match {
-                  case -\/(_) =>
-                    logger.debug("Error while saving client entry")
-                    Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None))
-                      .flashing("error" -> "Please try again")
-                  case \/-(_) =>
-                    logger.debug("Successfully added. Redirecting to client list")
-                    Redirect(com.noeupapp.middleware.authorizationServer.client.routes.Clients.list())
-                }
-              case Some(c) => // duplicate
-                logger.debug("Duplicate client entry")
-                Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None))
-                  .flashing("error" -> "Please select another id for this client")
-            }
-          }
-        )
-
-      case "PUT" => NotImplemented
-      case _ => BadRequest("wrong verb usage")
+  def delete(id: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))).async { implicit request =>
+    clientService.delete(id) map {
+      case -\/(e) =>
+        Logger.error(e.toString)
+        InternalServerError("Internal server error")
+      case \/-(_) => Ok("Client deleted")
     }
   }
 
-  def update =  SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))) { implicit request =>
-    logger.debug("Clients.update()")
+
+  def add = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))).async { implicit request =>
     val boundForm = ClientForm.form.bindFromRequest
     boundForm.fold(
 
-      formWithErrors => {
-        logger.debug("Form has errors")
-        logger.debug(formWithErrors.errors.toString)
+      formWithErrors => Future.successful {
         Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(formWithErrors, None))
           .flashing("error" -> "Form has errors. Please enter correct values.")
       },
 
-      clientDetails => {
-        logger.debug("Client details")
-        logger.debug("Searching for client: " + clientDetails.clientId)
-        Client.findByClientId(clientDetails.clientId) match {
-          //models.oauth2.Clients.get(cd.id) match {
-          case Some(c) => // existing client
-            logger.debug("Saving new client")
-            Try(Client.update(clientDetails)) match {
+      client => {
+        clientService.findByClientId(client.clientId) flatMap {
+          case -\/(e) =>
+            Logger.error(e.toString)
+            Future.successful(InternalServerError("Internal server error"))
+          case \/-(Some(_)) =>
+            Future.successful(
+              Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None))
+              .flashing("error" -> "Please select another id for this client")
+            )
+          case \/-(None) =>
+            clientService.insert(client) map {
               case -\/(_) =>
-                logger.debug("Error while saving client entry")
-                Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None)).flashing("error" -> "Please try again")
+                Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None))
+                  .flashing("error" -> "Please try again")
               case \/-(_) =>
-                logger.debug("Successfully added. Redirecting to client list")
                 Redirect(com.noeupapp.middleware.authorizationServer.client.routes.Clients.list())
             }
-            logger.debug("redirecting to client list")
-            Redirect(com.noeupapp.middleware.authorizationServer.client.routes.Clients.list())
-          case None => // does not exist
-            logger.debug("No such client")
-            NotFound
+        }
+      }
+    )
+  }
+
+  def update =  SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("admin"))).async { implicit request =>
+    val boundForm = ClientForm.form.bindFromRequest
+    boundForm.fold(
+
+      formWithErrors => Future.successful {
+        Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(formWithErrors, None))
+          .flashing("error" -> "Form has errors. Please enter correct values.")
+      },
+
+      client => {
+        clientService.findByClientId(client.clientId) flatMap {
+          case -\/(e) =>
+            Logger.error(e.toString)
+            Future.successful(InternalServerError("Internal server error"))
+          case \/-(Some(_)) =>
+            Future.successful(
+              Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None))
+                .flashing("error" -> "Please select another id for this client")
+            )
+          case \/-(None) =>
+            clientService.update(client) map {
+              case -\/(_) =>
+                Ok(com.noeupapp.middleware.authorizationServer.client.html.new_client(boundForm, None))
+                  .flashing("error" -> "Please try again")
+              case \/-(_) =>
+                Redirect(com.noeupapp.middleware.authorizationServer.client.routes.Clients.list())
+            }
         }
       }
     )

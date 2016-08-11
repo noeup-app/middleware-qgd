@@ -1,12 +1,12 @@
 package com.noeupapp.middleware.authorizationServer.oauth2
 
-import java.util.{Date, NoSuchElementException}
+import java.util.{Date, NoSuchElementException, UUID}
 
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api
 import com.noeupapp.middleware.authorizationClient.login.{LoginInfo, PasswordInfoDAO}
 import com.noeupapp.middleware.authorizationServer.authCode.{AuthCode, AuthCodeService}
-import com.noeupapp.middleware.authorizationServer.client.Client
+import com.noeupapp.middleware.authorizationServer.client.{Client, ClientService}
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessToken, OAuthAccessTokenDAO, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.entities.user.UserService
@@ -28,7 +28,9 @@ import org.joda.time.DateTime
 class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
                                       accessTokenService: OAuthAccessTokenService,
                                       userService: UserService,
-                                      authCodeService: AuthCodeService) extends DataHandler[User] with NamedLogger {
+                                      authCodeService: AuthCodeService,
+                                      clientService: ClientService)
+  extends DataHandler[User] with NamedLogger {
 
   /**
     * Validate Client if client & secret matches and grantType is in the authorized list // TODO check RFC about refresh token
@@ -36,7 +38,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     * @param request
     * @return
     */
-  def validateClient(request: AuthorizationRequest): Future[Boolean] = Future.successful {
+  def validateClient(request: AuthorizationRequest): Future[Boolean] = {
     Logger.debug("AuthorizationHandler.validateClient...")
     val clientCredential = request.clientCredential.get // TODO manage None
     val grantType = request.grantType
@@ -46,10 +48,17 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
 
     logger.debug(s"given : id = ${clientCredential.clientId} , secret = ${clientCredential.clientSecret}, grantType = $grantType")
 
-    val isValid = Client.validateClient(clientCredential.clientId, clientCredential.clientSecret, grantType)
-
-    logger.debug(s"Client isValid : $isValid")
-    isValid
+    clientService.findByClientIDAndClientSecret(clientCredential.clientId, clientCredential.clientSecret.getOrElse("")) map {
+      case -\/(e) =>
+        Logger.error(e.toString)
+        false
+      case \/-(None) =>
+        logger.debug(s"Client is not valid")
+        false
+      case \/-(Some(_)) =>
+        logger.debug(s"Client is valid")
+        true
+    }
   }
 
   /**
@@ -67,15 +76,16 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     val expiration = Some(Config.OAuth2.accessTokenExpirationInSeconds.toLong)
     val now = new Date()//System.currentTimeMillis())
 
-    val token = new OAuthAccessToken( accessToken, //jsonWebToken,
-                                      refreshToken,
-                                      authInfo.clientId.getOrElse(""),    // TODO Why does Nulab did use option Here?
-                                      authInfo.user.id,
-//                                      "Bearer",
-                                      authInfo.scope,
-                                      expiration,
-                                      now
-                                    )
+
+
+    val token = new OAuthAccessToken(accessToken, //jsonWebToken,
+                                     refreshToken,
+                                     authInfo.clientId.getOrElse(""),    // TODO Why does Nulab did use option Here?
+                                     Some(authInfo.user.id),
+//                                     "Bearer",
+                                     authInfo.scope,
+                                     expiration,
+                                     now)
 
     //authAccessService.saveAccessToken(token, authInfo) // TODO Check if needed here (does provider really needs to keep token ?)
 
@@ -103,9 +113,9 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     Logger.debug("AuthorizationHandler.getStoredAccessToken")
     authInfo.clientId match {
       case Some(clientId) =>
-          accessTokenService.findByUserAndClient(authInfo.user.id, clientId).map{
-            case -\/(_) => None
-            case \/-(res) => Some(res)
+          accessTokenService.findByUserAndClient(authInfo.user.id, clientId) map {
+            case -\/(_)     => None
+            case \/-(token) => Some(token)
           }
       case None => Future.successful(None)
     }
@@ -149,7 +159,7 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
       case request: ClientCredentialsRequest =>
         // Client credential cannot return any user and is just used to provide general information on client
         logger.error("ClientCredentialsRequest : no user defined")
-        Future.successful(None)
+        Future.successful(Some(User.getDefault))
       case _ =>
         logger.warn("Unauthorized request grant type")
         Future.successful(None)
@@ -173,14 +183,16 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
 
     for{
       accessToken <- EitherT(accessTokenService.findByRefreshToken(refreshToken))
-      user        <- EitherT(userService.findById(accessToken.userId))
+      user        <- EitherT(userService.findById(accessToken.userId.get))
 
     } yield AuthInfo[User](user.get, Some(accessToken.clientId), accessToken.scope, None)
   }.run map {
     case -\/(_) => None
     case \/-(e) => Some(e)
   }}.recover{
-    case e: NoSuchElementException => None
+    case e: NoSuchElementException =>
+      Logger.error(e.getMessage, e)
+      None
   }
 
   /**

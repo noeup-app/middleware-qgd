@@ -57,4 +57,15 @@ object User {
 
   implicit def toUserOut(u:User):UserOut = UserOut(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.active)
 
+  implicit def toUser(u:UserOut):User = User(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.active, deleted = false)
+
+
+
+  // Bypass because of nulab/scala-oauth2-provider lib (
+  private val defaultUser: User = User(new UUID(0, 0), Some("FAKE"), Some("FAKE"), Some("FAKE"), Some("FAKE"), active = true, deleted = false)
+
+  def getDefault = defaultUser
+  def isDefault(u: User) = defaultUser.equals(u)
+
+
 }

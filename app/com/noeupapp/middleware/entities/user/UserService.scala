@@ -20,6 +20,7 @@ import com.noeupapp.middleware.errorHandle.FailError.Expect
 import play.api.Logger
 import play.api.Play.current
 import play.api.db.DB
+import com.noeupapp.middleware.utils.TypeCustom._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -50,9 +51,16 @@ class UserService @Inject()(userDAO: UserDAO,
     }
   }
 
-  def findByEmail(email: String): Future[Expect[Option[User]]] = {
-    TryBDCall{ implicit c =>
-      \/- (userDAO.find(email))
+  def findByEmail(email: String, clientId: Option[String] = None): Future[Expect[Option[User]]] = {
+    clientId match {
+      case Some(client) =>
+        TryBDCall{ implicit c =>
+          \/- (userDAO.find(email, client))
+        }
+      case None =>
+        TryBDCall{ implicit c =>
+          \/- (userDAO.find(email))
+        }
     }
   }
 
@@ -145,12 +153,21 @@ class UserService @Inject()(userDAO: UserDAO,
   }
 
 
-  def changePassword(email: String, password: String): Future[Expect[Unit]] = {
+  private def changePasswordWithoutUserCheck(email: String, password: String): Future[Expect[Unit]] = {
     TryBDCall{ implicit c =>
       val loginInfo = LoginInfo("credentials", email)
       val passwordInfo = passwordHasher.hash(password)
       \/-(passwordInfoDAO.update(loginInfo, passwordInfo))
     }
   }
+
+
+  def changePassword(email: String, password: String): Future[Expect[Unit]] = {
+    for{
+      user <- EitherT(this.findByEmail(email))
+      _    <- EitherT(user |> "User is not defined")
+      _    <- EitherT(this.changePasswordWithoutUserCheck(email, password))
+    } yield ()
+  }.run
 
 }

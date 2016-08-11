@@ -15,9 +15,9 @@ import com.noeupapp.middleware.entities.organisation.Organisation._
 import scala.language.postfixOps
 
 case class Account(
-                 loginInfo: api.LoginInfo,
-                 user: User,
-                 organisation: Option[Organisation]) extends api.Identity
+                    loginInfo: api.LoginInfo,
+                    user: User,
+                    organisation: Option[Organisation]) extends api.Identity
 
 
 object Account {
