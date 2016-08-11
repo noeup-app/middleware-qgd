@@ -3,7 +3,6 @@ package com.noeupapp.middleware.crudauto
 import java.sql.Connection
 import java.util.UUID
 
-import anorm.SqlParser._
 import anorm.{~, _}
 import com.noeupapp.middleware.entities.entity.Entity
 import com.noeupapp.middleware.entities.entity.Entity._
@@ -14,14 +13,7 @@ import scala.language.postfixOps
 
 class CrudAutoDAO extends GlobalReadsWrites {
 
-  def findById[T](model: T, entityId: UUID, tableName: String)(implicit connection: Connection) = {
-    val classe = model.asInstanceOf[Class[T]]
-    val const = classe.getDeclaredConstructors()(0)
-    const.setAccessible(true)
-    val obj = const.newInstance()
-    val parse = classe.getDeclaredField("parse")
-    parse.setAccessible(true)
-    val parser =  parse.get(classe.cast(obj)).asInstanceOf[anorm.RowParser[T]]
+  def findById[T](entityId: UUID, tableName: String, parser: RowParser[T])(implicit connection: Connection) = {
 
     SQL(
       s"""SELECT *
@@ -31,4 +23,34 @@ class CrudAutoDAO extends GlobalReadsWrites {
         'id -> entityId
       ).as(parser *).headOption
   }
+
+  def findAll[T](tableName: String, parser: RowParser[T])(implicit connection: Connection) = {
+
+    SQL(
+      s"""SELECT *
+         FROM ${tableName};
+        """
+    ).as(parser *)
+  }
+
+  def add[T](entity: T, tableName: String)(implicit connection: Connection): Boolean = {
+    true
+  }
+    /*SQL(
+      """
+         INSERT INTO courses (id, form, level, certification, module_name, requirements, proposals, locked, deleted)
+             VALUES ({id}::UUID, {form}::UUID, {level}, {certification}::UUID, {module_name}, {requirements}::UUID, {proposals}, {locked}, {deleted});
+      """
+    ).on(
+      'id -> course.id,
+      'form -> course.formId,
+      'level -> course.level,
+      'certification -> course.certification,
+      'module_name -> course.moduleName,
+      'requirements -> course.requirements,
+      'proposals -> course.proposals,
+      'locked -> course.locked,
+      'deleted -> course.deleted
+    ).execute()
+  }*/
 }

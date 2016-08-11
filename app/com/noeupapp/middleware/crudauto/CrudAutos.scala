@@ -12,7 +12,6 @@ import com.noeupapp.middleware.authorizationClient.ScopeAndRoleAuthorization
 import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScope
 import com.noeupapp.middleware.entities.account.Account
 import play.api.Logger
-import play.api.http.Writeable
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
 import play.api.mvc._
@@ -36,6 +35,16 @@ class CrudAutos @Inject()(crudAutoService: CrudAutoService,
     }
   }
 
+  def fetchAll(model: String) = Action.async { implicit request =>
+
+    crudAutoService.findAllFlow(model) map {
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while fetching entity"))
+      case \/-(json) =>  Ok(Json.toJson(json))
+    }
+  }
+
   def fetchName(model: String) = Action.async { implicit request =>
 
     crudAutoService.getClassName(model) map {
@@ -43,6 +52,17 @@ class CrudAutos @Inject()(crudAutoService: CrudAutoService,
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while fetching entity"))
       case \/-(name) =>  Ok(Json.toJson(name))
+    }
+  }
+
+  def add(model: String) = Action.async(parse.json) { implicit request =>
+
+    val json = request.body.as[JsObject]
+    crudAutoService.addFlow(model, json) map {
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while adding new entity"))
+      case \/-(json) =>  Ok(Json.toJson(json))
     }
   }
 }
