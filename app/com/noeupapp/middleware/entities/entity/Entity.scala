@@ -23,7 +23,7 @@ object Entity {
     }
   }
 
-  def getDBParam(value: String): Option[String] = {
+  def getDBColumns(value: String): Option[String] = {
     value match {
       case "id" => Some("id")
       case "parent" => Some("parent")

@@ -1,18 +1,14 @@
 package com.noeupapp.middleware.crudauto
 
 import java.util.UUID
-import javassist.bytecode.stackmap.TypeData.ClassName
 import javax.inject.Inject
 
 import anorm.RowParser
-import com.noeupapp.middleware.entities.entity.EntityDAO
-import com.noeupapp.middleware.entities.entity.Entity
 import com.noeupapp.middleware.crudauto.CrudAuto._
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.utils.MonadTransformers._
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
-import com.noeupapp.middleware.utils.StringUtils._
 import org.joda.time.DateTime
 import play.api.libs.json._
 import com.noeupapp.middleware.utils.FutureFunctor._
@@ -22,8 +18,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz._
 
-class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO,
-                                 entityDAO: EntityDAO)() {
+class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
 
   def findByIdFlow(model:String, id: UUID): Future[Expect[JsValue]] = {
     for {
@@ -100,10 +95,10 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO,
     val const = sing.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
-    val method = sing.getDeclaredMethod("getDBParam", classOf[String])
-    method.setAccessible(true)
+    val getTableColumnNames = sing.getDeclaredMethod("getTableColumns", classOf[String])
+    getTableColumnNames.setAccessible(true)
     val fields = entity.getClass.getDeclaredFields
-    val params = fields.flatMap{field => method.invoke(obj, field.getName).asInstanceOf[Option[String]] }
+    val params = fields.flatMap{field => getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]] }
     val values = fields.map{field => field.setAccessible(true)
                                      (field.get(entity), field.getGenericType.getTypeName)}
     val value = concatValue(values.toList)
@@ -122,22 +117,22 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO,
 
   def concatValue(values: List[(AnyRef, String)], value: String = ""): String = {
     values match {
-      case x::xs => x match {
-        case (y, "java.util.UUID") => concatValue(xs, value + "'" + y.toString + "'::UUID, ")
+      case x::xs => concatValue(xs, value + valueToAdd(x._1.toString, x._2))
+      case Nil => value.splitAt(value.length-2)._1
+    }
+  }
 
-        case (y,z) if z.contains("scala.Option") && z.contains("UUID") && y.toString.contains("Some")  =>
-          val entry = x._1.toString.splitAt(5)
-          concatValue(xs, value + "'" + entry._2.splitAt(entry._2.length-1)._1 + "'::UUID, ")
-
-        case (y,z) if z.contains("scala.Option") && y.toString.contains("Some") =>
-             val entry = x._1.toString.splitAt(5)
-             concatValue(xs, value + "'" + entry._2.splitAt(entry._2.length-1)._1 + "', ")
-
-        case (y,z) if z.contains("scala.Option") && !y.toString.contains("Some") => concatValue(xs, value + "null, ")
-
-        case _ => concatValue(xs, value + "'" + x._1.toString + "', ")
-      }
-      case Nil => value.splitAt(value.length -2)._1
+  def valueToAdd(value: String, typeName: String): String = {
+    (value, typeName) match {
+      case (y, "java.util.UUID") =>
+        "'" + y + "'::UUID, "
+      case (y,z) if z.contains("scala.Option") && z.contains("UUID") && y.contains("Some") =>
+        "'" + y.splitAt(5)._2.splitAt(y.length-6)._1 + "'::UUID, "
+      case (y,z) if z.contains("scala.Option") && !z.contains("UUID") && y.contains("Some") =>
+        "'" + y.splitAt(5)._2.splitAt(y.length-6)._1 + "', "
+      case (y,z) if z.contains("scala.Option") && !y.contains("Some") =>
+        "null, "
+      case (y,z) => "'" + y + "', "
     }
   }
 
