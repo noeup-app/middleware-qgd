@@ -33,24 +33,12 @@ class CrudAutoDAO extends GlobalReadsWrites {
     ).as(parser *)
   }
 
-  def add[T](entity: T, tableName: String)(implicit connection: Connection): Boolean = {
-    true
-  }
-    /*SQL(
+  def add(tableName: String, param: String, value: String)(implicit connection: Connection): Boolean = {
+    SQL(
+      s"""
+         INSERT INTO ${tableName} (${param})
+             VALUES (${value});
       """
-         INSERT INTO courses (id, form, level, certification, module_name, requirements, proposals, locked, deleted)
-             VALUES ({id}::UUID, {form}::UUID, {level}, {certification}::UUID, {module_name}, {requirements}::UUID, {proposals}, {locked}, {deleted});
-      """
-    ).on(
-      'id -> course.id,
-      'form -> course.formId,
-      'level -> course.level,
-      'certification -> course.certification,
-      'module_name -> course.moduleName,
-      'requirements -> course.requirements,
-      'proposals -> course.proposals,
-      'locked -> course.locked,
-      'deleted -> course.deleted
     ).execute()
-  }*/
+  }
 }
