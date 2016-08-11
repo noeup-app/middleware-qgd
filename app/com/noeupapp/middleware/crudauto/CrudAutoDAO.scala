@@ -3,9 +3,7 @@ package com.noeupapp.middleware.crudauto
 import java.sql.Connection
 import java.util.UUID
 
-import anorm.{~, _}
-import com.noeupapp.middleware.entities.entity.Entity
-import com.noeupapp.middleware.entities.entity.Entity._
+import anorm._
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 import play.api.Logger
 
