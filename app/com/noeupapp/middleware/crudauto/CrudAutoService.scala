@@ -4,11 +4,11 @@ import java.util.UUID
 import javax.inject.Inject
 
 import anorm.RowParser
-import com.noeupapp.middleware.crudauto.CrudAuto._
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.utils.MonadTransformers._
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
+import com.noeupapp.middleware.utils.TypeCustom._
 import org.joda.time.DateTime
 import play.api.libs.json._
 import com.noeupapp.middleware.utils.FutureFunctor._
@@ -19,52 +19,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz._
 
 class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
-
-  def findByIdFlow(model:String, id: UUID): Future[Expect[JsValue]] = {
-    for {
-      name <- EitherT(getClassName(model))
-      ref = Class.forName("com.noeupapp.middleware.entities.entity."+name)
-      singleton = Class.forName("com.noeupapp.middleware.entities.entity."+name+"$")
-
-      classInfos <- EitherT(getClassInfos(ref, singleton, name))
-      found <- EitherT(findById(ref, id, classInfos._1, classInfos._2))
-
-      json <- EitherT(toJsValue(found.toList, name, classInfos._3))
-    } yield json
-  }.run
-
-  def findAllFlow(model:String): Future[Expect[JsValue]] = {
-    for {
-      name <- EitherT(getClassName(model))
-      ref = Class.forName("com.noeupapp.middleware.entities.entity."+name)
-      singleton = Class.forName("com.noeupapp.middleware.entities.entity."+name+"$")
-
-      classInfos <- EitherT(getClassInfos(ref, singleton, name))
-      found <- EitherT(findAll(ref, classInfos._1, classInfos._2))
-
-      json <- EitherT(toJsValue(found, name, classInfos._3))
-    } yield json
-  }.run
-
-  def addFlow(model: String, json: JsObject): Future[Expect[JsValue]] = {
-    for {
-      name <- EitherT(getClassName(model))
-      ref = Class.forName("com.noeupapp.middleware.entities.entity."+name)
-      singleton = Class.forName("com.noeupapp.middleware.entities.entity."+name+"$")
-
-      classInfos <- EitherT(getClassInfos(ref, singleton, name))
-      found <- EitherT(add(ref, singleton, json, classInfos._1, classInfos._2, classInfos._3))
-
-      json <- EitherT(toJsValue(found.toList, name, classInfos._3))
-    } yield json
-  }.run
-
-  def getClassName(model: String): Future[Expect[String]] = {
-    CrudAuto.supportedClasses.find(name => name.equalsIgnoreCase(CrudAuto.toSingular(model).getOrElse(""))) match {
-      case Some(className) => Future.successful(\/-(className))
-      case None => Future.successful(-\/(FailError("this model is not supported")))
-    }
-  }
 
   def findById[T](model: T, id: UUID, tableName: String, parser: RowParser[T]): Future[Expect[Option[T]]] = {
     TryBDCall{ implicit c=>
@@ -83,10 +37,26 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
   def add[T, A](model: T, singleton: A, json: JsObject, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
     TryBDCall{ implicit c=>
       implicit val reads = format
-      val entity:T = (json+(("id", JsString(UUID.randomUUID().toString)))).as[T]
+      val entity:T = (json+(("id", JsString(UUID.randomUUID().toString)))+(("deleted", JsBoolean(false)))).as[T]
       val request = buildAddRequest(entity, singleton, tableName)
       crudAutoDAO.add(tableName, request._1, request._2)
       \/-(Some(entity))
+    }
+  }
+
+  def update[T, A](model: T, singleton: A, json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
+    TryBDCall{ implicit c=>
+      implicit val reads = format
+      val entity:T = (json+(("id", JsString(id.toString)))+(("deleted", JsBoolean(false)))).as[T]
+      val request = buildUpdateRequest(entity, singleton, tableName)
+      crudAutoDAO.update(tableName, request, id)
+      \/-(Some(entity))
+    }
+  }
+
+  def delete(id: UUID, tableName: String): Future[Expect[Boolean]] = {
+    TryBDCall{ implicit c=>
+      \/-(crudAutoDAO.delete(tableName, id))
     }
   }
 
@@ -104,8 +74,21 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     val value = concatValue(values.toList)
     Logger.debug(value)
     val param = concatParam(params.toList)
-
     (param, value)
+  }
+
+  def buildUpdateRequest[T, A](entity: T, singleton: A, tableName : String): String = {
+    val sing = singleton.asInstanceOf[Class[A]]
+    val const = sing.getDeclaredConstructors()(0)
+    const.setAccessible(true)
+    val obj = const.newInstance()
+    val getTableColumnNames = sing.getDeclaredMethod("getTableColumns", classOf[String])
+    getTableColumnNames.setAccessible(true)
+    val fields = entity.getClass.getDeclaredFields
+    val params = fields.map{field =>  field.setAccessible(true)
+                                      (getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]], field.get(entity), field.getGenericType.getTypeName)}
+    Logger.debug(concatParamAndValue(params.toList))
+    concatParamAndValue(params.toList)
   }
 
   def concatParam(params: List[String], param: String = ""): String = {
@@ -118,6 +101,17 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
   def concatValue(values: List[(AnyRef, String)], value: String = ""): String = {
     values match {
       case x::xs => concatValue(xs, value + valueToAdd(x._1.toString, x._2))
+      case Nil => value.splitAt(value.length-2)._1
+    }
+  }
+
+  def concatParamAndValue(list: List[(Option[String], AnyRef, String)], value: String = ""): String = {
+    list match {
+      case x::xs => x match {
+        case (Some(name),v,t) if !name.equals("id") =>
+          concatParamAndValue(xs, value + name + " = " + valueToAdd(v.toString, t))
+        case _  => concatParamAndValue(xs, value)
+      }
       case Nil => value.splitAt(value.length-2)._1
     }
   }
@@ -136,7 +130,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def getClassInfos[T, A](model: T, singleton: A, className: String): Future[Expect[(String, RowParser[T], Format[T])]] = {
+  def getClassInfo[T, A](model: T, singleton: A, className: String): Future[Expect[(String, RowParser[T], Format[T])]] = {
     val sing = singleton.asInstanceOf[Class[A]]
     val const = sing.getDeclaredConstructors()(0)
     const.setAccessible(true)
