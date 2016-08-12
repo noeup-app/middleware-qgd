@@ -52,6 +52,3 @@ GET         /entity/accounts/me                 com.noeupapp.middleware.entities
 GET         /entity/users/:userId               com.noeupapp.middleware.entities.user.Users.fetchById(userId: java.util.UUID)
 GET         /entity/users                       com.noeupapp.middleware.entities.user.Users.fetchAll
 POST        /entity/users                       com.noeupapp.middleware.entities.user.Users.add
-
-#Auto Crud
-GET         /:model                            com.noeupapp.middleware.crudauto.CrudAutos.fetchName(model: String)

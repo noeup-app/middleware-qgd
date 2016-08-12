@@ -15,7 +15,7 @@ class CrudAutoDAO extends GlobalReadsWrites {
 
     SQL(
       s"""SELECT *
-         FROM ${tableName}
+         FROM $tableName
          WHERE id = {id}::UUID;"""
       ).on(
         'id -> entityId
@@ -26,7 +26,7 @@ class CrudAutoDAO extends GlobalReadsWrites {
 
     SQL(
       s"""SELECT *
-         FROM ${tableName};
+         FROM $tableName;
         """
     ).as(parser *)
   }
@@ -34,9 +34,34 @@ class CrudAutoDAO extends GlobalReadsWrites {
   def add(tableName: String, param: String, value: String)(implicit connection: Connection): Boolean = {
     SQL(
       s"""
-         INSERT INTO ${tableName} (${param})
-             VALUES (${value});
+         INSERT INTO $tableName ($param)
+             VALUES ($value);
       """
+    ).execute()
+  }
+
+  def update(tableName: String, value: String, id: UUID)(implicit connection: Connection): Boolean = {
+    SQL(
+      s"""
+        UPDATE $tableName
+        SET
+          $value
+        WHERE id = {id}::UUID
+      """
+    ).on(
+      'id -> id
+    ).execute()
+  }
+
+  def delete(tableName: String, id: UUID)(implicit connection: Connection): Boolean = {
+    SQL(
+      s"""
+        UPDATE $tableName
+        SET deleted = 'true'
+        WHERE id = {id}::UUID
+      """
+    ).on(
+      'id -> id
     ).execute()
   }
 }

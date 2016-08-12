@@ -22,16 +22,4 @@ object Entity {
       case id ~ parent ~ entityType ~ accountType => Entity(id, parent, entityType, accountType)
     }
   }
-
-  def getDBColumns(value: String): Option[String] = {
-    value match {
-      case "id" => Some("id")
-      case "parent" => Some("parent")
-      case "entityType" => Some("type")
-      case "accountType" => Some("account_type")
-      case _ => None
-    }
-  }
-
-  val tableName = "entity_entities"
 }
