@@ -16,8 +16,8 @@ case class SendinBlueConfig(baseUrl: String, apiKey:String)
 class SMS @Inject()(ws: WSClient,
                     sendinBlueConfig: SendinBlueConfig){
 
-  def sendSMS(phone: String, text: String): Future[Expect[JsValue]] = {
-    val content = "{\"text\":\""+text+"\",\"from\":\"noeupApp\",\"to\":\""+phone+"\",\"type\":\"transactional\"}"
+  def sendSMS(phone: String, text: String, from: String): Future[Expect[JsValue]] = {
+    val content = "{\"text\":\""+text+"\",\"from\":\""+from+"\",\"to\":\""+phone+"\",\"type\":\"transactional\"}"
     Logger.debug(content)
     val request: WSRequest = ws.url(sendinBlueConfig.baseUrl+"sms")
     val complexRequest: WSRequest =
