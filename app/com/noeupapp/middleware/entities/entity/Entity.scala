@@ -6,6 +6,8 @@ import play.api.libs.json.Json
 import anorm.SqlParser._
 import anorm._
 
+import com.noeupapp.middleware.utils.Companion
+
 case class Entity(id: UUID, parent: Option[UUID], entityType: String, accountType: Option[String])
 
 
