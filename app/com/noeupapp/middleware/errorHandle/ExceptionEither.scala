@@ -36,6 +36,14 @@ object ExceptionEither {
     }
   }
 
+  def TryExpect[T](t: => Expect[T]): Expect[T] = {
+    try{
+      t
+    }catch {
+      case e: Exception => -\/(FailError(e.getMessage, Some(-\/(e))))
+    }
+  }
+
   def TryToOption[T](t: => T): Option[T] = {
     try{
       Some(t)

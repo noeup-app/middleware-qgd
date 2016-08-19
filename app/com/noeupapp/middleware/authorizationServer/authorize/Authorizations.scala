@@ -9,7 +9,7 @@ import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.{CredentialsProvider, SocialProviderRegistry}
 import com.noeupapp.middleware.authorizationClient.login.Login
 import com.noeupapp.middleware.authorizationServer.authCode.{AuthCode, AuthCodeService}
-import com.noeupapp.middleware.authorizationServer.client.Client
+import com.noeupapp.middleware.authorizationServer.client.{Client, ClientService}
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import play.api.db.DB
 import play.api.i18n.{Messages, MessagesApi}
@@ -17,6 +17,7 @@ import play.api.mvc.Action
 import play.api.{Configuration, Logger}
 
 import scala.concurrent.Future
+import scalaz.{-\/, \/-}
 
 //import models.oauth2.Client
 //import play.api.db.slick.DBAction
@@ -34,7 +35,8 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
                                userService: AccountService,
                                configuration: Configuration,
                                credentialsProvider: CredentialsProvider,
-                               authCodeService: AuthCodeService)
+                               authCodeService: AuthCodeService,
+                               clientService: ClientService)
     extends Silhouette[Account, BearerTokenAuthenticator] {
 
 
@@ -51,17 +53,21 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
 
   // TODO comments
 
-  def authorize(client_id: String, redirect_uri: String, state: String, scope: String) = UserAwareAction { implicit request =>
+  def authorize(client_id: String, redirect_uri: String, state: String, scope: String) = UserAwareAction.async { implicit request =>
 
     Logger.info("Authorize.authorize clientId : " + (client_id, redirect_uri, state, scope).toString())
 
     // check if such a client exists
-    Client.findByClientId(client_id) match {
+    clientService.findByClientId(client_id) map {
 
-      case None => // doesn't exist
+      case -\/(e) =>
+        Logger.error(e.toString)
+        InternalServerError("Internal server error")
+
+      case \/-(None) => // doesn't exist
         BadRequest("No such client exists.")
 
-      case Some(client) =>
+      case \/-(Some(client)) =>
         Logger.info("Authorize.authorize")
         // read URL parameters
         val params = List("client_id", "redirect_uri", "state", "scope")
