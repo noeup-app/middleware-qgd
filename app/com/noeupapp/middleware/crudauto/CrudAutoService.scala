@@ -61,11 +61,56 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
   }
 
   def completeAdd(json: JsObject): Future[Expect[JsObject]] = {
-    Future.successful(\/-(json+(("id", JsString(UUID.randomUUID().toString)))+(("deleted", JsBoolean(false)))))
-  }
+    for {
+      js1 <- EitherT(completeId(json))
+      js2 <- EitherT(completeDeleted(js1))
+      js3 <- EitherT(completeNow(js2))
+    }yield js3
+  }.run
 
   def completeUpdate(json: JsObject, id: UUID): Future[Expect[JsObject]] = {
-    Future.successful(\/-(json+(("id", JsString(id.toString)))+(("deleted", JsBoolean(false)))))
+    for {
+      js1 <- EitherT(completeDeleted(json+(("id", JsString(id.toString)))))
+      js2 <- EitherT(completeNow(js1))
+    }yield js2
+  }.run
+
+
+  def completeDeleted(json: JsObject): Future[Expect[JsObject]] = {
+    (json \ "deleted").asOpt[Boolean] match {
+      case Some(field) => field match {
+        case false => Future.successful(\/-(json))
+        case _ => Future.successful(\/-(json+(("deleted", JsBoolean(false)))))
+      }
+      case None => Future.successful(\/-(json+(("deleted", JsBoolean(false)))))
+    }
+  }
+
+  def completeId(json: JsObject): Future[Expect[JsObject]] = {
+    (json \ "id").asOpt[String] match {
+      case Some(field) => field match {
+        case t if isUUID(t) => Future.successful(\/-(json))
+        case _ => Future.successful(\/-(json+(("id", JsString(UUID.randomUUID().toString)))))
+      }
+      case None => Future.successful(\/-(json+(("id", JsString(UUID.randomUUID().toString)))))
+    }
+  }
+
+  def completeNow(json: JsObject): Future[Expect[JsObject]] = {
+    json.fields.filter(field => field._2.isInstanceOf[JsString] && field._2.as[String].equals("now")) match {
+      case Nil => Future.successful(\/-(json))
+      case fields => val newJs = JsObject(fields.map(f => f._1 -> JsString(DateTime.now().toString("yyyy-MM-dd"))))
+        Future.successful(\/-(json++newJs))
+    }
+  }
+
+  def isUUID(value: String): Boolean = {
+    try{
+      UUID.fromString(value)
+      true
+    } catch{
+      case e:IllegalArgumentException => false
+    }
   }
 
   def buildAddRequest[T, A](entity: T, singleton: A, tableName : String): (String, String) = {
