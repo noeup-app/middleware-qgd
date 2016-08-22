@@ -37,9 +37,9 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
   def add[T, A](model: T, singleton: A, json: JsObject, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
     TryBDCall{ implicit c=>
       implicit val reads = format
-      val entity:T = (json+(("id", JsString(UUID.randomUUID().toString)))+(("deleted", JsBoolean(false)))).as[T]
+      val entity:T = json.as[T]
       val request = buildAddRequest(entity, singleton, tableName)
-      crudAutoDAO.add(tableName, request._1, request._2)
+      crudAutoDAO.add(tableName, entity, singleton, request._1, request._2)
       \/-(Some(entity))
     }
   }
@@ -47,7 +47,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
   def update[T, A](model: T, singleton: A, json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
     TryBDCall{ implicit c=>
       implicit val reads = format
-      val entity:T = (json+(("id", JsString(id.toString)))+(("deleted", JsBoolean(false)))).as[T]
+      val entity:T = json.as[T]
       val request = buildUpdateRequest(entity, singleton, tableName)
       crudAutoDAO.update(tableName, request, id)
       \/-(Some(entity))
@@ -58,6 +58,14 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     TryBDCall{ implicit c=>
       \/-(crudAutoDAO.delete(tableName, id))
     }
+  }
+
+  def completeAdd(json: JsObject): Future[Expect[JsObject]] = {
+    Future.successful(\/-(json+(("id", JsString(UUID.randomUUID().toString)))+(("deleted", JsBoolean(false)))))
+  }
+
+  def completeUpdate(json: JsObject, id: UUID): Future[Expect[JsObject]] = {
+    Future.successful(\/-(json+(("id", JsString(id.toString)))+(("deleted", JsBoolean(false)))))
   }
 
   def buildAddRequest[T, A](entity: T, singleton: A, tableName : String): (String, String) = {
@@ -71,6 +79,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     val params = fields.flatMap{field => getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]] }
     val values = fields.map{field => field.setAccessible(true)
                                      (field.get(entity), field.getGenericType.getTypeName)}
+    Logger.debug(values.toSeq.toString())
     val value = concatValue(values.toList)
     Logger.debug(value)
     val param = concatParam(params.toList)
