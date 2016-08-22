@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.util.{Date, UUID}
 
 import com.google.inject.Inject
-import com.noeupapp.middleware.authorizationServer.client.Client
+import com.noeupapp.middleware.authorizationServer.client.{Client, ClientDAO}
 import com.noeupapp.middleware.utils.AuthCodeGenerator
 import play.api.db.DB
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
@@ -16,7 +16,8 @@ import play.api.Play.current
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 
 import scalaz.\/-
-class AuthCodeService @Inject() (authCodeDAO: AuthCodeDAO) {
+class AuthCodeService @Inject() (authCodeDAO: AuthCodeDAO,
+                                 clientDAO: ClientDAO) {
 
 
   /**
@@ -32,7 +33,7 @@ class AuthCodeService @Inject() (authCodeDAO: AuthCodeDAO) {
   def generateAuthCodeForClient(clientId: String, redirectUri: String, scope: String, userId: UUID, expiresIn: Int): Future[Option[AuthCode]] = Future {
 
     DB.withTransaction({ implicit c =>
-      Client.findByClientId(clientId).flatMap {
+      clientDAO.findByClientId(clientId).flatMap {
         client =>
           val code = AuthCodeGenerator.generateAuthCode()
           val createdAt = new Timestamp(new Date().getTime)

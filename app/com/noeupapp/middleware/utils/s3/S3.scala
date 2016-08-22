@@ -135,8 +135,10 @@ class S3 @Inject() (s3: AmazonS3Client,
   def getSignedUrlToGetAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
     getSignedUrl(HttpMethod.GET, bucketName, fileName)
 
-  def getSignedUrlToPutAFile(bucketName: String, fileName: String, documentInstanceId: UUID): Future[Expect[UrlS3]] =
-    getSignedUrl(HttpMethod.PUT, bucketName, fileName, Some(documentInstanceId)) // TODO set uploadable only once
+  def getSignedUrlToPutAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
+    getSignedUrlToPutAFile(bucketName, fileName, None)
+  def getSignedUrlToPutAFile(bucketName: String, fileName: String, documentInstanceId: Option[UUID]): Future[Expect[UrlS3]] =
+    getSignedUrl(HttpMethod.PUT, bucketName, fileName, documentInstanceId) // TODO set uploadable only once
 
   def getSignedUrl(httpMethod: HttpMethod, bucketName: String, fileName: String, documentInstanceId: Option[UUID] = None): Future[Expect[UrlS3]] = {
     manageS3Error {

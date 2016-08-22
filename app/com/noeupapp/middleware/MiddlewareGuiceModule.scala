@@ -32,7 +32,7 @@ import com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPassword
 import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthenticatorDAO
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
-import com.noeupapp.middleware.utils.Html2PdfConfig
+import com.noeupapp.middleware.utils.{Html2PdfConfig, SendinBlueConfig}
 import com.noeupapp.middleware.utils.s3.{AmazonS3CoweboClient, S3Config, S3CoweboConfig}
 import org.joda.time.DateTime
 
@@ -371,5 +371,10 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
   @Provides
   def provideHtml2PdfConfig(configuration: Configuration): Html2PdfConfig = {
     configuration.underlying.as[Html2PdfConfig]("html2Pdf")
+  }
+
+  @Provides
+  def provideSendinBlueConfig(configuration: Configuration): SendinBlueConfig = {
+    configuration.underlying.as[SendinBlueConfig]("sendinblue")
   }
 }

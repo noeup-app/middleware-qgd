@@ -37,11 +37,28 @@ class UserDAO extends GlobalReadsWrites {
     */
   def find(email: String)(implicit connection: Connection): Option[User] = {
     SQL(
-      """SELECT id, first_name, last_name, email, avatar_url, active, deleted
+      """SELECT *
          FROM entity_users
          WHERE email = {email};""")
       .on(
       'email  -> email
+      ).as(User.parse *).headOption // One email corresponds to at most one user
+  }
+
+  /**
+    * Finds a user by its login info.
+    *
+    * @param email user email
+    * @return The found user or None if no user for the given login info could be found.
+    */
+  def find(email: String, clientId: String)(implicit connection: Connection): Option[User] = {
+    SQL(
+      """SELECT *
+         FROM entity_users
+         WHERE email = {email} AND owned_by_client = {client_id};""")
+      .on(
+        'email  -> email,
+        'client_id -> clientId
       ).as(User.parse *).headOption // One email corresponds to at most one user
   }
 
