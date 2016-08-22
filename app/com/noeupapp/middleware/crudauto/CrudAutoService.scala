@@ -65,17 +65,15 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     for {
       js1 <- EitherT(completeId(json))
       js2 <- EitherT(completeDeleted(js1))
-      js3 <- EitherT(completeNow(js2))
-      js4 <- EitherT(completeOtherTime(js3))
-    }yield js4
+      js3 <- EitherT(completeTime(js2))
+    }yield js3
   }.run
 
   def completeUpdate(json: JsObject, id: UUID): Future[Expect[JsObject]] = {
     for {
       js1 <- EitherT(completeDeleted(json+(("id", JsString(id.toString)))))
-      js2 <- EitherT(completeNow(js1))
-      js3 <- EitherT(completeOtherTime(js2))
-    }yield js3
+      js2 <- EitherT(completeTime(js1))
+    }yield js2
   }.run
 
   def completeDeleted(json: JsObject): Future[Expect[JsObject]] = {
@@ -98,21 +96,15 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def completeNow(json: JsObject): Future[Expect[JsObject]] = {
-    json.fields.filter(field => field._2.isInstanceOf[JsString] && field._2.as[String].equals("time_now")) match {
-      case Nil => Future.successful(\/-(json))
-      case fields =>
-        val newJs = JsObject(fields.map(f => f._1 -> JsString(DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss'Z'"))))
-        Future.successful(\/-(json++newJs))
-    }
-  }
-
-  def completeOtherTime(json: JsObject): Future[Expect[JsObject]] = {
+  def completeTime(json: JsObject): Future[Expect[JsObject]] = {
     json.fields.filter(field => field._2.isInstanceOf[JsString] &&
-      (field._2.as[String].split(' ').head.equals("time_plus") | field._2.as[String].split(' ').head.equals("time_minus"))) match {
+      (field._2.as[String].split(' ').head == "time_plus" |
+       field._2.as[String].split(' ').head == "time_minus" |
+       field._2.as[String].split(' ').head == "time_now")) match {
       case Nil => Future.successful(\/-(json))
       case fields =>
-        val newJs = JsObject(fields.map(f => f._1 -> JsString(getTime(f._2.as[String], f._2.as[String].split(' ').head))))
+        val newJs = JsObject(fields.map(f =>
+          f._1 -> JsString(getTime(f._2.as[String], f._2.as[String].split(' ').head))))
         Future.successful(\/-(json++newJs))
     }
   }
@@ -141,6 +133,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
         case "millis" => DateTime.now.minusMillis(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
         case _ => DateTime.now.toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
       }
+      case "time_now" => DateTime.now.toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
     }
   }
 
@@ -160,10 +153,10 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     val getTableColumnNames = singleton.getDeclaredMethod("getTableColumns", classOf[String])
     getTableColumnNames.setAccessible(true)
     val fields = entity.getClass.getDeclaredFields
-    val params = fields.flatMap{field => getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]] }
+    val params = fields.flatMap{field => getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]]}
     val values = fields.map{field => field.setAccessible(true)
                                      (field.get(entity), field.getGenericType.getTypeName)}
-    Logger.debug(values.toSeq.toString())
+    Logger.debug(values.toSeq.toString)
     val value = concatValue(values.toList)
     Logger.debug(value)
     val param = concatParam(params.toList)
@@ -178,7 +171,9 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     getTableColumnNames.setAccessible(true)
     val fields = entity.getClass.getDeclaredFields
     val params = fields.map{field =>  field.setAccessible(true)
-                                      (getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]], field.get(entity), field.getGenericType.getTypeName)}
+                                      (getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]],
+                                       field.get(entity),
+                                       field.getGenericType.getTypeName)}
     Logger.debug(concatParamAndValue(params.toList))
     concatParamAndValue(params.toList)
   }
@@ -200,7 +195,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
   def concatParamAndValue(list: List[(Option[String], AnyRef, String)], value: String = ""): String = {
     list match {
       case x::xs => x match {
-        case (Some(name),v,t) if !name.equals("id") =>
+        case (Some(name),v,t) if !(name == "id") =>
           concatParamAndValue(xs, value + name + " = " + valueToAdd(v.toString, t))
         case _  => concatParamAndValue(xs, value)
       }
