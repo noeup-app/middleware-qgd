@@ -148,7 +148,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     table.setAccessible(true)
     val parse = sing.getDeclaredField("parse")
     parse.setAccessible(true)
-    val jsFormat = sing.getDeclaredField(className+"Format")
+    val jsFormat = sing.getDeclaredField(className.split('.').last+"Format")
     jsFormat.setAccessible(true)
     val format = jsFormat.get(obj).asInstanceOf[Format[T]]
     val parser = parse.get(obj).asInstanceOf[anorm.RowParser[T]]

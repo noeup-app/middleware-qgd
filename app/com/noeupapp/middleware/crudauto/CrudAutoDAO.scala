@@ -50,7 +50,7 @@ class CrudAutoDAO extends GlobalReadsWrites {
     SQL(
       s"""
          INSERT INTO $tableName ($params)
-             VALUES ({$values});
+             VALUES ($values);
       """
     ).execute()
   }
