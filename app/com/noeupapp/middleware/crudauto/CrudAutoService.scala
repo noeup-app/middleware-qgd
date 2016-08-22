@@ -12,6 +12,7 @@ import com.noeupapp.middleware.utils.TypeCustom._
 import org.joda.time.DateTime
 import play.api.libs.json._
 import com.noeupapp.middleware.utils.FutureFunctor._
+import org.joda.time.format.DateTimeFormat
 import play.api.Logger
 
 import scala.concurrent.Future
@@ -20,21 +21,21 @@ import scalaz._
 
 class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
 
-  def findById[T](model: T, id: UUID, tableName: String, parser: RowParser[T]): Future[Expect[Option[T]]] = {
+  def findById[T](model: Class[T], id: UUID, tableName: String, parser: RowParser[T]): Future[Expect[Option[T]]] = {
     TryBDCall{ implicit c=>
       val newEntity: Option[T] = crudAutoDAO.findById(id, tableName, parser)
       \/-(newEntity)
     }
   }
 
-  def findAll[T](model: T, tableName: String, parser: RowParser[T]): Future[Expect[List[T]]] = {
+  def findAll[T](model: Class[T], tableName: String, parser: RowParser[T]): Future[Expect[List[T]]] = {
     TryBDCall{ implicit c=>
       val newEntity:List[T] = crudAutoDAO.findAll(tableName, parser)
       \/-(newEntity)
     }
   }
 
-  def add[T, A](model: T, singleton: A, json: JsObject, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
+  def add[T, A](model: Class[T], singleton: Class[A], json: JsObject, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
     TryBDCall{ implicit c=>
       implicit val reads = format
       val entity:T = json.as[T]
@@ -44,7 +45,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def update[T, A](model: T, singleton: A, json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
+  def update[T, A](model: Class[T], singleton: Class[A], json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
     TryBDCall{ implicit c=>
       implicit val reads = format
       val entity:T = json.as[T]
@@ -65,16 +66,17 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
       js1 <- EitherT(completeId(json))
       js2 <- EitherT(completeDeleted(js1))
       js3 <- EitherT(completeNow(js2))
-    }yield js3
+      js4 <- EitherT(completeOtherTime(js3))
+    }yield js4
   }.run
 
   def completeUpdate(json: JsObject, id: UUID): Future[Expect[JsObject]] = {
     for {
       js1 <- EitherT(completeDeleted(json+(("id", JsString(id.toString)))))
       js2 <- EitherT(completeNow(js1))
-    }yield js2
+      js3 <- EitherT(completeOtherTime(js2))
+    }yield js3
   }.run
-
 
   def completeDeleted(json: JsObject): Future[Expect[JsObject]] = {
     (json \ "deleted").asOpt[Boolean] match {
@@ -97,10 +99,48 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
   }
 
   def completeNow(json: JsObject): Future[Expect[JsObject]] = {
-    json.fields.filter(field => field._2.isInstanceOf[JsString] && field._2.as[String].equals("now")) match {
+    json.fields.filter(field => field._2.isInstanceOf[JsString] && field._2.as[String].equals("time_now")) match {
       case Nil => Future.successful(\/-(json))
-      case fields => val newJs = JsObject(fields.map(f => f._1 -> JsString(DateTime.now().toString("yyyy-MM-dd"))))
+      case fields =>
+        val newJs = JsObject(fields.map(f => f._1 -> JsString(DateTime.now().toString("yyyy-MM-dd'T'HH:mm:ss'Z'"))))
         Future.successful(\/-(json++newJs))
+    }
+  }
+
+  def completeOtherTime(json: JsObject): Future[Expect[JsObject]] = {
+    json.fields.filter(field => field._2.isInstanceOf[JsString] &&
+      (field._2.as[String].split(' ').head.equals("time_plus") | field._2.as[String].split(' ').head.equals("time_minus"))) match {
+      case Nil => Future.successful(\/-(json))
+      case fields =>
+        val newJs = JsObject(fields.map(f => f._1 -> JsString(getTime(f._2.as[String], f._2.as[String].split(' ').head))))
+        Future.successful(\/-(json++newJs))
+    }
+  }
+
+  def getTime(jsValue: String, operation: String): String = {
+    operation match {
+      case "time_plus" => jsValue.split(' ')(1) match {
+        case "years" => DateTime.now.plusYears(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "months" => DateTime.now.plusMonths(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "weeks" => DateTime.now.plusWeeks(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "days" => DateTime.now.plusDays(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "hours" => DateTime.now.plusHours(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "minutes" => DateTime.now.plusMinutes(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "seconds" => DateTime.now.plusSeconds(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "millis" => DateTime.now.plusMillis(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case _ => DateTime.now.toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+      }
+      case "time_minus" => jsValue.split(' ')(1) match {
+        case "years" => DateTime.now.minusYears(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "months" => DateTime.now.minusMonths(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "weeks" => DateTime.now.minusWeeks(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "days" => DateTime.now.minusDays(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "hours" => DateTime.now.minusHours(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "minutes" => DateTime.now.minusMinutes(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "seconds" => DateTime.now.minusSeconds(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case "millis" => DateTime.now.minusMillis(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+        case _ => DateTime.now.toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+      }
     }
   }
 
@@ -113,12 +153,11 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def buildAddRequest[T, A](entity: T, singleton: A, tableName : String): (String, String) = {
-    val sing = singleton.asInstanceOf[Class[A]]
-    val const = sing.getDeclaredConstructors()(0)
+  def buildAddRequest[T, A](entity: T, singleton: Class[A], tableName : String): (String, String) = {
+    val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
-    val getTableColumnNames = sing.getDeclaredMethod("getTableColumns", classOf[String])
+    val getTableColumnNames = singleton.getDeclaredMethod("getTableColumns", classOf[String])
     getTableColumnNames.setAccessible(true)
     val fields = entity.getClass.getDeclaredFields
     val params = fields.flatMap{field => getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]] }
@@ -131,12 +170,11 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     (param, value)
   }
 
-  def buildUpdateRequest[T, A](entity: T, singleton: A, tableName : String): String = {
-    val sing = singleton.asInstanceOf[Class[A]]
-    val const = sing.getDeclaredConstructors()(0)
+  def buildUpdateRequest[T, A](entity: T, singleton: Class[A], tableName : String): String = {
+    val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
-    val getTableColumnNames = sing.getDeclaredMethod("getTableColumns", classOf[String])
+    val getTableColumnNames = singleton.getDeclaredMethod("getTableColumns", classOf[String])
     getTableColumnNames.setAccessible(true)
     val fields = entity.getClass.getDeclaredFields
     val params = fields.map{field =>  field.setAccessible(true)
@@ -184,20 +222,19 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def getClassInfo[T, A](model: T, singleton: A, className: String): Future[Expect[(String, RowParser[T], Format[T])]] = {
-    val sing = singleton.asInstanceOf[Class[A]]
-    val const = sing.getDeclaredConstructors()(0)
+  def getClassInfo[T, A](model: Class[T], singleton: Class[A], className: String): Future[Expect[(String, RowParser[T], Format[T])]] = {
+    val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
-    val table = sing.getDeclaredField("tableName")
+    val table = singleton.getDeclaredField("tableName")
     table.setAccessible(true)
-    val parse = sing.getDeclaredField("parse")
+    val parse = singleton.getDeclaredField("parse")
     parse.setAccessible(true)
-    val jsFormat = sing.getDeclaredField(className.split('.').last+"Format")
+    val jsFormat = singleton.getDeclaredField(className.split('.').last+"Format")
     jsFormat.setAccessible(true)
     val format = jsFormat.get(obj).asInstanceOf[Format[T]]
     val parser = parse.get(obj).asInstanceOf[anorm.RowParser[T]]
-    val name = table.get(sing.cast(obj)).asInstanceOf[String]
+    val name = table.get(singleton.cast(obj)).asInstanceOf[String]
     Future.successful(\/-((name, parser, format)))
   }
 

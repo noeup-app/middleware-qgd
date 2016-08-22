@@ -32,7 +32,7 @@ class CrudAutoDAO extends GlobalReadsWrites {
     ).as(parser *)
   }
 
-  def add[T, A](tableName: String, entity:T, singleton: A, params: String, values: String)(implicit connection: Connection): Boolean = {
+  def add[T, A](tableName: String, entity:T, singleton: Class[A], params: String, values: String)(implicit connection: Connection): Boolean = {
     /*val sing = singleton.asInstanceOf[Class[A]]
     val const = sing.getDeclaredConstructors()(0)
     const.setAccessible(true)
