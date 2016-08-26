@@ -37,7 +37,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
 
   def add[T, A](model: Class[T], singleton: Class[A], json: JsObject, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
     TryBDCall{ implicit c=>
-      implicit val reads = format
+      implicit val jsFormat = format
       val entity:T = json.as[T]
       val request = buildAddRequest(entity, singleton, tableName)
       crudAutoDAO.add(tableName, entity, singleton, request._1, request._2)
@@ -61,19 +61,31 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def completeAdd(json: JsObject): Future[Expect[JsObject]] = {
-    for {
+  def completeAdd[T,A, B](model: Class[T], in: Class[B], singleton: Class[A], json: JsObject, format: Format[T], formatIn: Format[B]): Future[Expect[JsObject]] = {
+    /*for {
       js1 <- EitherT(completeId(json))
       js2 <- EitherT(completeDeleted(js1))
       js3 <- EitherT(completeTime(js2))
-    }yield js3
-  }.run
+    }yield js3*/
+    implicit val form = format
+    implicit val formIn  = formatIn
+    val input:B = json.as[B]
+    val consts = model.getDeclaredConstructors
+    val const = consts.find(r=> r.getParameterTypes.contains(in))
+    Logger.debug(const.mkString)
+    const match {
+      case Some(init) => init.setAccessible(true)
+        val entity: T = init.newInstance(input.asInstanceOf[Object]).asInstanceOf[T]
+        Future.successful(\/-(Json.toJson(entity).as[JsObject]))
+      case None => Future.successful(-\/(FailError("couldn't find constructor")))
+    }
+  }//.run
 
   def completeUpdate(json: JsObject, id: UUID): Future[Expect[JsObject]] = {
     for {
       js1 <- EitherT(completeDeleted(json+(("id", JsString(id.toString)))))
       js2 <- EitherT(completeTime(js1))
-    }yield js2
+    } yield js2
   }.run
 
   def completeDeleted(json: JsObject): Future[Expect[JsObject]] = {
@@ -143,6 +155,20 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
       true
     } catch{
       case e:IllegalArgumentException => false
+    }
+  }
+
+  def jsonValidate[B](json: JsObject, in: Class[B], formatIn: Format[B]): Future[Expect[JsObject]] = {
+    try{
+      implicit val format = formatIn
+      val input:B = json.as[B]
+      Future.successful(\/-(json))
+    } catch {
+      case e:Exception =>
+        Logger.error(e.getMessage)
+        val fields = in.getDeclaredFields.map{f=> (f.getName, f.getName + " : " + f.getGenericType.getTypeName.split('.').last)}
+        val missing = fields.filter(f => e.getMessage.contains(f._1))
+        Future.successful(-\/(FailError(e.getMessage + "\nError while validating json. "+ "Missing fields are : \n" + missing.map{f=>f._2}.mkString("\n"))))
     }
   }
 
@@ -217,7 +243,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def getClassInfo[T, A](model: Class[T], singleton: Class[A], className: String): Future[Expect[(String, RowParser[T], Format[T])]] = {
+  def getClassInfo[T, A, B](model: Class[T], singleton: Class[A], className: String, in: Class[B]): Future[Expect[(String, RowParser[T], Format[T], Format[B])]] = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
@@ -227,10 +253,13 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     parse.setAccessible(true)
     val jsFormat = singleton.getDeclaredField(className.split('.').last+"Format")
     jsFormat.setAccessible(true)
+    val jsFormatIn = singleton.getDeclaredField(in.getName.split('.').last+"Format")
+    jsFormatIn.setAccessible(true)
     val format = jsFormat.get(obj).asInstanceOf[Format[T]]
+    val formatIn = jsFormatIn.get(obj).asInstanceOf[Format[B]]
     val parser = parse.get(obj).asInstanceOf[anorm.RowParser[T]]
     val name = table.get(singleton.cast(obj)).asInstanceOf[String]
-    Future.successful(\/-((name, parser, format)))
+    Future.successful(\/-((name, parser, format, formatIn)))
   }
 
   def toJsValue[T](newObject: List[T], className: String, format: Format[T]): Future[Expect[JsValue]] = {
