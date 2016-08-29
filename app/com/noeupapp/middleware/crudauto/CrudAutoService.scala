@@ -1,5 +1,6 @@
 package com.noeupapp.middleware.crudauto
 
+import java.lang.reflect.Field
 import java.util.UUID
 import javax.inject.Inject
 
@@ -45,13 +46,13 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def update[T, A](model: Class[T], singleton: Class[A], json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
+  def update[T, A](model: Class[T], singleton: Class[A], json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[JsObject]] = {
     TryBDCall{ implicit c=>
-      implicit val reads = format
-      val entity:T = json.as[T]
-      val request = buildUpdateRequest(entity, singleton, tableName)
+      //implicit val reads = format
+      //val entity:T = json.as[T]
+      val request = buildUpdateRequest(model,/*entity*/json, singleton, tableName)
       crudAutoDAO.update(tableName, request, id)
-      \/-(Some(entity))
+      \/-(json)
     }
   }
 
@@ -172,6 +173,16 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
+  def jsonUpdateValidate[B](json: JsObject, in: Class[B], formatIn: Format[B]): Future[Expect[JsObject]] = {
+    val jsFields = json.fields.map{f=> f._1}
+    val inputFields = in.getDeclaredFields.map{f=>f.getName}
+    val fields = jsFields.intersect(inputFields)
+    fields match {
+      case Nil => Future.successful(-\/(FailError("Error, these fields cannot be updated")))
+      case t => Future.successful(\/-(JsObject(json.fields.filter(f=> t.contains(f._1)))))
+    }
+  }
+
   def buildAddRequest[T, A](entity: T, singleton: Class[A], tableName : String): (String, String) = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
@@ -189,19 +200,26 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     (param, value)
   }
 
-  def buildUpdateRequest[T, A](entity: T, singleton: Class[A], tableName : String): String = {
+  def buildUpdateRequest[T, A](model: Class[T], json: JsObject, singleton: Class[A], tableName : String): String = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
     val getTableColumnNames = singleton.getDeclaredMethod("getTableColumns", classOf[String])
     getTableColumnNames.setAccessible(true)
-    val fields = entity.getClass.getDeclaredFields
-    val params = fields.map{field =>  field.setAccessible(true)
-                                      (getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]],
-                                       field.get(entity),
-                                       field.getGenericType.getTypeName)}
+    val fields = model.getDeclaredFields
+    val jsFields = json.fields
+    val params = jsFields.map{field => val inField = fields.find(f=> f.getName.equals(field._1)).get
+                                      (getTableColumnNames.invoke(obj, field._1).asInstanceOf[Option[String]],
+                                       getJsValue(field._2, )
+                                       inField.getGenericType.getTypeName)}
     Logger.debug(concatParamAndValue(params.toList))
     concatParamAndValue(params.toList)
+  }
+
+  def getJsValue[T](jsValue : JsValue, parser: Format[T]): T = {
+    implicit val format = parser
+    val value:T = jsValue.as[T]
+    value
   }
 
   def concatParam(params: List[String], param: String = ""): String = {
@@ -218,11 +236,11 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def concatParamAndValue(list: List[(Option[String], AnyRef, String)], value: String = ""): String = {
+  def concatParamAndValue(list: List[(Option[String], String, String)], value: String = ""): String = {
     list match {
       case x::xs => x match {
         case (Some(name),v,t) if !(name == "id") =>
-          concatParamAndValue(xs, value + name + " = " + valueToAdd(v.toString, t))
+          concatParamAndValue(xs, value + name + " = " + valueToAdd(v, t))
         case _  => concatParamAndValue(xs, value)
       }
       case Nil => value.splitAt(value.length-2)._1

@@ -55,12 +55,12 @@ class CrudAutoDAO extends GlobalReadsWrites {
     ).execute()
   }
 
-  def getValue[T, A](entity: A, fieldType: Class[T], field: Field):T = {
+  /*def getValue[T, A](entity: A, fieldType: Class[T], field: Field):T = {
     val fi = field.get(entity).asInstanceOf[T]
     Logger.debug(fi.getClass.getName)
     Logger.debug(fi.toString)
     fi
-  }
+  }*/
 
   def update(tableName: String, value: String, id: UUID)(implicit connection: Connection): Boolean = {
     SQL(
