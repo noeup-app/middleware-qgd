@@ -36,7 +36,8 @@ class Groups @Inject()(
   def fetchById(groupId: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async { implicit request =>
       val user = request.identity.user.id
-      groupService.findByIdFlow(groupId, user) map {
+      val organisation = request.identity.organisation
+      groupService.findByIdFlow(groupId, user, organisation) map {
         case -\/(error) =>
           Logger.error(error.toString)
           InternalServerError(Json.toJson("Error while fetching group"))
@@ -52,7 +53,8 @@ class Groups @Inject()(
   def fetchAll = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async { implicit request =>
       val user = request.identity.user.id
-      groupService.findAllFlow(user) map {
+      val organisation = request.identity.organisation
+      groupService.findAllFlow(user, organisation) map {
         case -\/(error) =>
           Logger.error(error.toString)
           InternalServerError(Json.toJson("Error while fetching groups"))
@@ -69,7 +71,8 @@ class Groups @Inject()(
   def fetchMembers(groupId: UUID)= SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
     .async { implicit request =>
       val user = request.identity.user.id
-      groupService.findMembersFlow(groupId, user) map {
+      val organisation = request.identity.organisation
+      groupService.findMembersFlow(groupId, user, organisation) map {
         case -\/(error) =>
           Logger.error(error.toString)
           InternalServerError(Json.toJson("Error while fetching groups"))
@@ -87,7 +90,8 @@ class Groups @Inject()(
     .async(parse.json[GroupIn]) { implicit request =>
       val groupIn = request.request.body
       val user = request.identity.user.id
-      groupService.addGroupCheck(user, groupIn) map {
+      val organisation = request.identity.organisation
+      groupService.addGroupCheck(user, groupIn, organisation) map {
         case -\/(error) =>
           if (error.message.contains("authorized"))
             {Logger.error(error.message)
@@ -111,7 +115,8 @@ class Groups @Inject()(
     .async(parse.json[Array[UUID]]) { implicit request =>
       val entities = request.request.body
       val user = request.identity.user.id
-      groupService.addEntitiesFlow(groupId, user, entities) map {
+      val organisation = request.identity.organisation
+      groupService.addEntitiesFlow(groupId, user, entities, organisation) map {
         case -\/(error) =>
           if (error.message.contains("authorized"))
             {Logger.error(error.message)
@@ -132,10 +137,11 @@ class Groups @Inject()(
     * @return
     */
   def updateGroup(groupId: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
-    .async(parse.json[GroupUpdate]) { implicit request =>
+    .async(parse.json[GroupIn]) { implicit request =>
       val groupUp = request.request.body
       val user = request.identity.user.id
-      groupService.updateGroupFlow(groupId, user, groupUp) map {
+      val organisation = request.identity.organisation
+      groupService.updateGroupFlow(groupId, user, groupUp, organisation) map {
         case -\/(error) =>
           if (error.message.contains("authorized"))
             {Logger.error(error.message)
@@ -158,7 +164,8 @@ class Groups @Inject()(
   def deleteGroup(groupId: UUID) = SecuredAction(WithScope(/*"builder.groups"*/))
     .async { implicit request =>
       val user = request.identity.user.id
-      groupService.deleteGroupFlow(groupId, user) map {
+      val organisation = request.identity.organisation
+      groupService.deleteGroupFlow(groupId, user, organisation) map {
         case -\/(error)          =>
           if (error.message.contains("authorized"))
             {Logger.error(error.message)

@@ -4,8 +4,7 @@ package com.noeupapp.middleware.entities.group
 import java.sql.Connection
 import java.util.UUID
 
-import com.noeupapp.middleware.entities.entity.Entity
-
+import com.noeupapp.middleware.entities.entity.{Entity, EntityOut}
 import anorm._
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 
@@ -22,21 +21,24 @@ class GroupDAO extends GlobalReadsWrites {
     * @param connection
     * @return
     */
-  def getById(groupId: UUID, userId: UUID, admin: Boolean)(implicit connection: Connection): Option[Group] = {
+  def getById(groupId: UUID, userId: UUID, admin: Boolean, organisation: UUID)(implicit connection: Connection): Option[Group] = {
     SQL(
       """
           SELECT grou.id, grou.name, owner, grou.deleted
           FROM entity_groups grou
           INNER JOIN entity_entities ent ON ent.id = grou.id
           LEFT JOIN entity_hierarchy hi ON hi.parent = ent.id
+          LEFT JOIN entity_hierarchy ho ON ho.entity = ent.id
           WHERE grou.id = {id}::UUID
           AND (owner = {user}::UUID OR hi.entity = {user}::UUID OR {admin} = 'true')
+          AND ho.parent = {organisation}::UUID
           AND grou.deleted = false
       """
     ).on(
       'id -> groupId,
       'user -> userId,
-      'admin -> admin
+      'admin -> admin,
+      'organisation -> organisation
     ).as(Group.parse *).headOption
   }
 
@@ -49,19 +51,22 @@ class GroupDAO extends GlobalReadsWrites {
     * @param connection
     * @return
     */
-  def getAll(userId: UUID, admin: Boolean)(implicit connection: Connection): List[Group] = {
+  def getAll(userId: UUID, admin: Boolean, organisation: UUID)(implicit connection: Connection): List[Group] = {
     SQL(
       """
           SELECT DISTINCT grou.id, grou.name, owner, grou.deleted
           FROM entity_groups grou
           INNER JOIN entity_entities ent ON ent.id = grou.id
           LEFT JOIN entity_hierarchy hi ON hi.parent = ent.id
+          LEFT JOIN entity_hierarchy ho ON ho.entity = ent.id
           WHERE owner = {user}::UUID OR hi.entity = {user}::UUID OR {admin} = 'true'
+          AND ho.parent = {organisation}::UUID
           AND grou.deleted = false
       """
     ).on(
       'user -> userId,
-      'admin -> admin
+      'admin -> admin,
+      'organisation -> organisation
     ).as(Group.parse *)
   }
 
@@ -71,15 +76,19 @@ class GroupDAO extends GlobalReadsWrites {
     * @param connection
     * @return
     */
-  def findAdmin(implicit connection: Connection): List[Entity] = {
+  def findAdmin(organisation: UUID)(implicit connection: Connection): List[Entity] = {
     SQL(
       """
          SELECT ent.id, ent.parent, ent.type, ent.account_type
          FROM entity_entities ent
          INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
          INNER JOIN entity_groups grou ON hi.parent = grou.id OR hi.entity = grou.owner
+         LEFT JOIN entity_hierarchy ho ON ho.entity = ent.id
          WHERE grou.name = 'Admin'
+         AND ho.parent = {organisation}::UUID
       """
+    ).on(
+      'organisation -> organisation
     ).as(Entity.parse *)
   }
 
@@ -90,22 +99,25 @@ class GroupDAO extends GlobalReadsWrites {
     * @param connection
     * @return
     */
-  def findMembers(groupId: UUID)(implicit connection: Connection): List[GroupMember] = {
+  def findMembers(groupId: UUID, organisation: UUID)(implicit connection: Connection): List[EntityOut] = {
     SQL(
       """
-          SELECT ent.id, first_name, last_name, org.name AS organisation_name, gro.name AS group_name
+          SELECT ent.id, first_name, last_name, org.name AS organisation_name
           FROM entity_entities ent
           INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
           INNER JOIN entity_groups grou ON grou.id = hi.parent
           LEFT JOIN entity_users use ON ent.id = use.id
           LEFT JOIN entity_organisations org ON org.id = ent.id
           LEFT JOIN entity_groups gro ON gro.id = ent.id
+          LEFT JOIN entity_hierarchy ho ON ho.entity = ent.id
           WHERE grou.id = {id}::UUID
+          AND ho.parent = {organisation}::UUID
           AND grou.deleted = false
       """
     ).on(
-      'id -> groupId
-    ).as(Group.parseMember *)
+      'id -> groupId,
+      'organisation -> organisation
+    ).as(Entity.parseOut *)
   }
 
   /**
@@ -132,28 +144,6 @@ class GroupDAO extends GlobalReadsWrites {
     ).execute()
   }
 
-
-  /**
-    * Add a new hierarchy between an entity and a parent group
-    *
-    * @param groupId
-    * @param entityId
-    * @param connection
-    * @return
-    */
-  def addHierarchy(groupId: UUID, entityId: UUID)(implicit connection: Connection): Boolean = {
-    SQL(
-      """
-          INSERT INTO entity_hierarchy (entity, parent)
-          VALUES ({entity}::UUID,
-                  {parent}::UUID)
-      """
-    ).on(
-      'entity -> entityId,
-      'parent -> groupId
-    ).execute()
-  }
-
   /**
     * Update a group
     *
@@ -161,20 +151,25 @@ class GroupDAO extends GlobalReadsWrites {
     * @param connection
     * @return
     */
-  def update(group: Group)(implicit connection: Connection): Boolean = {
+  def update(group: Group, organisation: UUID)(implicit connection: Connection): Boolean = {
     SQL(
       """
-         UPDATE entity_groups
+         UPDATE entity_groups AS grou
          SET
-            name = {name},
-            owner = {owner}::UUID,
-            deleted = {deleted}
-         WHERE id = {id}::UUID
+            grou.name = {name},
+            grou.owner = {owner}::UUID,
+            grou.deleted = {deleted}
+         FROM entity_entities ent
+         INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
+         WHERE grou.id = {id}::UUID
+         AND ent.id = grou.id
+         AND hi.parent = {organisation}::UUID
       """
     ).on(
       'id -> group.id,
       'name -> group.name,
       'owner -> group.owner,
+      'organisation -> organisation,
       'deleted -> group.deleted
     ).execute()
   }
@@ -186,12 +181,16 @@ class GroupDAO extends GlobalReadsWrites {
     * @param connection
     * @return
     */
-  def delete(groupId: UUID)(implicit connection: Connection): Boolean = {
+  def delete(groupId: UUID, organisation: UUID)(implicit connection: Connection): Boolean = {
     SQL(
       """
-    UPDATE entity_groups
-    SET deleted = 'true'
-    WHERE id = {id}::UUID
+         UPDATE entity_groups AS grou
+         SET deleted = 'true'
+         FROM entity_entities ent
+                  INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
+                  WHERE grou.id = {id}::UUID
+                  AND ent.id = grou.id
+                  AND hi.parent = {organisation}::UUID
       """
     ).on(
       'id -> groupId

@@ -9,8 +9,8 @@ import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.TypeConversion
 import com.noeupapp.middleware.utils.TypeCustom._
-
-import com.noeupapp.middleware.entities.entity.EntityService
+import com.noeupapp.middleware.entities.entity.{EntityOut, EntityService}
+import com.noeupapp.middleware.entities.organisation.Organisation
 import com.noeupapp.middleware.errorHandle.FailError
 
 import scalaz._
@@ -29,11 +29,12 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param userId
     * @return
     */
-  def findByIdFlow(groupId: UUID, userId: UUID): Future[Expect[Option[Group]]] = {
+  def findByIdFlow(groupId: UUID, userId: UUID, organisation: Option[Organisation]): Future[Expect[Option[Group]]] = {
     for {
-      admin <- EitherT(isAdmin(userId))
+      org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
+      admin <- EitherT(isAdmin(userId, org.id))
 
-      group <- EitherT(findById(groupId, userId, admin))
+      group <- EitherT(findById(groupId, userId, admin, org.id))
     } yield group
   }.run
 
@@ -45,9 +46,9 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param admin
     * @return
     */
-  def findById(groupId: UUID, userId: UUID, admin: Boolean): Future[Expect[Option[Group]]] = {
+  def findById(groupId: UUID, userId: UUID, admin: Boolean, organisation: UUID): Future[Expect[Option[Group]]] = {
     TryBDCall { implicit c =>
-      \/-(groupDAO.getById(groupId, userId, admin))
+      \/-(groupDAO.getById(groupId, userId, admin, organisation))
     }
   }
 
@@ -57,12 +58,13 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param userId
     * @return
     */
-  def findAllFlow(userId: UUID): Future[Expect[List[Group]]] = {
+  def findAllFlow(userId: UUID, organisation: Option[Organisation]): Future[Expect[List[Group]]] = {
     for {
 
-      admin <- EitherT(isAdmin(userId))
+      org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
+      admin <- EitherT(isAdmin(userId, org.id))
 
-      groups <- EitherT(findAll(userId, admin))
+      groups <- EitherT(findAll(userId, admin, org.id))
     } yield groups
   }.run
 
@@ -73,10 +75,10 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param admin
     * @return
     */
-  def findAll(userId: UUID, admin: Boolean): Future[Expect[List[Group]]] = {
+  def findAll(userId: UUID, admin: Boolean, organisation: UUID): Future[Expect[List[Group]]] = {
     TryBDCall { implicit c =>
       Logger.debug(admin.toString)
-      \/-(groupDAO.getAll(userId, admin))
+      \/-(groupDAO.getAll(userId, admin, organisation))
     }
   }
 
@@ -87,10 +89,10 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param groupIn
     * @return
     */
-  def addGroupCheck(userId: UUID, groupIn: GroupIn): Future[Expect[Group]] = {
+  def addGroupCheck(userId: UUID, groupIn: GroupIn, organisation: Option[Organisation]): Future[Expect[Group]] = {
     for {
-
-      admin <- EitherT(isAdmin(userId))
+      org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
+      admin <- EitherT(isAdmin(userId, org.id))
 
       validUser <- EitherT(admin |> "You are not authorized to add groups")
 
@@ -122,16 +124,17 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param userId
     * @return
     */
-  def findMembersFlow(groupId: UUID, userId: UUID): Future[Expect[List[GroupMember]]] = {
+  def findMembersFlow(groupId: UUID, userId: UUID, organisation: Option[Organisation]): Future[Expect[GroupMembers]] = {
     for {
-      admin <- EitherT(isAdmin(userId))
+      org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
+      admin <- EitherT(isAdmin(userId, org.id))
 
-      findGroup <- EitherT(findById(groupId, userId, admin))
+      findGroup <- EitherT(findById(groupId, userId, admin, org.id))
 
       group <- EitherT(findGroup |> "Couldn't find this group")
 
-      members <- EitherT(findMembers(groupId))
-    } yield members
+      members <- EitherT(findMembers(groupId, org.id))
+    } yield GroupMembers(group.name, members)
   }.run
 
   /**
@@ -140,10 +143,9 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param groupId
     * @return
     */
-  def findMembers(groupId: UUID): Future[Expect[List[GroupMember]]] = {
+  def findMembers(groupId: UUID, organisation: UUID): Future[Expect[List[EntityOut]]] = {
     TryBDCall { implicit c =>
-      val members = groupDAO.findMembers(groupId)
-      \/-(members)
+      \/-(groupDAO.findMembers(groupId, organisation))
     }
   }
 
@@ -156,13 +158,14 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param entities
     * @return
     */
-  def addEntitiesFlow(groupId: UUID, userId: UUID, entities: Array[UUID]): Future[Expect[Group]] = {
+  def addEntitiesFlow(groupId: UUID, userId: UUID, entities: Array[UUID], organisation: Option[Organisation]): Future[Expect[Group]] = {
     for {
-      admin <- EitherT(isAdmin(userId))
+      org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
+      admin <- EitherT(isAdmin(userId, org.id))
 
       validUser <- EitherT(admin |> "You are not authorized to add members to group")
 
-      findGroup <- EitherT(findById(groupId, userId, admin))
+      findGroup <- EitherT(findById(groupId, userId, admin, org.id))
 
       group <- EitherT(findGroup |> "Couldn't find this group")
 
@@ -183,25 +186,11 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     Try {
       entities.foreach { entity =>
         entityService.findById(entity)
-        addHierarchy(groupId, entity)
+        entityService.addHierarchy(groupId, entity)
       }
     } match {
       case -\/(_) => Future.successful(-\/(FailError("Error while adding entity")))
       case \/-(_) => Future.successful(\/-(entities))
-    }
-  }
-
-  /**
-    * Creates a new hierarchy relation to link an entity to a parent group
-    *
-    * @param groupId
-    * @param entityId
-    * @return
-    */
-  def addHierarchy(groupId: UUID, entityId: UUID): Future[Expect[UUID]] = {
-    TryBDCall { implicit c =>
-      groupDAO.addHierarchy(groupId, entityId)
-      \/-(entityId)
     }
   }
 
@@ -214,21 +203,22 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param groupUpdate
     * @return
     */
-  def updateGroupFlow(groupId: UUID, userId: UUID, groupUpdate: GroupUpdate): Future[Expect[Group]] = {
+  def updateGroupFlow(groupId: UUID, userId: UUID, groupUpdate: GroupIn, organisation: Option[Organisation]): Future[Expect[Group]] = {
     for {
-      admin <- EitherT(isAdmin(userId))
+      org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
+      admin <- EitherT(isAdmin(userId, org.id))
 
       validUser <- EitherT(admin |> "You are not authorized to update groups")
 
-      findGroup <- EitherT(findById(groupId, userId, admin))
+      findGroup <- EitherT(findById(groupId, userId, admin, org.id))
 
       groupToUpdate <- EitherT(findGroup |> "Couldn't find this group")
 
       group <- EitherT(updateGroup(Group(groupId,
-                                         groupUpdate.name.getOrElse(groupToUpdate.name),
+                                         groupUpdate.name,
                                          groupUpdate.owner.getOrElse(groupToUpdate.owner),
                                          deleted = false
-                                         )))
+                                         ), org.id))
     } yield group
   }.run
 
@@ -238,9 +228,9 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param group
     * @return
     */
-  def updateGroup(group: Group): Future[Expect[Group]] = {
+  def updateGroup(group: Group, organisation: UUID): Future[Expect[Group]] = {
     TryBDCall { implicit c =>
-      groupDAO.update(group)
+      groupDAO.update(group, organisation)
       \/-(group)
     }
   }
@@ -251,9 +241,9 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param userId
     * @return
     */
-  def isAdmin(userId: UUID): Future[Expect[Boolean]] = {
+  def isAdmin(userId: UUID, organisation: UUID): Future[Expect[Boolean]] = {
     TryBDCall { implicit c =>
-      groupDAO.findAdmin.filter(entity => entity.id.equals(userId)) match {
+      groupDAO.findAdmin(organisation).filter(entity => entity.id.equals(userId)) match {
         case Nil => \/-(false)
         case entity => \/-(true)
       }
@@ -268,18 +258,18 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param userId
     * @return
     */
-  def deleteGroupFlow(groupId: UUID, userId: UUID): Future[Expect[Group]] = {
+  def deleteGroupFlow(groupId: UUID, userId: UUID, organisation: Option[Organisation]): Future[Expect[Group]] = {
     for {
-
-      admin <- EitherT(isAdmin(userId))
+      org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
+      admin <- EitherT(isAdmin(userId, org.id))
 
       validUser <- EitherT(admin |> "You are not authorized to delete groups")
 
-      findGroup <- EitherT(findById(groupId, userId, admin))
+      findGroup <- EitherT(findById(groupId, userId, admin, org.id))
 
       groupToDelete <- EitherT(findGroup |> "Couldn't find this group")
 
-      group <- EitherT(deleteGroup(groupToDelete))
+      group <- EitherT(deleteGroup(groupToDelete, org.id))
 
     } yield group
   }.run
@@ -290,10 +280,10 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param group
     * @return
     */
-  def deleteGroup(group: Group): Future[Expect[Group]] = {
+  def deleteGroup(group: Group, organisation: UUID): Future[Expect[Group]] = {
     TryBDCall { implicit c =>
 
-        groupDAO.delete(group.id)
+        groupDAO.delete(group.id, organisation)
         \/-(group.copy(deleted = true))
 
     }
