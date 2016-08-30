@@ -5,6 +5,8 @@ import java.util.UUID
 import play.api.libs.json.Json
 import anorm.SqlParser._
 import anorm._
+import com.noeupapp.middleware.entities.entity.EntityOut
+import com.noeupapp.middleware.entities.entity.Entity._
 
 import scala.language.{implicitConversions, postfixOps}
 
@@ -30,42 +32,23 @@ case class Group(
   * @param name
   */
 case class GroupIn(
-                  name: String
+                  name: String,
+                  owner: Option[UUID]
                   )
-
-/**
-  * Input to update a group
-  *
-  * @param name
-  * @param owner
-  */
-case class GroupUpdate(
-                      name: Option[String],
-                      owner: Option[UUID]
-                      )
-
 /**
   * Output for  group members
   *
-  * @param entityId
-  * @param firstName
-  * @param lastName
-  * @param organisationName
   * @param groupName
   */
-case class GroupMember(
-                 entityId: UUID,
-                 firstName: Option[String],
-                 lastName: Option[String],
-                 organisationName: Option[String],
-                 groupName: Option[String]
+case class GroupMembers(
+                 groupName: String,
+                 members: List[EntityOut]
                  )
 
 object Group{
   implicit val GroupFormat = Json.format[Group]
   implicit val GroupInFormat = Json.format[GroupIn]
-  implicit val GroupMemberFormat = Json.format[GroupMember]
-  implicit val GroupUpdateFormat = Json.format[GroupUpdate]
+  implicit val GroupMemberFormat = Json.format[GroupMembers]
 
   val parse = {
     get[UUID]("id") ~
@@ -74,17 +57,5 @@ object Group{
       get[Boolean]("deleted") map {
       case id ~ name ~ owner ~ deleted => Group(id, name, owner, deleted)
     }
-  }
-
-  val parseMember = {
-    get[UUID]("id") ~
-    get[Option[String]]("first_name") ~
-    get[Option[String]]("last_name") ~
-    get[Option[String]]("organisation_name") ~
-    get[Option[String]]("group_name") map {
-      case id ~ firstName ~ lastName ~ organisationName ~ groupName =>
-        GroupMember(id, firstName, lastName, organisationName, groupName)
-    }
-
   }
 }
