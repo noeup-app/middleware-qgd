@@ -95,12 +95,12 @@ class GroupService @Inject()(groupDAO: GroupDAO,
       admin <- EitherT(isAdmin(userId, org.id))
 
       validUser <- EitherT(admin |> "You are not authorized to add groups")
-
       group <- EitherT(addGroup(Group(UUID.randomUUID(),
                                       groupIn.name,
                                       userId,
                                       deleted = false
                                       )))
+      hierarchy <- EitherT(entityService.addHierarchy(org.id, group.id))
     } yield group
   }.run
 
@@ -285,7 +285,6 @@ class GroupService @Inject()(groupDAO: GroupDAO,
 
         groupDAO.delete(group.id, organisation)
         \/-(group.copy(deleted = true))
-
     }
   }
 }
