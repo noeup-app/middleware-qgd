@@ -9,9 +9,12 @@ import com.noeupapp.middleware.utils.GlobalReadsWrites
 
 case class Organisation(id: UUID, name: String, sub_domain: String, logo_url: String, color: String, credits: Long, deleted: Boolean)
 
+case class OrganisationIn(name: String, sub_domain: String, logo_url: String, color: String, credits: Long)
+
 object Organisation extends GlobalReadsWrites {
 
   implicit val organisationFormat = Json.format[Organisation]
+  implicit val OrganisationInFormat = Json.format[OrganisationIn]
 
   val parse = { // TODO check usage
     get[UUID]("id") ~
