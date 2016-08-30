@@ -47,7 +47,7 @@ class S3 @Inject() (s3: AmazonS3Client,
 
       val meta: ObjectMetadata = new ObjectMetadata ()
       meta.setContentLength (content.file.length.toLong)
-      meta.setContentType (contentType)
+//      meta.setContentType (contentType)
       content.bucketName match {
         case "thumb-cowebo-com" =>
           s3Cowebo.putObject(//new PutObjectRequest(
