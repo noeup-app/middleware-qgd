@@ -205,12 +205,13 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     const.setAccessible(true)
     val obj = const.newInstance()
     val getTableColumnNames = singleton.getDeclaredMethod("getTableColumns", classOf[String])
+    val parseIn = singleton.getDeclaredMethod("parseIn", classOf[String], classOf[JsValue])
     getTableColumnNames.setAccessible(true)
     val fields = model.getDeclaredFields
     val jsFields = json.fields
     val params = jsFields.map{field => val inField = fields.find(f=> f.getName.equals(field._1)).get
                                       (getTableColumnNames.invoke(obj, field._1).asInstanceOf[Option[String]],
-                                       getJsValue(field._2, )
+                                       parseIn.invoke(obj, field._1, field._2).toString,
                                        inField.getGenericType.getTypeName)}
     Logger.debug(concatParamAndValue(params.toList))
     concatParamAndValue(params.toList)
