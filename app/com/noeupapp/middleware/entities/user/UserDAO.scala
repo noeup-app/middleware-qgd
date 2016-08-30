@@ -23,7 +23,7 @@ class UserDAO extends GlobalReadsWrites {
     */
   def findAll(implicit connection: Connection): List[User] = {
     SQL(
-      """SELECT id, first_name, last_name, email, avatar_url, active, deleted
+      """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted
          FROM entity_users
       """)
       .as(User.parse *)
@@ -72,7 +72,7 @@ class UserDAO extends GlobalReadsWrites {
   def find(userID: UUID)(implicit connection:
   Connection): Option[User] = {
       SQL(
-        """SELECT id, first_name, last_name, email, avatar_url, active, deleted
+        """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted
            FROM entity_users
            WHERE id = {id};""")
       .on(

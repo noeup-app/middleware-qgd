@@ -4,10 +4,11 @@ import java.util.UUID
 
 import anorm.SqlParser._
 import anorm._
+import org.joda.time.DateTime
 import play.api.libs.json.Json
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 
-case class Organisation(id: UUID, name: String, sub_domain: String, logo_url: String, color: String, credits: Long, deleted: Boolean)
+case class Organisation(id: UUID, name: String, sub_domain: String, logo_url: String, color: String, credits: Long, created: DateTime, deleted: Boolean)
 
 object Organisation extends GlobalReadsWrites {
 
@@ -20,8 +21,9 @@ object Organisation extends GlobalReadsWrites {
     get[String]("logo_url") ~
     get[String]("color") ~
     get[Long]("credits") ~
+    get[DateTime]("created") ~
     get[Boolean]("deleted") map {
-      case id ~ name ~ sub_domain ~ logo_url ~ color ~ credits ~ deleted => Organisation(id, name, sub_domain, logo_url, color, credits, deleted)
+      case id ~ name ~ sub_domain ~ logo_url ~ color ~ credits ~ created ~ deleted => Organisation(id, name, sub_domain, logo_url, color, credits, created, deleted)
     }
   }
 
@@ -32,8 +34,9 @@ object Organisation extends GlobalReadsWrites {
     get[Option[String]]("logo_url") ~
     get[Option[String]]("color") ~
     get[Long]("credits") ~
+    get[DateTime]("created") ~
     get[Option[Boolean]]("deleted") map { // TODO fix that (options)
-      case id ~ name ~ sub_domain ~ logo_url ~ color ~ credits ~ deleted => Organisation(id, name, sub_domain, logo_url.getOrElse(""), color.getOrElse("black"), credits, deleted.getOrElse(false))
+      case id ~ name ~ sub_domain ~ logo_url ~ color ~ credits ~ created ~ deleted => Organisation(id, name, sub_domain, logo_url.getOrElse(""), color.getOrElse("black"), credits, created, deleted.getOrElse(false))
     }
   }
 }

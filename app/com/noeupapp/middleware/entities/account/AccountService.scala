@@ -10,6 +10,7 @@ import com.noeupapp.middleware.entities.organisation.{Organisation, Organisation
 import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.entities.user.{User, UserService}
 import com.noeupapp.middleware.errorHandle.FailError
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.Play.current
 import play.api.db.DB
@@ -115,6 +116,7 @@ class AccountService @Inject()(userService: UserService,
             lastName = profile.lastName,
             email = profile.email,
             avatarUrl = profile.avatarURL,
+            created = DateTime.now(),
             active = false,
             deleted = false
           ),

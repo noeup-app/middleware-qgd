@@ -17,6 +17,7 @@ import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
+import org.joda.time.DateTime
 import play.api.Logger
 import play.api.Play.current
 import play.api.db.DB
@@ -96,6 +97,7 @@ class UserService @Inject()(userDAO: UserDAO,
                         userInput.lastName,
                         userInput.email,
                         userInput.avatarUrl,
+                        DateTime.now,
                         true,
                         false
                       )
@@ -112,13 +114,14 @@ class UserService @Inject()(userDAO: UserDAO,
     DB.withTransaction({ implicit c =>
       val userId = UUID.randomUUID()
       val user = User(  userId,
-        userInput.firstName,
-        userInput.lastName,
-        userInput.email,
-        userInput.avatarUrl,
-        true,
-        false
-      )
+                        userInput.firstName,
+                        userInput.lastName,
+                        userInput.email,
+                        userInput.avatarUrl,
+                        DateTime.now,
+                        true,
+                        false
+                      )
       userDAO.add(user)
       user
     })

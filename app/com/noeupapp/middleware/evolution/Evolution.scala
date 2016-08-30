@@ -18,6 +18,7 @@ class Evolution extends Controller {
   def apply(id: Int) = Action.async {
     id match {
       case 1 => _1
+      case 2 => _2
       case _ => Future.successful(NotFound)
     }
   }
@@ -53,6 +54,13 @@ class Evolution extends Controller {
         |ALTER TABLE public.entity_users
         |ADD CONSTRAINT entity_users_auth_clients_client_id_fk
         |FOREIGN KEY (owned_by_client) REFERENCES auth_clients (client_id);
+      """.stripMargin)
+
+  def _2 =
+    applyHelper(
+      """
+        |ALTER TABLE entity_users ADD created TIMESTAMP DEFAULT now() NOT NULL;
+        |ALTER TABLE entity_organisations ADD created TIMESTAMP DEFAULT now() NOT NULL;
       """.stripMargin)
 
 
