@@ -21,5 +21,17 @@ class EntityService @Inject() (entityDAO: EntityDAO) {
       }
     }
   }
-
+  /**
+    * Creates a new hierarchy relation to link an entity to a parent entity
+    *
+    * @param parentId
+    * @param entityId
+    * @return
+    */
+  def addHierarchy(parentId: UUID, entityId: UUID): Future[Expect[UUID]] = {
+    TryBDCall { implicit c =>
+      entityDAO.addHierarchy(parentId, entityId)
+      \/-(entityId)
+    }
+  }
 }
