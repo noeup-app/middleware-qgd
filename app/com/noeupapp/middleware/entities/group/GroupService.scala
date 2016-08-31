@@ -268,6 +268,7 @@ class GroupService @Inject()(groupDAO: GroupDAO,
       findGroup <- EitherT(findById(groupId, userId, admin, org.id))
 
       groupToDelete <- EitherT(findGroup |> "Couldn't find this group")
+      adminGroup <- EitherT(!groupToDelete.name.equals("Admin") |> "You can't delete an admin group")
 
       group <- EitherT(deleteGroup(groupToDelete, org.id))
 
