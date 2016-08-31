@@ -32,6 +32,7 @@ import com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPassword
 import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthenticatorDAO
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
+import com.noeupapp.middleware.oauth2.TierAccessTokenConfig
 import com.noeupapp.middleware.utils.{Html2PdfConfig, SendinBlueConfig}
 import com.noeupapp.middleware.utils.s3.{AmazonS3CoweboClient, S3Config, S3CoweboConfig}
 import org.joda.time.DateTime
@@ -196,6 +197,11 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
     new CredentialsProvider(authInfoRepository, passwordHasher, Seq(passwordHasher))
   }
 
+  @Provides
+  def provideTierAccessTokenConfig(configuration: Configuration): TierAccessTokenConfig = {
+    configuration.underlying.as[TierAccessTokenConfig]("tier.accesstoken")
+  }
+
 //  /**
 //   * Provides the Facebook provider.
 //   *
@@ -246,6 +252,8 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
 
     new QGDProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.qgd"))
   }
+
+
 //
 //  /**
 //   * Provides the VK provider.
