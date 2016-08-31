@@ -291,8 +291,14 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     Future.successful(\/-((name, parser, format, formatIn)))
   }
 
-  def toJsValue[T](newObject: List[T], className: String, format: Format[T]): Future[Expect[JsValue]] = {
-    implicit val reads = format
-    Future.successful(\/-(Json.toJson(newObject)))
+  def toJsValue[T, A, C](newObject: List[T], model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
+    val const = singleton.getDeclaredConstructors()(0)
+    const.setAccessible(true)
+    val obj = const.newInstance()
+    val jsFormat = singleton.getDeclaredField(out.getName.split('.').last+"Format")
+    jsFormat.setAccessible(true)
+    implicit val format = jsFormat.get(obj).asInstanceOf[Format[C]]
+    val toOut = singleton.getDeclaredMethod("to"+out.getName.split('.').last, model)
+    Future.successful(\/-(Json.toJson(newObject.map{o=> toOut.invoke(obj, o.asInstanceOf[Object]).asInstanceOf[C]})))
   }
 }
