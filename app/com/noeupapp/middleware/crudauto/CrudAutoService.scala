@@ -188,7 +188,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     val inputFields = in.getDeclaredFields.map{f=>f.getName}
     val fields = jsFields.intersect(inputFields)
     fields match {
-      case Nil => Future.successful(-\/(FailError("Error, these fields cannot be updated")))
+      case Nil => Future.successful(-\/(FailError("Error, these fields do not exist or cannot be updated")))
       case t => Future.successful(\/-(JsObject(json.fields.filter(f=> t.contains(f._1)))))
     }
   }
@@ -225,12 +225,6 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
                                        field.getGenericType.getTypeName)}
     Logger.debug(concatParamAndValue(params.toList))
     concatParamAndValue(params.toList)
-  }
-
-  def getJsValue[T](jsValue : JsValue, parser: Format[T]): T = {
-    implicit val format = parser
-    val value:T = jsValue.as[T]
-    value
   }
 
   def concatParam(params: List[String], param: String = ""): String = {
