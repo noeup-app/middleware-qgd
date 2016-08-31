@@ -46,13 +46,13 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def update[T, A](model: Class[T], singleton: Class[A], entity: T, json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[JsObject]] = {
+  def update[T, A](model: Class[T], singleton: Class[A], json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
     TryBDCall{ implicit c=>
-      implicit val reads = format
-      val oldJson = Json.toJson(entity).as[JsObject]
-      val request = buildUpdateRequest(model, oldJson, json, singleton, tableName, format)
+      implicit val jsFormat = format
+      val entity:T = json.as[T]
+      val request = buildUpdateRequest(model, json, singleton, tableName, format)
       crudAutoDAO.update(tableName, request, id)
-      \/-(json)
+      \/-(Some(entity))
     }
   }
 
@@ -63,6 +63,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
   }
 
   def completeAdd[T,A, B](model: Class[T], in: Class[B], singleton: Class[A], json: JsObject, format: Format[T], formatIn: Format[B]): Future[Expect[JsObject]] = {
+    //Deprecated
     /*for {
       js1 <- EitherT(completeId(json))
       js2 <- EitherT(completeDeleted(js1))
@@ -82,14 +83,19 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }//.run
 
-  def completeUpdate(json: JsObject, id: UUID): Future[Expect[JsObject]] = {
-    for {
-      js1 <- EitherT(completeDeleted(json+(("id", JsString(id.toString)))))
-      js2 <- EitherT(completeTime(js1))
-    } yield js2
-  }.run
+  def completeUpdate[T](entity: T, json: JsObject, id: UUID, format: Format[T]): Future[Expect[JsObject]] = {
+   //Deprecated
+   // for {
+   //   js1 <- EitherT(completeDeleted(json+(("id", JsString(id.toString)))))
+   //   js2 <- EitherT(completeTime(js1))
+   // } yield js2
+   implicit val reads = format
+    val oldJson = Json.toJson(entity).as[JsObject]
+    Future.successful(\/-(oldJson ++ json))
+  }//.run
 
-  def completeDeleted(json: JsObject): Future[Expect[JsObject]] = {
+  //Deprecated
+  /*def completeDeleted(json: JsObject): Future[Expect[JsObject]] = {
     (json \ "deleted").asOpt[Boolean] match {
       case Some(field) => field match {
         case false => Future.successful(\/-(json))
@@ -97,9 +103,10 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
       }
       case None => Future.successful(\/-(json+(("deleted", JsBoolean(false)))))
     }
-  }
+  }*/
 
-  def completeId(json: JsObject): Future[Expect[JsObject]] = {
+  //Deprecated
+  /*def completeId(json: JsObject): Future[Expect[JsObject]] = {
     (json \ "id").asOpt[String] match {
       case Some(field) => field match {
         case t if isUUID(t) => Future.successful(\/-(json))
@@ -107,9 +114,10 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
       }
       case None => Future.successful(\/-(json+(("id", JsString(UUID.randomUUID().toString)))))
     }
-  }
+  }*/
 
-  def completeTime(json: JsObject): Future[Expect[JsObject]] = {
+  //Deprecated
+  /*def completeTime(json: JsObject): Future[Expect[JsObject]] = {
     json.fields.filter(field => field._2.isInstanceOf[JsString] &&
       (field._2.as[String].split(' ').head == "time_plus" |
        field._2.as[String].split(' ').head == "time_minus" |
@@ -120,9 +128,10 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
           f._1 -> JsString(getTime(f._2.as[String], f._2.as[String].split(' ').head))))
         Future.successful(\/-(json++newJs))
     }
-  }
+  }*/
 
-  def getTime(jsValue: String, operation: String): String = {
+  //Deprecated
+  /*def getTime(jsValue: String, operation: String): String = {
     operation match {
       case "time_plus" => jsValue.split(' ')(1) match {
         case "years" => DateTime.now.plusYears(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
@@ -148,8 +157,9 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
       }
       case "time_now" => DateTime.now.toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
     }
-  }
+  }*/
 
+  //Unused (could be moved to utils)
   def isUUID(value: String): Boolean = {
     try{
       UUID.fromString(value)
@@ -200,16 +210,15 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     (param, value)
   }
 
-  def buildUpdateRequest[T, A](model: Class[T], oldJson: JsObject, json: JsObject, singleton: Class[A], tableName : String, format: Format[T]): String = {
+  def buildUpdateRequest[T, A](model: Class[T], json: JsObject, singleton: Class[A], tableName : String, format: Format[T]): String = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
     val getTableColumnNames = singleton.getDeclaredMethod("getTableColumns", classOf[String])
     getTableColumnNames.setAccessible(true)
     val fields = model.getDeclaredFields
-    val completeJs = oldJson ++ json
     implicit val form = format
-    val entity:T = completeJs.as[T]
+    val entity:T = json.as[T]
     val params = fields.map{field => field.setAccessible(true)
       (getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]],
                                        field.get(entity).toString,
@@ -251,15 +260,21 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
 
   def valueToAdd(value: String, typeName: String): String = {
     (value, typeName) match {
-      case (y, "java.util.UUID") =>
-        "'" + y + "'::UUID, "
-      case (y,z) if z.contains("scala.Option") && z.contains("UUID") && y.contains("Some") =>
-        "'" + y.splitAt(5)._2.splitAt(y.length-6)._1 + "'::UUID, "
-      case (y,z) if z.contains("scala.Option") && !z.contains("UUID") && y.contains("Some") =>
-        "'" + y.splitAt(5)._2.splitAt(y.length-6)._1 + "', "
+      case (y, z) if z.contains("UUID") =>
+        "'" + innerValue(y, z) + "'::UUID, "
       case (y,z) if z.contains("scala.Option") && !y.contains("Some") =>
         "null, "
-      case (y,z) => "'" + y + "', "
+      case (y,z) => "'" + innerValue(y, z) + "', "
+    }
+  }
+
+  def innerValue(value: String, typeName: String): String = {
+    (value, typeName) match {
+      case (y, z) if z.contains("scala.Option") && y.contains("Some") =>
+        y.splitAt(5)._2.splitAt(y.length-6)._1
+      case (y, z) if z.contains("List") =>
+        "{" + y.splitAt(5)._2.splitAt(y.length-6)._1 + "}"
+      case _ => value
     }
   }
 
