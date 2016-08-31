@@ -46,11 +46,11 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def update[T, A](model: Class[T], singleton: Class[A], json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[JsObject]] = {
+  def update[T, A](model: Class[T], singleton: Class[A], entity: T, json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[JsObject]] = {
     TryBDCall{ implicit c=>
-      //implicit val reads = format
-      //val entity:T = json.as[T]
-      val request = buildUpdateRequest(model,/*entity*/json, singleton, tableName)
+      implicit val reads = format
+      val oldJson = Json.toJson(entity).as[JsObject]
+      val request = buildUpdateRequest(model, oldJson, json, singleton, tableName, format)
       crudAutoDAO.update(tableName, request, id)
       \/-(json)
     }
@@ -200,19 +200,20 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     (param, value)
   }
 
-  def buildUpdateRequest[T, A](model: Class[T], json: JsObject, singleton: Class[A], tableName : String): String = {
+  def buildUpdateRequest[T, A](model: Class[T], oldJson: JsObject, json: JsObject, singleton: Class[A], tableName : String, format: Format[T]): String = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
     val getTableColumnNames = singleton.getDeclaredMethod("getTableColumns", classOf[String])
-    val parseIn = singleton.getDeclaredMethod("parseIn", classOf[String], classOf[JsValue])
     getTableColumnNames.setAccessible(true)
     val fields = model.getDeclaredFields
-    val jsFields = json.fields
-    val params = jsFields.map{field => val inField = fields.find(f=> f.getName.equals(field._1)).get
-                                      (getTableColumnNames.invoke(obj, field._1).asInstanceOf[Option[String]],
-                                       parseIn.invoke(obj, field._1, field._2).toString,
-                                       inField.getGenericType.getTypeName)}
+    val completeJs = oldJson ++ json
+    implicit val form = format
+    val entity:T = completeJs.as[T]
+    val params = fields.map{field => field.setAccessible(true)
+      (getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]],
+                                       field.get(entity).toString,
+                                       field.getGenericType.getTypeName)}
     Logger.debug(concatParamAndValue(params.toList))
     concatParamAndValue(params.toList)
   }
