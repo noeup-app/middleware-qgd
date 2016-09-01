@@ -46,7 +46,7 @@ POST        /oauth2/authenticate                com.noeupapp.middleware.authoriz
 POST        /oauth2/access_token                 com.noeupapp.middleware.authorizationServer.oauth2.OAuth2s.accessToken
 
 POST        /oauth2/alternative_access_token     com.noeupapp.middleware.oauth2.AlternativeFlows.alternativeFlow
-GET         /oauth2/byp/access_token             com.noeupapp.middleware.oauth2.BypAccessToken.getAccessToken
+GET         /oauth2/tier/access_token             com.noeupapp.middleware.oauth2.TierAccessToken.getAccessToken
 
 
 
