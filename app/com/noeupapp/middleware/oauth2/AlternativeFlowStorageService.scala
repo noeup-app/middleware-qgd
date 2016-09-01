@@ -1,0 +1,60 @@
+package com.noeupapp.middleware.oauth2
+
+import java.util.UUID
+
+import com.google.inject.Inject
+import com.noeupapp.middleware.authorizationServer.client.{Client, ClientService}
+import com.noeupapp.middleware.entities.user.UserOut
+import com.noeupapp.middleware.entities.user.User.UserOutFormat
+import com.noeupapp.middleware.errorHandle.FailError
+import com.noeupapp.middleware.errorHandle.FailError.Expect
+import com.noeupapp.middleware.utils.BearerTokenGenerator
+import org.sedis.Pool
+import play.api.libs.json.{JsError, JsResult, JsSuccess, Json}
+import play.api.mvc.RequestHeader
+import play.api.mvc.Results._
+
+import scala.concurrent.Future
+import scalaz.{-\/, \/-}
+import com.noeupapp.middleware.errorHandle.ExceptionEither._
+import play.api.Logger
+
+import scala.concurrent.ExecutionContext.Implicits.global
+
+
+/**
+  * Created by damien on 25/07/2016.
+  */
+class AlternativeFlowStorageService @Inject()(pool: Pool) {
+
+
+  case class UserAndClient(user: UserOut, client: Client)
+
+  implicit val UserAndClientFormat = Json.format[UserAndClient]
+
+  def createAndStoreToken(user: UserOut, client: Client): Future[Expect[String]] = Future {
+    val token = BearerTokenGenerator.generateToken
+    Try{
+      pool.withClient(_.set(
+        token,
+        Json.stringify(Json.toJson(UserAndClient(user, client))(UserAndClientFormat))
+      ))
+      token
+    }
+  }
+
+
+  def checkToken(token: String): Future[Expect[Option[(UserOut, Client)]]] = Future {
+    TryExpect{
+      pool.withClient(_.get(token))
+        .map(Json.parse)
+        .map(u => Json.fromJson(u)(UserAndClientFormat)) match {
+          case Some(JsSuccess(res, _)) => \/-(Some((res.user, res.client)))
+          case Some(JsError(errors))   => -\/(FailError(s"Unable to parse user $errors"))
+          case None                    => \/-(None)
+        }
+    }
+  }
+
+
+}

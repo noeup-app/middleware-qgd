@@ -37,7 +37,7 @@ class UserDAO extends GlobalReadsWrites {
     */
   def find(email: String)(implicit connection: Connection): Option[User] = {
     SQL(
-      """SELECT *
+      """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted
          FROM entity_users
          WHERE email = {email};""")
       .on(
