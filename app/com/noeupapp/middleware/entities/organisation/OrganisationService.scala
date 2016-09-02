@@ -9,6 +9,7 @@ import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.entities.group.{Group, GroupService}
 import com.noeupapp.middleware.entities.entity.EntityService
+import org.joda.time.DateTime
 
 import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
@@ -36,6 +37,7 @@ class OrganisationService @Inject() (organisationDAO: OrganisationDAO,
         organisationInput.logo_url,
         organisationInput.color,
         organisationInput.credits,
+        new DateTime(),
         deleted = false)))
 
       adminGroup <- EitherT(groupService.addGroup(Group(UUID.randomUUID(),

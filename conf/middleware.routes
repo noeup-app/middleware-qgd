@@ -45,6 +45,10 @@ POST        /oauth2/authenticate                com.noeupapp.middleware.authoriz
 # OAuth2 Routes
 POST        /oauth2/access_token                 com.noeupapp.middleware.authorizationServer.oauth2.OAuth2s.accessToken
 
+POST        /oauth2/alternative_access_token     com.noeupapp.middleware.oauth2.AlternativeFlows.alternativeFlow
+GET         /oauth2/tier/access_token             com.noeupapp.middleware.oauth2.TierAccessToken.getAccessToken
+
+
 
 # Entity
 GET         /entity/accounts/me                 com.noeupapp.middleware.entities.account.Accounts.me
