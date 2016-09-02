@@ -19,6 +19,7 @@ class Evolution extends Controller {
     id match {
       case 1 => _1
       case 2 => _2
+      case 3 => _3
       case _ => Future.successful(NotFound)
     }
   }
@@ -63,5 +64,18 @@ class Evolution extends Controller {
         |ALTER TABLE entity_organisations ADD created TIMESTAMP DEFAULT now() NOT NULL;
       """.stripMargin)
 
+  def _3 =
+    applyHelper(
+      """
+        |CREATE TABLE public.pass_hashes
+        |(
+        |  "user" UUID PRIMARY KEY,
+        |  hasher TEXT NOT NULL,
+        |  hash TEXT NOT NULL,
+        |  salt TEXT,
+        |  last_modified TIMESTAMP DEFAULT now() NOT NULL,
+        |  CONSTRAINT pass_hashes_entity_users_id_fk FOREIGN KEY ("user") REFERENCES entity_users (id)
+        |);
+      """.stripMargin)
 
 }
