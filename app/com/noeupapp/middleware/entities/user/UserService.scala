@@ -135,20 +135,19 @@ class UserService @Inject()(userDAO: UserDAO,
     * @param password non hashed pwd
     */
   def validateUser(email: String, password: String): Future[Expect[Option[User]]] = {
-    Logger.debug(s"UserService.validateUser($email, ******)...")
-
 
     val result: ValidationFuture[Option[User]] =
     for{
       user         <- EitherT(findByEmail(email))
+                      trace1 = Logger.trace(s"Login : Found existing user for $email")
       passwordInfo <- EitherT(passwordInfoDAO.find(LoginInfo("credentials", email)).map(TypeConversion.option2Expect))
     } yield {
       passwordHasher.matches(passwordInfo, password) match {
         case true =>
-          Logger.debug(s"UserService.validateUser($email, ******) -> Some($user)")
+          Logger.debug(s"Login : $email successfully logged in ")
           user
         case false =>
-          Logger.debug(s"UserService.validateUser($email, ******) -> None")
+          Logger.debug(s"Login : $email not logged in (password does not match")
           None
       }
     }
