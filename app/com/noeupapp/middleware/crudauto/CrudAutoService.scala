@@ -1,6 +1,6 @@
 package com.noeupapp.middleware.crudauto
 
-import java.lang.reflect.Field
+import java.lang.reflect.{Field, Method}
 import java.util.UUID
 import javax.inject.Inject
 
@@ -18,7 +18,8 @@ import play.api.Logger
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scalaz._
+import scala.language.higherKinds
+import scalaz._, Scalaz._
 
 class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
 
@@ -291,6 +292,31 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     Future.successful(\/-((name, parser, format, formatIn)))
   }
 
+
+  // TODO merge 2 functions
+
+  def toJsValue[T, A, C](newObject: Option[T], model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
+    val const = singleton.getDeclaredConstructors()(0)
+    const.setAccessible(true)
+    val obj = const.newInstance()
+    val jsFormat = singleton.getDeclaredField(out.getName.split('.').last+"Format")
+    jsFormat.setAccessible(true)
+    implicit val format = jsFormat.get(obj).asInstanceOf[Format[C]]
+    val toOut: Method = singleton.getDeclaredMethod("to"+out.getName.split('.').last, model)
+    Future.successful(
+      \/-(
+        Json.toJson(
+              newObject
+                .map{ o =>
+                  toOut
+                    .invoke(obj, o.asInstanceOf[Object])
+                    .asInstanceOf[C]
+                }
+        )
+      )
+    )
+  }
+
   def toJsValue[T, A, C](newObject: List[T], model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
@@ -298,7 +324,18 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     val jsFormat = singleton.getDeclaredField(out.getName.split('.').last+"Format")
     jsFormat.setAccessible(true)
     implicit val format = jsFormat.get(obj).asInstanceOf[Format[C]]
-    val toOut = singleton.getDeclaredMethod("to"+out.getName.split('.').last, model)
-    Future.successful(\/-(Json.toJson(newObject.map{o=> toOut.invoke(obj, o.asInstanceOf[Object]).asInstanceOf[C]})))
+    val toOut: Method = singleton.getDeclaredMethod("to"+out.getName.split('.').last, model)
+    Future.successful(
+      \/-(
+        Json.toJson(
+              newObject
+                .map{ o =>
+                  toOut
+                    .invoke(obj, o.asInstanceOf[Object])
+                    .asInstanceOf[C]
+                }
+        )
+      )
+    )
   }
 }
