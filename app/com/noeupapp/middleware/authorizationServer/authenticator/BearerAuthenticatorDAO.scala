@@ -22,20 +22,20 @@ class BearerAuthenticatorDAO(authAccessTokenService: OAuthAccessTokenService,
   override def find(id: String): Future[Option[BearerTokenAuthenticator]] = {
     authAccessTokenService.find(id) flatMap {
       case \/-(accessToken) if accessToken.userId.isDefined => {
-        Logger.debug(s"BearerAuthenticatorDAO.find($id) -> authAccessTokenService.find -> $accessToken")
-        Logger.debug(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) ...")
+        Logger.trace(s"BearerAuthenticatorDAO.find($id) -> authAccessTokenService.find -> $accessToken")
+        Logger.trace(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) ...")
         userService.findById(accessToken.userId.get).map{
           case \/-(Some(user)) => Some(user)
           case _ => None
         }.map(_.map{user =>
-          Logger.debug(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) -> $user")
+          Logger.trace(s"BearerAuthenticatorDAO.find($id) -> userService.findById(${accessToken.userId}) -> $user")
           val a = BearerTokenAuthenticator(id,
             api.LoginInfo("credentials", user.email.getOrElse("")),
             new DateTime(),
             new DateTime(accessToken.createdAt).plus(accessToken.expiresIn.getOrElse(0l) * 1000),
             None
           )
-          Logger.info(s"BearerAuthenticatorDAO.find($id) -> $a")
+          Logger.trace(s"BearerAuthenticatorDAO.find($id) -> $a")
           a
         })
       }
@@ -45,7 +45,7 @@ class BearerAuthenticatorDAO(authAccessTokenService: OAuthAccessTokenService,
         Future.successful(None)
 
       case -\/(e) =>
-        Logger.debug(s"BearerAuthenticatorDAO.find($id) -> authAccessTokenService.find -> nothing found - $e")
+        Logger.trace(s"BearerAuthenticatorDAO.find($id) -> authAccessTokenService.find -> nothing found - $e")
         Future.successful(None)
     }
   }
