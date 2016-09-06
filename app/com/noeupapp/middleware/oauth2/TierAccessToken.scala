@@ -72,10 +72,16 @@ class TierAccessTokenService @Inject()(ws: WSClient,
           )
         )
       )
-      .map(_.json.validate[AccessToken])
-      .map {
-        case JsSuccess(value, _) => \/-(value)
-        case JsError(errors)     => -\/(FailError(errors.mkString(", ")))
+      .map{ response =>
+        response.status match {
+          case status if status >= 200 && status < 300 =>
+            response.json.validate[AccessToken] match {
+              case JsSuccess(value, _) => \/-(value)
+              case JsError(errors)     => -\/(FailError(errors.mkString(", ")))
+            }
+          case status => -\/(FailError(s"Non 2** status ($status) returned by tier : ${response.json}"))
+        }
+
       }
   }.recover {
     case e: Exception => -\/(FailError(e))
