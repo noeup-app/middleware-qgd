@@ -8,6 +8,7 @@ import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.noeupapp.middleware.authorizationClient.ScopeAndRoleAuthorization
 import com.noeupapp.middleware.entities.account.Account
 import com.noeupapp.middleware.entities.user.{UserIn, UserService}
+import com.noeupapp.middleware.errorHandle.ErrorResult
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.BearerTokenGenerator
 
@@ -20,7 +21,6 @@ import play.api.mvc.{Action, Controller}
 
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
-
 import com.noeupapp.middleware.oauth2.AlternativeFlowData._
 /**
   * Created by damien on 25/07/2016.
@@ -51,8 +51,12 @@ class AlternativeFlows @Inject()(alternativeFlowService: AlternativeFlowService,
       case -\/(e) =>
         Logger.error(e.toString)
         InternalServerError("Internal server error")
-      case \/-(ClientNotFoundAlternativeFlow)     => NotFound("Client is not found")
-      case \/-(UserNotFoundAlternativeFlow)       => NotFound("User is not found")
+      case \/-(ClientNotFoundAlternativeFlow)     =>
+        Logger.error("Client is not found")
+        NotFound(ErrorResult(404, "Client is not found").toJson)
+      case \/-(UserNotFoundAlternativeFlow)       =>
+        Logger.error("User is not found")
+        NotFound(ErrorResult(404, "User is not found").toJson)
       case \/-(AccessTokenAlternativeFlow(token)) => Ok(token)
     }
 
