@@ -7,6 +7,7 @@ import play.api.mvc.Results._
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scalaz._
 
 final case class FailError(message: String, cause: Option[\/[Throwable, Error]] = None, errorType: Status = InternalServerError) {
@@ -65,5 +66,11 @@ object FailError {
 
   def apply(exception: Throwable): FailError = FailError(exception.getMessage, exception)
 
+}
+
+object Expect {
+
+  def right[T](block: T): FailError.Expect[T] = \/-(block)
+  def futureRight[T](block: T): Future[FailError.Expect[T]] = Future.successful(\/-(block))
 
 }
