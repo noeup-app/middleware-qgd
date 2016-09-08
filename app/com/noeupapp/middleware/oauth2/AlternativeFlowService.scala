@@ -6,6 +6,7 @@ import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessT
 import com.noeupapp.middleware.entities.user.{User, UserService}
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
+import play.api.Logger
 import play.api.libs.json.{JsValue, Json}
 
 import scala.concurrent.Future
@@ -31,7 +32,9 @@ class AlternativeFlowService @Inject()(alternativeFlowHandler: AlternativeFlowHa
   def getAlternativeFlowService(alternativeFlowData: AlternativeFlowData): Future[Expect[AlternativeFlow]] = {
     clientService.findByClientIDAndClientSecret(alternativeFlowData.client_id, alternativeFlowData.client_secret)  flatMap {
       case e@ -\/(_) => Future.successful(e)
-      case \/-(None) => Future.successful(\/-(ClientNotFoundAlternativeFlow))
+      case \/-(None) =>
+        Logger.error(s"AlternativeFlowService client is not found ${(alternativeFlowData.client_id, alternativeFlowData.client_secret)}")
+        Future.successful(\/-(ClientNotFoundAlternativeFlow))
       case \/-(Some(client)) => // TODO /!\ WARNING NO SCOPE OR ROLE FILTER
         userService.findByEmail(alternativeFlowData.email, Some(client.clientId)) flatMap {
           case e@ -\/(_) => Future.successful(e)
