@@ -60,6 +60,30 @@ trait GlobalReadsWrites {
   implicit def dateTimeOrdering: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
 
 
+
+
+
+
+  implicit def rowToOptionDateTime: Column[Option[DateTime]] = Column.nonNull1 { (value, meta) =>
+    value match {
+      case ts: java.sql.Timestamp => Right(Some(new DateTime(ts.getTime)))
+      case d: java.sql.Date => Right(Some(new DateTime(d.getTime)))
+      case str: java.lang.String => Right(Some(dateFormatGeneration.parseDateTime(str)))
+      case _ => Left(TypeDoesNotMatch("Cannot convert " + value + ":" + value.asInstanceOf[AnyRef].getClass))
+    }
+  }
+
+  implicit val optionDateTimeToStatement = new ToStatement[Option[DateTime]] {
+    def set(s: java.sql.PreparedStatement, index: Int, aValue: Option[DateTime]): Unit = {
+      aValue foreach { value =>
+        s.setTimestamp(index, new java.sql.Timestamp(value.withMillisOfSecond(0).getMillis))
+      }
+    }
+  }
+
+
+
+
   // UUID
   implicit def rowToUUID: Column[UUID] = Column.nonNull1 { (value, meta) =>
     val MetaDataItem(qualified, _, _) = meta
