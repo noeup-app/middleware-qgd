@@ -1,6 +1,6 @@
 package com.noeupapp.middleware.utils
 
-import java.sql.PreparedStatement
+import java.sql.{PreparedStatement, Types}
 import java.util.UUID
 
 import anorm.{Column, MetaDataItem, ToStatement, TypeDoesNotMatch}
@@ -53,7 +53,7 @@ trait GlobalReadsWrites {
 
   implicit val dateTimeToStatement = new ToStatement[DateTime] {
     def set(s: java.sql.PreparedStatement, index: Int, aValue: DateTime): Unit = {
-      s.setTimestamp(index, new java.sql.Timestamp(aValue.withMillisOfSecond(0).getMillis))
+      s.setTimestamp(index, new java.sql.Timestamp(aValue.getMillis))
     }
   }
 
@@ -75,8 +75,9 @@ trait GlobalReadsWrites {
 
   implicit val optionDateTimeToStatement = new ToStatement[Option[DateTime]] {
     def set(s: java.sql.PreparedStatement, index: Int, aValue: Option[DateTime]): Unit = {
-      aValue foreach { value =>
-        s.setTimestamp(index, new java.sql.Timestamp(value.withMillisOfSecond(0).getMillis))
+      aValue match {
+        case Some(value) => s.setTimestamp(index, new java.sql.Timestamp(value.getMillis))
+        case None        => s.setNull(index, Types.TIMESTAMP)
       }
     }
   }
