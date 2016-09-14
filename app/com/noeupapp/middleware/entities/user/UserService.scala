@@ -89,18 +89,35 @@ class UserService @Inject()(userDAO: UserDAO,
     * @param userInput
     * @return Complete user with UUID created
     */
-  def add(userInput: UserIn): Future[Expect[UserOut]] = {
-    TryBDCall[UserOut]{ implicit c =>
+  def add(userInput: UserIn, orGet: Option[String] = None): Future[Expect[UserOut]] = {
+    orGet match {
+      case Some(_) =>
+        userInput.email match {
+          case None        => Future.successful(-\/(FailError("Email is not defined")))
+          case Some(email) =>
+            findByEmail(email).flatMap{
+              case \/-(Some(user)) => Future.successful(\/-(user))
+              case e @ -\/(_) => Future.successful(e)
+              case \/-(None)  => addDao(userInput)
+            }
+        }
+      case None => addDao(userInput)
+    }
+  }
+
+  private def addDao(userInput: UserIn): Future[Expect[UserOut]] = {
+    TryBDCall[UserOut] { implicit c =>
       val userId = UUID.randomUUID()
-      val user = User(  userId,
-                        userInput.firstName,
-                        userInput.lastName,
-                        userInput.email,
-                        userInput.avatarUrl,
-                        DateTime.now,
-                        true,
-                        false
-                      )
+      val user = User(
+        id = userId,
+        firstName = userInput.firstName,
+        lastName = userInput.lastName,
+        email = userInput.email,
+        avatarUrl = userInput.avatarUrl,
+        created = DateTime.now,
+        active = true,
+        deleted = false
+      )
       userDAO.add(user)
       \/-(user)
     }

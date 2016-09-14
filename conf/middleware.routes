@@ -55,7 +55,7 @@ GET         /entity/accounts/me                 com.noeupapp.middleware.entities
 
 GET         /entity/users/:userId               com.noeupapp.middleware.entities.user.Users.fetchById(userId: java.util.UUID)
 GET         /entity/users                       com.noeupapp.middleware.entities.user.Users.fetchAll
-POST        /entity/users                       com.noeupapp.middleware.entities.user.Users.add
+POST        /entity/users                       com.noeupapp.middleware.entities.user.Users.add(orGet: Option[String])
 
 GET         /evolution/:n                       com.noeupapp.middleware.evolution.Evolution.apply(n: Int)
 

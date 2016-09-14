@@ -54,10 +54,10 @@ class Users @Inject()(
     }
   }
 
-  def add = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.Processes"*/), WithRole()))
+  def add(orGet: Option[String]) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.Processes"*/), WithRole()))
     .async(parse.json[UserIn]) { implicit request =>
       val newUser = request.request.body
-      userService.add(newUser) map {
+      userService.add(newUser, orGet) map {
         case \/-(createdUser)  => Ok(Json.toJson(createdUser))
         case -\/(_)           => InternalServerError("Error while creating process")
       }
