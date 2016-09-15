@@ -30,8 +30,8 @@ class ForgotPasswords @Inject()(
                                 ajaxSignUpsResult: AjaxSignUpsResult,
                                 avatarService: AvatarService,
                                 passwordHasher: PasswordHasher,
-                                forgotPasswordService: ForgotPasswordService
-                              )
+                                forgotPasswordService: ForgotPasswordService,
+                                forgotPasswordConfig: ForgotPasswordConfig)
   extends Silhouette[Account, BearerTokenAuthenticator] {
 
   def forgotPasswordGet() = Action { implicit request =>
@@ -40,7 +40,8 @@ class ForgotPasswords @Inject()(
   }
 
   def forgotPasswordAction = Action.async(jsonOrAnyContent[ForgotPasswordForm.Data]) { implicit request =>
-    val domain = RequestHelper.getFullDomain
+//    val domain = RequestHelper.getFullDomain
+    val domain = forgotPasswordConfig.url
     RequestHelper.isJson(request) match {
       case false =>
         ForgotPasswordForm.form.bindFromRequest.fold(
