@@ -362,6 +362,7 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
   def provideAmazonS3CoweboClient(s3CoweboConfig: S3CoweboConfig): AmazonS3CoweboClient = {
     val awsCredentials = new BasicAWSCredentials(s3CoweboConfig.key, s3CoweboConfig.secret)
     val config = new ClientConfiguration
+    config.setSignerOverride("S3SignerType")
     val s3 = new AmazonS3CoweboClient(awsCredentials, config.withProtocol(Protocol.HTTPS))
     s3.setEndpoint(s3CoweboConfig.host)
     s3
@@ -371,6 +372,7 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
   def provideAmazonS3Client(s3Config: S3Config): AmazonS3Client = {
     val awsCredentials = new BasicAWSCredentials(s3Config.key, s3Config.secret)
     val config = new ClientConfiguration
+    config.setSignerOverride("S3SignerType")
     val s3 = new AmazonS3Client(awsCredentials, config.withProtocol(Protocol.HTTPS))
     s3.setEndpoint(s3Config.host)
     s3

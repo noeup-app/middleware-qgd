@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   jdbc,
   //
   // S3
-  "com.amazonaws" % "aws-java-sdk" % "1.10.72",
+  "com.amazonaws" % "aws-java-sdk" % "1.11.3",
   //
   // TESTS
   specs2 % Test,
