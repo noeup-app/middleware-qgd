@@ -4,6 +4,9 @@ import java.sql.Connection
 import java.util.UUID
 
 import anorm._
+import anorm.SqlParser._
+
+import scala.language.postfixOps
 
 class RoleDAO {
 
@@ -25,6 +28,21 @@ class RoleDAO {
           'id -> roleId,
           'role_name -> role
     ).execute()
+  }
+
+
+
+  def getByUserId(userId: UUID)(implicit connection: Connection): List[String] = {
+    SQL(
+      """
+        SELECT role_name
+        FROM entity_roles role
+        INNER JOIN entity_relation_users_roles user_role ON user_role.role_id = role.id
+        WHERE user_role.user_id = {userId}::UUID;
+      """.stripMargin)
+      .on(
+        'userId -> userId
+      ).as(scalar[String] *)
   }
 
 }

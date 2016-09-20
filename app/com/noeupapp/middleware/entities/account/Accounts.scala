@@ -6,9 +6,12 @@ import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.noeupapp.middleware.authorizationClient.login.LoginInfo
 import play.api.i18n.MessagesApi
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import com.noeupapp.middleware.entities.account.Account._
+import play.api.Logger
+
 import scala.concurrent.ExecutionContext.Implicits.global
+import scalaz.{-\/, \/-}
 
 /**
   * The Account controller
@@ -24,10 +27,16 @@ class Accounts @Inject()(
 
 
   def me = SecuredAction.async { implicit request =>
-    val loginInfo = api.LoginInfo("credentials", request.identity.user.email.getOrElse(""))
-    accountService.retrieve(loginInfo) map {
-      case None => NotFound("Cannot to fetch your data, not found")
-      case Some(account) => Ok(Json.toJson(account))
+    accountService.retrieveWithRoles(request.identity.user.email, request.identity.user.id) map {
+      case \/-(Some((account, roles))) =>
+        val jsonAccount: JsObject = Json.toJson(account).as[JsObject]
+        val jsonRoles = Json.toJson(roles)
+        Ok(jsonAccount + ("roles" -> jsonRoles))
+      case \/-(None) =>
+        NotFound("User not found")
+      case e @ -\/(_) =>
+        Logger.error(e.toString)
+        InternalServerError("Internal server error")
     }
   }
 

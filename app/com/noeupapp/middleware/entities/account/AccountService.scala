@@ -3,6 +3,7 @@ package com.noeupapp.middleware.entities.account
 import java.util.{NoSuchElementException, UUID}
 import javax.inject.Inject
 
+import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
@@ -10,6 +11,7 @@ import com.noeupapp.middleware.entities.organisation.{Organisation, Organisation
 import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.entities.user.{User, UserService}
 import com.noeupapp.middleware.errorHandle.FailError
+import com.noeupapp.middleware.errorHandle.FailError.Expect
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.Play.current
@@ -19,6 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, EitherT, OptionT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
+import com.noeupapp.middleware.utils.TypeCustom._
 
 
 /**
@@ -53,6 +56,14 @@ class AccountService @Inject()(userService: UserService,
            None
       }
 
+
+  def retrieveWithRoles(email: Option[String], userId: UUID): Future[Expect[Option[(Account, List[String])]]] = {
+    val loginInfo = api.LoginInfo("credentials", email.getOrElse(""))
+    for{
+      accountOpt <- EitherT(retrieve(loginInfo).map[Expect[Option[Account]]](\/-(_)))
+      roles      <- EitherT(roleService.getRoleByUser(userId))
+    } yield accountOpt.map((_, roles))
+  }.run
 
 
   /**
