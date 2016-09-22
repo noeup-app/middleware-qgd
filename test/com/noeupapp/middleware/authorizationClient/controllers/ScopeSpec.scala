@@ -10,6 +10,7 @@ import play.api.test.PlaySpecification
 import ScopeAuthorization.{WithScope, WithScopes}
 import com.noeupapp.middleware.entities.account.Account
 import com.noeupapp.middleware.entities.user.User
+import org.joda.time.DateTime
 
 
 class ScopeSpec extends PlaySpecification with Mockito {
@@ -31,6 +32,7 @@ class ScopeSpec extends PlaySpecification with Mockito {
         lastName = None,
         email = None,
         avatarUrl = None,
+        created = new DateTime(),
         active = false,
         deleted = false
       ),

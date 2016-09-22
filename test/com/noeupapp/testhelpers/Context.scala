@@ -2,6 +2,7 @@ package com.noeupapp.testhelpers
 
 import java.util.UUID
 
+import akka.util.Timeout
 import com.google.inject.AbstractModule
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
@@ -10,12 +11,15 @@ import com.noeupapp.middleware.authorizationClient.{FakeScopeAndRoleAuthorizatio
 import com.noeupapp.middleware.entities.account.Account
 import com.noeupapp.middleware.entities.user.User
 import net.codingwell.scalaguice.ScalaModule
+import org.joda.time.DateTime
 import org.specs2.matcher.Scope
 import play.api.Mode
 import play.api.db.{Database, Databases}
 import play.api.inject.guice.GuiceApplicationBuilder
 
+import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.language.postfixOps
 //import play.api.Play.current
 
 /**
@@ -46,6 +50,7 @@ trait Context extends Scope {
       lastName = None,
       email = None,
       avatarUrl = None,
+      created = new DateTime(),
       active = false,
       deleted = false
     ),
@@ -58,6 +63,8 @@ trait Context extends Scope {
   implicit val env: Environment[Account, BearerTokenAuthenticator] = {
     new FakeEnvironment[Account, BearerTokenAuthenticator](Seq(loginInfo -> identity))
   }
+
+//  implicit val timeout = Timeout(5 seconds)
 
 
 //
@@ -84,14 +91,16 @@ trait Context extends Scope {
     * The application.
     */
   lazy val application = new GuiceApplicationBuilder()
-    .configure(Map(
-        "db.default.url"      -> db_url
-      , "db.default.username" -> db_config.get("username").get
-      , "db.default.password" -> db_config.get("password").get
-    ))
+//    .configure(Map(
+//        "db.default.url"      -> db_url
+//      , "db.default.username" -> db_config.get("username").get
+//      , "db.default.password" -> db_config.get("password").get
+//    ))
     .in(Mode.Test)
     .overrides(new FakeModule)
     .build()
+
+  val injector = application.injector
 
 
 //  def withMyDatabase[T](block: Database => T) = {
@@ -106,15 +115,15 @@ trait Context extends Scope {
 //    )(block)
 //  }
 
-  def withDatabase[T](block: Database => T) = {
-
-    Databases.withDatabase(
-      driver = db_driver,
-      url = db_url,
-      name = db_name,
-      config = db_config
-    )(block)
-  }
+//  def withDatabase[T](block: Database => T) = {
+//
+//    Databases.withDatabase(
+//      driver = db_driver,
+//      url = db_url,
+//      name = db_name,
+//      config = db_config
+//    )(block)
+//  }
 
   implicit val context = this
 }

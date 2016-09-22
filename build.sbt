@@ -37,6 +37,9 @@ libraryDependencies ++= Seq(
   "net.ceedubs" %% "ficus" % "1.1.2",
   "com.typesafe.play" %% "play-mailer" % "4.0.0",
   cache,
+  "org.slf4j" % "slf4j-api" % "1.6.1",
+  "org.slf4j" % "slf4j-simple" % "1.6.1",
+  "com.chuusai" %% "shapeless" % "2.3.2",
   //
   // FRONT
   "com.adrianhurt" %% "play-bootstrap3" % "0.4.4-P24",
@@ -54,6 +57,7 @@ resolvers ++= Seq(
   "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
   "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
   "sonatype releases" at "http://oss.sonatype.org/content/repositories/releases",
+  Resolver.sonatypeRepo("snapshots"),
   "bintray Repository" at "https://dl.bintray.com/graingert/maven"
 )
 
