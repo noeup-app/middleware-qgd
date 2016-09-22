@@ -1,5 +1,4 @@
-package com.noeupapp.bebrokerapi.distributionlist
-
+package com.noeupapp.middleware.utils.parser
 
 import scala.util.{Failure, Success, Try}
 
