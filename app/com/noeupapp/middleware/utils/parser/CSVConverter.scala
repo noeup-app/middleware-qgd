@@ -1,10 +1,18 @@
 package com.noeupapp.middleware.utils.parser
 
+import java.io.File
+
+import play.api.libs.iteratee.Enumeratee.{CheckDone, Grouped}
+import play.api.libs.iteratee.Execution.Implicits._
+import play.api.libs.iteratee.{Done, Input, _}
+
 import scala.util.{Failure, Success, Try}
+import shapeless._
+import syntax.singleton._
 
-import shapeless._, syntax.singleton._
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.immutable.{:: => Cons}
+import scala.concurrent.{ExecutionContext, Future}
 
 // Implementation
 
@@ -65,21 +73,24 @@ object CSVConverter {
   implicit def listCsvConverter[A](implicit ec: CSVConverter[A])
   : CSVConverter[List[A]] = new CSVConverter[List[A]] {
     def from(s: String, context: Option[Line] = Option.empty): Try[List[A]] = {
-      val lines: List[Line] =
-        s
-          .trim
-          .split("\n").toList
-          .zipWithIndex
-          .map{
-            case (content, lineNumber) => Line(lineNumber, content)
-          }
+      val lines: List[Line] = stringToListOfLines(s)
       listCsvLinesConverter(lines)(ec)
     }
     def to(l: List[A]): String = l.map(ec.to).mkString("\n")
   }
 
+  def stringToListOfLines(s: String): List[Line] = {
+    s
+      .trim
+      .split("\n").toList
+      .zipWithIndex
+      .map {
+        case (content, lineNumber) => Line(lineNumber, content)
+      }
+  }
 
   // HList
+
 
   implicit def deriveHNil: CSVConverter[HNil] =
     new CSVConverter[HNil] {
@@ -145,5 +156,134 @@ object CSVConverter {
     def from(s: String, context: Option[Line] = Option.empty): Try[A] = conv.from(s, context).map(gen.from)
     def to(a: A): String = conv.to(gen.to(a))
   }
+
+
+  def readHugeFile[T](file: File)(implicit st: Lazy[CSVConverter[T]]) = {
+
+
+    val chunkSize = 1024 * 8
+
+    val enumerator: Enumerator[Array[Byte]] = Enumerator.fromFile(file, chunkSize)
+
+    def isLastChunk(chunk: Array[Byte]): Boolean = {
+      chunk.length < chunkSize
+    }
+
+
+    val groupByLines: Enumeratee[Array[Byte], List[String]] = Enumeratee.grouped {
+      println("groupByLines")
+      Iteratee.fold[Array[Byte], (String, List[String])]("", List.empty) {
+        case ((accLast, accLines), chunk) =>
+          println("groupByLines chunk size " + chunk.length)
+          new String(chunk)
+            .trim
+            .split("\n")
+            .toList match {
+            case lines  @ Cons(h, tail) =>
+              val lineBetween2Chunks: String = accLast + h
+
+              val goodLines =
+                isLastChunk(chunk) match {
+                  case true  => Cons(lineBetween2Chunks, tail)
+                  case false => Cons(lineBetween2Chunks, tail).init
+                }
+
+              (lines.last, accLines ++ goodLines)
+            case Nil => ("", accLines)
+          }
+      }.map(_._2)
+    }
+
+
+    val turnIntoLines: Enumeratee[List[String], List[Line]] = Enumeratee.grouped {
+      println("turnIntoLines")
+      Iteratee.fold[List[String], (Int, List[Line])](0, List.empty) {
+        case ((index, accLines), chunk) =>
+          println("turnIntoLines chunk size " + chunk.length)
+          val lines =
+            ((Stream from index) zip chunk).map {
+              case (lineNumber, content) => Line(lineNumber, content)
+            }.toList
+          (index + chunk.length, lines ++ accLines)
+      }.map(_._2)
+    }
+
+
+//    def test: Enumeratee[List[Line],List[Line]] = new Enumeratee[List[Line],List[Line]]{
+//      override def applyOn[A](inner: Iteratee[List[Line], A]): Iteratee[List[Line], Iteratee[List[Line], A]] = new CheckDone[List[Line], List[Line]] {
+//
+//        def step[B](f: Iteratee[List[Line], List[Line]]): K[List[Line], Iteratee[List[Line], B]] = {
+//
+//          case in @ (Input.El(_) | Input.Empty) =>
+//
+//            Error("test", in)
+//          case Input.EOF => Done(List.empty)
+//
+//        }
+//
+//        def continue[B](k: K[List[Line], A]) = Cont(step(k))
+//      }
+//    }
+
+//
+//    def grouped[From] = new Grouped[From] {
+//
+//      def apply[To](folder: Iteratee[From, To]): Enumeratee[From, To] = new CheckDone[From, To] {
+//
+//        def step[A](f: Iteratee[From, To])(k: K[To, A]): K[From, Iteratee[To, A]] = {
+//
+//          case in @ (Input.El(_) | Input.Empty) =>
+//
+//            Iteratee.flatten(f.feed(in)).pureFlatFold {
+//              case Step.Done(a, left) => new CheckDone[From, To] {
+//                def continue[A](k: K[To, A]) =
+//                  (left match {
+//                    case Input.El(_) => step(folder)(k)(left)
+//                    case _ => Cont(step(folder)(k))
+//                  })
+//              } &> k(Input.El(a))
+//              case Step.Cont(kF) => Cont(step(Cont(kF))(k))
+//              case Step.Error(msg, e) => Error(msg, in)
+//            }(dec)
+//
+//          case Input.EOF => Iteratee.flatten(f.run.map[Iteratee[From, Iteratee[To, A]]]((c: To) => Done(k(Input.El(c)), Input.EOF))(dec))
+//
+//        }
+//
+//        def continue[A](k: K[To, A]) = Cont(step(folder)(k))
+//      }
+//    }
+
+
+//
+//    def groupByChunk[A](chunkSize: Int): Enumeratee[List[A], List[A]] = Enumeratee.grouped(
+//      Enumeratee.splitOnceAt
+//    )
+
+
+    val parseChunk: Iteratee[List[Line], Try[List[T]]] = {
+      println("parseChunk")
+      Iteratee.fold[List[Line], Try[List[T]]](Try(List.empty)) {
+        case (_, chunk) =>
+          println(("chunk", chunk.size))
+          listCsvLinesConverter[T](chunk)(st.value)
+      }
+    }
+
+
+    val future = (enumerator &> groupByLines ><> turnIntoLines  |>> parseChunk).flatMap(_.run)
+    future.onFailure{
+      case e => println(e)
+    }
+    future.onSuccess{
+      case list =>
+        println("ok")
+        println(list)
+        println(list foreach println)
+//        println(list.mkString("\n"))
+    }
+
+  }
+
 }
 
