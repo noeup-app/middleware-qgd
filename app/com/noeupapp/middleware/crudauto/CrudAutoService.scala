@@ -57,9 +57,23 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     }
   }
 
-  def delete(id: UUID, tableName: String): Future[Expect[Boolean]] = {
-    TryBDCall{ implicit c=>
-      \/-(crudAutoDAO.delete(tableName, id))
+  def delete(id: UUID, tableName: String, purge: Option[Boolean]): Future[Expect[Boolean]] = {
+    TryBDCall{ implicit c =>
+      purge match {
+        case Some(true) => crudAutoDAO.purge(tableName, id) match {
+          case 0 => \/-(false)
+          case 1 => \/-(true)
+          case i:Int => -\/(FailError("More than one row deleted (" + i + ")"))
+        }
+        case _ =>
+          crudAutoDAO.delete(tableName, id) match {
+            case 0 => \/-(false)
+            case 1 => \/-(true)
+            case i:Int => -\/(FailError("More than one row deleted (" + i + ")"))
+          }
+      }
+
+
     }
   }
 
@@ -85,12 +99,12 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
   }//.run
 
   def completeUpdate[T](entity: T, json: JsObject, id: UUID, format: Format[T]): Future[Expect[JsObject]] = {
-   //Deprecated
-   // for {
-   //   js1 <- EitherT(completeDeleted(json+(("id", JsString(id.toString)))))
-   //   js2 <- EitherT(completeTime(js1))
-   // } yield js2
-   implicit val reads = format
+    //Deprecated
+    // for {
+    //   js1 <- EitherT(completeDeleted(json+(("id", JsString(id.toString)))))
+    //   js2 <- EitherT(completeTime(js1))
+    // } yield js2
+    implicit val reads = format
     val oldJson = Json.toJson(entity).as[JsObject]
     Future.successful(\/-(oldJson ++ json))
   }//.run
@@ -203,7 +217,7 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     val fields = entity.getClass.getDeclaredFields
     val params = fields.flatMap{field => getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]]}
     val values = fields.map{field => field.setAccessible(true)
-                                     (field.get(entity), field.getGenericType.getTypeName)}
+      (field.get(entity), field.getGenericType.getTypeName)}
     Logger.debug(values.toSeq.toString)
     val value = concatValue(values.toList)
     Logger.debug(value)
@@ -222,8 +236,8 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     val entity:T = json.as[T]
     val params = fields.map{field => field.setAccessible(true)
       (getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]],
-                                       field.get(entity).toString,
-                                       field.getGenericType.getTypeName)}
+        field.get(entity).toString,
+        field.getGenericType.getTypeName)}
     Logger.debug(concatParamAndValue(params.toList))
     concatParamAndValue(params.toList)
   }
@@ -264,12 +278,15 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
   }
 
   def innerValue(value: String, typeName: String): String = {
-    (value, typeName) match {
+    //val r = """(?!^'|'$)(\')"""
+    val r = """(\')"""
+    val escapeSimpleQuote = r.r replaceAllIn (value, "''")
+    (escapeSimpleQuote, typeName) match {
       case (y, z) if z.contains("scala.Option") && y.contains("Some") =>
         y.splitAt(5)._2.splitAt(y.length-6)._1
       case (y, z) if z.contains("List") =>
         "{" + y.splitAt(5)._2.splitAt(y.length-6)._1 + "}"
-      case _ => value
+      case _ => escapeSimpleQuote
     }
   }
 
@@ -306,12 +323,12 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     Future.successful(
       \/-(
         Json.toJson(
-              newObject
-                .map{ o =>
-                  toOut
-                    .invoke(obj, o.asInstanceOf[Object])
-                    .asInstanceOf[C]
-                }
+          newObject
+            .map{ o =>
+              toOut
+                .invoke(obj, o.asInstanceOf[Object])
+                .asInstanceOf[C]
+            }
         )
       )
     )
@@ -328,12 +345,12 @@ class CrudAutoService  @Inject()(crudAutoDAO: CrudAutoDAO)() {
     Future.successful(
       \/-(
         Json.toJson(
-              newObject
-                .map{ o =>
-                  toOut
-                    .invoke(obj, o.asInstanceOf[Object])
-                    .asInstanceOf[C]
-                }
+          newObject
+            .map{ o =>
+              toOut
+                .invoke(obj, o.asInstanceOf[Object])
+                .asInstanceOf[C]
+            }
         )
       )
     )

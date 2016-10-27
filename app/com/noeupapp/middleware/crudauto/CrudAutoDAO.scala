@@ -18,9 +18,9 @@ class CrudAutoDAO extends GlobalReadsWrites {
       s"""SELECT *
          FROM $tableName
          WHERE id = {id}::UUID;"""
-      ).on(
-        'id -> entityId
-      ).as(parser *).headOption
+    ).on(
+      'id -> entityId
+    ).as(parser *).headOption
   }
 
   def findAll[T](tableName: String, parser: RowParser[T])(implicit connection: Connection) = {
@@ -33,7 +33,6 @@ class CrudAutoDAO extends GlobalReadsWrites {
   }
 
   def add[T, A](tableName: String, entity:T, singleton: Class[A], params: String, values: String)(implicit connection: Connection): Boolean = {
-
     SQL(
       s"""
          INSERT INTO $tableName ($params)
@@ -55,15 +54,25 @@ class CrudAutoDAO extends GlobalReadsWrites {
     ).execute()
   }
 
-  def delete(tableName: String, id: UUID)(implicit connection: Connection): Boolean = {
+  def delete(tableName: String, id: UUID)(implicit connection: Connection): Int = {
     SQL(
       s"""
-        UPDATE $tableName
-        SET deleted = 'true'
-        WHERE id = {id}::UUID
+      DELETE FROM $tableName WHERE id = {id}::UUID;
       """
     ).on(
       'id -> id
-    ).execute()
+    ).executeUpdate()
+  }
+
+  def purge(tableName: String, id: UUID)(implicit connection: Connection): Int = {
+    SQL(
+      s"""
+      UPDATE $tableName
+      SET deleted = 'true'
+      WHERE id = {id}::UUID
+      """
+    ).on(
+      'id -> id
+    ).executeUpdate()
   }
 }
