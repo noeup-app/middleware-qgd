@@ -1,6 +1,82 @@
 @import com.noeupapp.middleware.entities.user.User
 @(title: String, user: Option[User] = None)(content: Html)(implicit messages: Messages)
 
+<!doctype html>
+<html lang="en">
+
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+            <!-- Angular Material style sheet -->
+        <link rel="shortcut icon" type="image/png" href="@com.noeupapp.middleware.controllers.routes.Assets.versioned("images/favicon.png")">
+        <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+        <link rel="stylesheet" href="@com.noeupapp.middleware.controllers.routes.Assets.versioned("stylesheets/middle-custom.css")">
+        <link rel="stylesheet" href="@com.noeupapp.middleware.controllers.routes.Assets.versioned("stylesheets/bootstrap.css")">
+    </head>
+
+    <body ng-app="middleApp" ng-cloak layout="row">
+        @content
+
+            <!-- Angular Material requires Angular.js Libraries -->
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular.min.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+
+            <!-- Angular Material Library -->
+        <script src="http://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.js"></script>    <!-- Your application bootstrap  -->
+        <script type="text/javascript">
+                /**
+                 * You must include the dependency on 'ngMaterial'
+                 */
+
+                (function () {
+                    'use strict';
+                    angular
+                            .module('middleApp', ['ngMaterial', 'ngMessages'])
+                            .config(['$mdIconProvider', function($mdIconProvider) {
+                                $mdIconProvider.icon('md-close', 'img/icons/ic_close_24px.svg', 24);
+                            }])
+                            .controller('BasicDemoCtrl', DemoCtrl);
+
+                    function DemoCtrl ($timeout, $q) {
+                        var self = this;
+
+                        self.readonly = false;
+
+                        // Lists of fruit names and Vegetable objects
+                        self.fruitNames = ['Apple', 'Banana', 'Orange'];
+                        self.roFruitNames = angular.copy(self.fruitNames);
+                        self.editableFruitNames = angular.copy(self.fruitNames);
+
+                        self.tags = [];
+                        self.vegObjs = [
+                            {
+                                'name' : 'Broccoli',
+                                'type' : 'Brassica'
+                            },
+                            {
+                                'name' : 'Cabbage',
+                                'type' : 'Brassica'
+                            },
+                            {
+                                'name' : 'Carrot',
+                                'type' : 'Umbelliferous'
+                            }
+                        ];
+
+                        self.newVeg = function(chip) {
+                            return {
+                                name: chip,
+                                type: 'unknown'
+                            };
+                        };
+                    }
+                })();
+        </script>
+    </body>
+</html>
+
+@*
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -31,3 +107,4 @@
     @content
 
 </html>
+*@
