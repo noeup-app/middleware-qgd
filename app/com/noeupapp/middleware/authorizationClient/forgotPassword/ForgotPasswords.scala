@@ -57,19 +57,19 @@ class ForgotPasswords @Inject()(
                 Redirect(com.noeupapp.middleware.authorizationClient.forgotPassword.routes.ForgotPasswords.forgotPasswordGet())
                   .flashing("error" -> "An internal server error occurred. You should try again later.")
               case \/-(_) =>
-                Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
-                  .flashing("info" -> s"An email has been sent to ${data.email}, check your mailbox.")
+                Redirect(com.noeupapp.middleware.authorizationClient.forgotPassword.routes.ForgotPasswords.forgotPasswordGet())//routes.Logins.loginAction())
+                  .flashing("info" -> s"An email has been sent to ${data.email}. Check your mailbox.")
             }
           }
         )
       case true =>
         val data = request.body.asInstanceOf[ForgotPasswordForm.Data]
-        forgotPasswordService.sendForgotPasswordEmail(data.email, domain, prefix = "#/") map {
+        forgotPasswordService.sendForgotPasswordEmail(data.email, domain, prefix = "") map {
           case -\/(e) =>
             Logger.error(e.toString)
             InternalServerError("An internal server error occurred. You should try again later.")
           case \/-(_) =>
-            Ok(s"An email has been sent to ${data.email}, check your mailbox.")
+            Ok(s"{An email has been sent to ${data.email}. Check your mailbox.}")
         }
     }
   }
@@ -107,6 +107,7 @@ class ForgotPasswords @Inject()(
             }
           }
         )
+
       case true =>
         val data = request.body.asInstanceOf[ForgotPasswordAskNewPasswordForm.Data]
         forgotPasswordService.changePassword(token, data).map{
