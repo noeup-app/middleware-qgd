@@ -20,6 +20,7 @@ class Evolution extends Controller {
       case 1 => _1
       case 2 => _2
       case 3 => _3
+      case 4 => _4
       case _ => Future.successful(NotFound)
     }
   }
@@ -78,4 +79,9 @@ class Evolution extends Controller {
         |);
       """.stripMargin)
 
+  def _4 =
+    applyHelper(
+      """
+        |ALTER TABLE public.entity_organisations ADD created TIMESTAMP DEFAULT now() NOT NULL;
+      """.stripMargin)
 }
