@@ -1,120 +1,75 @@
 //package com.noeupapp.middleware.crudauto
 //
-//import java.lang.reflect.{Field, Method}
+//import java.lang.reflect.Method
 //import java.util.UUID
 //import javax.inject.Inject
 //
 //import anorm.RowParser
 //import com.noeupapp.middleware.errorHandle.ExceptionEither._
-//import com.noeupapp.middleware.utils.MonadTransformers._
 //import com.noeupapp.middleware.errorHandle.FailError
 //import com.noeupapp.middleware.errorHandle.FailError.Expect
-//import com.noeupapp.middleware.utils.TypeCustom._
-//import org.joda.time.DateTime
-//import play.api.libs.json._
-//import com.noeupapp.middleware.utils.FutureFunctor._
-//import org.joda.time.format.DateTimeFormat
 //import play.api.Logger
+//import play.api.libs.json._
 //
 //import scala.concurrent.Future
-//import scala.concurrent.ExecutionContext.Implicits.global
 //import scala.language.higherKinds
-//import scalaz._, Scalaz._
+//import scalaz._
 //
-//import slick.driver._
-//import slick.driver.PostgresDriver.api._
-//import slick.lifted.{TableQuery, Tag}
+//class CrudAutoServiceOld  @Inject()(crudAutoDAO: CrudAutoDAO)() {
 //
-//class CrudAutoService @Inject()(dao: Dao)() {
+//  def findById[T](model: Class[T], id: UUID, tableName: String, parser: RowParser[T]): Future[Expect[Option[T]]] = {
+//    TryBDCall{ implicit c=>
+//      val newEntity: Option[T] = crudAutoDAO.findById(id, tableName, parser)
+//      \/-(newEntity)
+//    }
+//  }
+//
+//  def findAll[T](model: Class[T], tableName: String, parser: RowParser[T]): Future[Expect[List[T]]] = {
+//    TryBDCall{ implicit c=>
+//      val newEntity:List[T] = crudAutoDAO.findAll(tableName, parser)
+//      \/-(newEntity)
+//    }
+//  }
+//
+//  def add[T, A](model: Class[T], singleton: Class[A], json: JsObject, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
+//    TryBDCall{ implicit c=>
+//      implicit val jsFormat = format
+//      val entity:T = json.as[T]
+//      val request = buildAddRequest(entity, singleton, tableName)
+//      crudAutoDAO.add(tableName, entity, singleton, request._1, request._2)
+//      \/-(Some(entity))
+//    }
+//  }
+//
+//  def update[T, A](model: Class[T], singleton: Class[A], json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
+//    TryBDCall{ implicit c=>
+//      implicit val jsFormat = format
+//      val entity:T = json.as[T]
+//      val request = buildUpdateRequest(model, json, singleton, tableName, format)
+//      crudAutoDAO.update(tableName, request, id)
+//      \/-(Some(entity))
+//    }
+//  }
+//
+//  def delete(id: UUID, tableName: String, purge: Option[Boolean]): Future[Expect[Boolean]] = {
+//    TryBDCall{ implicit c =>
+//      purge match {
+//        case Some(true) => crudAutoDAO.purge(tableName, id) match {
+//          case 0 => \/-(false)
+//          case 1 => \/-(true)
+//          case i:Int => -\/(FailError("More than one row deleted (" + i + ")"))
+//        }
+//        case _ =>
+//          crudAutoDAO.delete(tableName, id) match {
+//            case 0 => \/-(false)
+//            case 1 => \/-(true)
+//            case i:Int => -\/(FailError("More than one row deleted (" + i + ")"))
+//          }
+//      }
 //
 //
-//
-//
-//
-//
-//
-//  def findAll[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V]): Future[Expect[Seq[E]]] =
-//    dao.runForAll(tableQuery)
-//
-//
-//  def find[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V], id: PK): Future[Expect[Option[E]]] =
-//    dao.runForHeadOption(tableQuery.filter(_.id === id))
-//
-//
-//  def add[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V], entity: E): Future[Expect[E]] =
-//    dao.run(tableQuery += entity).map(_.map(_ => entity))
-//
-//
-//  def upsert[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V], entity: E): Future[Expect[E]] =
-//    dao.run(tableQuery.insertOrUpdate(entity)).map(_.map(_ => entity))
-//
-//
-//  def update[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V], id: PK, entity: E): Future[Expect[E]] =
-//    dao.run(tableQuery.filter(_.id === id).update(entity)).map(_.map(_ => entity))
-//
-//
-//  def delete[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V], id: PK): Future[Expect[PK]] =
-//    dao.run(tableQuery.filter(_.id === id).delete).map(_.map(_ => id))
-//
-//
-//
-//
-//
-//
-//
-//
-//  //  val crudAutoDAO: CrudAutoDAO
-//
-////  def findById[T, U : Table[T]](model: Class[T], id: UUID, tableQuery: TableQuery[U]): Future[Expect[Option[T]]] =
-////    dao.run(tableQuery.filter(_.primaryKeys.head.columns.head === id)).headOption
-////
-////  def findAll[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](model: Class[E], pK: Class[PK], tableQuery: TableQuery[V]): Future[Expect[Seq[U]]] =
-////    dao.db.run(tableQuery.result)
-////      .map(\/-(_))
-////      .recover{
-////        case e: Exception => -\/(FailError(e))
-////      }
-////    dao.run(tableQuery)
-//
-////  def add[T, A](model: Class[T], singleton: Class[A], json: JsObject, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
-////    TryBDCall{ implicit c=>
-////      implicit val jsFormat = format
-////      val entity:T = json.as[T]
-////      val request = buildAddRequest(entity, singleton, tableName)
-////      crudAutoDAO.add(tableName, entity, singleton, request._1, request._2)
-////      \/-(Some(entity))
-////    }
-////  }
-////
-////  def update[T, A](model: Class[T], singleton: Class[A], json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
-////    TryBDCall{ implicit c=>
-////      implicit val jsFormat = format
-////      val entity:T = json.as[T]
-////      val request = buildUpdateRequest(model, json, singleton, tableName, format)
-////      crudAutoDAO.update(tableName, request, id)
-////      \/-(Some(entity))
-////    }
-////  }
-////
-////  def delete(id: UUID, tableName: String, purge: Option[Boolean]): Future[Expect[Boolean]] = {
-////    TryBDCall{ implicit c =>
-////      purge match {
-////        case Some(true) => crudAutoDAO.purge(tableName, id) match {
-////          case 0 => \/-(false)
-////          case 1 => \/-(true)
-////          case i:Int => -\/(FailError("More than one row deleted (" + i + ")"))
-////        }
-////        case _ =>
-////          crudAutoDAO.delete(tableName, id) match {
-////            case 0 => \/-(false)
-////            case 1 => \/-(true)
-////            case i:Int => -\/(FailError("More than one row deleted (" + i + ")"))
-////          }
-////      }
-////
-////
-////    }
-////  }
+//    }
+//  }
 //
 //  def completeAdd[T,A, B](model: Class[T], in: Class[B], singleton: Class[A], json: JsObject, format: Format[T], formatIn: Format[B]): Future[Expect[JsObject]] = {
 //    //Deprecated
