@@ -67,3 +67,6 @@ GET         /entity/groups/:groupId/members     com.noeupapp.middleware.entities
 PUT         /entity/groups/:groupId/update      com.noeupapp.middleware.entities.group.Groups.updateGroup(groupId: java.util.UUID)
 
 POST        /organisations                      com.noeupapp.middleware.entities.organisation.Organisations.addOrganisation
+
+
+GET         /ws                                 com.noeupapp.middleware.webSockets.WebSocketEndPoint.socket
