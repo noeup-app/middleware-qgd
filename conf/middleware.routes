@@ -69,4 +69,4 @@ PUT         /entity/groups/:groupId/update      com.noeupapp.middleware.entities
 POST        /organisations                      com.noeupapp.middleware.entities.organisation.Organisations.addOrganisation
 
 
-GET         /ws    com.noeupapp.middleware.webSockets.WebSocketTest.socket
+GET         /ws                                 com.noeupapp.middleware.webSockets.WebSocketEndPoint.socket
