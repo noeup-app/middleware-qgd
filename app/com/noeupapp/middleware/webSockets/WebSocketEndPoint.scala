@@ -33,7 +33,6 @@ class WebSocketEndPoint @Inject()(val messagesApi: MessagesApi,
   extends Silhouette[Account, BearerTokenAuthenticator] {
 
 
-  val webSocketManagerActor = actorSystem.actorOf(WebSocketManagerActor.props, "webSocketManagerActor")
 
 //  actorSystem.scheduler.schedule(2.seconds, 2.seconds) {
 //    webSocketManagerActor ! Broadcast(s"Salut les gens ${UUID.randomUUID()}")

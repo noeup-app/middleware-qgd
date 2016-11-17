@@ -17,7 +17,7 @@ class WebSocketManagerActor extends Actor {
     case Quit(userId)      => clients -= userId
     case Send(userId, msg) => clients.get(userId).foreach(_ ! msg)
     case Broadcast(msg)    => clients.values.foreach(_ ! msg)
-    case Clients           => sender ! clients.keys
+    case Clients           => sender ! clients.keys.toList
   }
 }
 
