@@ -11,6 +11,7 @@ import scala.language.implicitConversions
 object TypeCustom {
   implicit def asBooleanCustom(boolean: Boolean): BooleanCustom = new BooleanCustom(boolean)
   implicit def asOptionCustom[T](option: Option[T]): OptionCustom[T] = new OptionCustom(option)
+  implicit def asListCustom[T](list: List[T]): ListCustom[T] = new ListCustom(list)
 }
 
 class BooleanCustom(boolean: Boolean) {
@@ -60,6 +61,31 @@ class OptionCustom[T](option: Option[T]) {
     option match {
       case Some(e) => Future.successful(\/-(e))
       case None    => Future.successful(-\/(FailError(message)))
+    }
+  }
+}
+
+class ListCustom[T](list: List[T]) {
+
+
+  /**
+    * This is a method change an List into a Future[Expect].
+    *   if Nil return message given in FailError
+    *
+    * How to use ?
+    *   for {
+    *     // ...
+    *     _ <- EitherT(myList |> "Error message returned if myOption is None")
+    *     // ...
+    *   } yield // ...
+    *
+    * @param message message returned if List is Nil
+    * @return
+    */
+  def |>(message: String): Future[Expect[List[T]]] = {
+    list match {
+      case (l @ (h::t)) => Future.successful(\/-(l))
+      case Nil    => Future.successful(-\/(FailError(message)))
     }
   }
 }
