@@ -11,6 +11,8 @@ object WebSocketAction {
 
   implicit val actorSystem = ActorSystem("websocketsystem")
 
+  val webSocketManagerActor = actorSystem.actorOf(WebSocketManagerActor.props, "webSocketManagerActor")
+
 
   sealed trait WebSocketAction
   case class Broadcast(msg: String) extends WebSocketAction
