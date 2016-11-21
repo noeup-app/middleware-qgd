@@ -17,7 +17,8 @@ trait CrudClassName {
 
 //  private lazy val configResult = configure(new Config).config
 
-  def getClassNames[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](modelName: String): Option[CrudClassNameValue]// =
+//  def getClassNames[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](modelName: String): Option[CrudClassNameValue]// =
+  def getClassNames(modelName: String): Option[CrudClassNameValue]// =
 //    configure[U, V](new Config[U, V]).config.get(modelName)
 
 }
@@ -34,4 +35,5 @@ trait CrudClassName {
 //
 
 //case class CrudClassNameValue(entityClass: Class[_], pK: Class[_], tableQuery: Class[_])
-case class CrudClassNameValue(entityClass: Class[_], pK: Class[_], tableQuery: Class[_])
+//case class CrudClassNameValue(entityClass: Class[_], pK: Class[_], tableQuery: Class[_])
+case class CrudClassNameValue(entityClass: String, pK: String, tableDef: String)

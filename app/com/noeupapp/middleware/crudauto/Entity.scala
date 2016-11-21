@@ -3,4 +3,4 @@ package com.noeupapp.middleware.crudauto
 /**
   * Created by damien on 15/11/2016.
   */
-trait Entity
+abstract class Entity
