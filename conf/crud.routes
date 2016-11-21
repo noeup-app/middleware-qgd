@@ -1,7 +1,7 @@
 
 
 
-#GET    /:model                                                                              com.noeupapp.middleware.crudauto.Cruds.fetchAll(model: String)
+GET    /:model                                                                              com.noeupapp.middleware.crudauto.Cruds.fetchAll(model: String)
 #GET    /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.fetchById(model: String, id: java.util.UUID)
 #POST   /:model                                                                              com.noeupapp.middleware.crudauto.Cruds.add(model: String)
 #PUT    /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.update(model: String, id: java.util.UUID)

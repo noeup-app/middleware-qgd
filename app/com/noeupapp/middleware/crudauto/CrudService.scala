@@ -157,38 +157,55 @@ trait AbstractCrudService {
 //    } yield JsArray
 //  }.run
 
-//  def findAllFlow(model:String): Future[Expect[JsValue]] = {
-//    for {
-//      entity <- EitherT(getClassName(model))
-//      found  <- EitherT(crudAutoService.findAll(entity.tableQuery))
-//    } yield JsObject(Seq("e" -> JsString("dazd")))
-//  }.run
+  def findAllFlow(model:String): Future[Expect[JsValue]] =
+    {
+      for {
+        name <- EitherT(getClassName(model))
+        entityClass = Class.forName(name.entityClass)
+        pkClass = Class.forName(name.pK)
+        tableDefClass = Class.forName(name.tableDef)
+        singleton = Class.forName(name.entityClass + "$")
 //
-  def addFlow(model: String, json: JsObject): Future[Expect[JsValue]] = {
-    for {
-      name <- EitherT(getClassName(model))
-      entityClass = Class.forName(name.entityClass)
-      pkClass = Class.forName(name.pK)
-      tableDefClass = Class.forName(name.tableDef)
+//        input = Class.forName(name+"In")
+        out = Class.forName(name.entityClass + "Out")
 
-      input = Class.forName(name+"In")
-      out = Class.forName(name+"Out")
+        tableQuery = TableQuery(tag =>
+          tableDefClass.getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[PKTable[Entity, BaseColumnType[_]]])
+        //.asInstanceOf[slick.lifted.AbstractTable[?]])
+        //        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
 
-      tableQuery = TableQuery(tag =>
-        tableDefClass.getConstructor(classOf[Tag])
-          .newInstance(tag)
-          .asInstanceOf[PKTable[_ <: Entity, _ <: BaseColumnType[_]]])
-          //.asInstanceOf[slick.lifted.AbstractTable[?]])
-//        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
-
-
-//      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-//      validatedJs <- EitherT(crudAutoService.jsonValidate(json, input, classInfo._4))
-//      jsToAdd <- EitherT(crudAutoService.completeAdd(ref, input, singleton, validatedJs, classInfo._3, classInfo._4))
-      found <- EitherT(crudAutoService.findAll(tableQuery))
-//      newJson <- EitherT(crudAutoService.toJsValue(found, ref, singleton, out))
-    } yield found
+        found <- EitherT(crudAutoService.findAll(tableQuery))
+        newJson <- EitherT(crudAutoService.toJsValue(found.toList, entityClass, singleton, out))
+      } yield newJson
   }.run
+//
+//  def addFlow(model: String, json: JsObject): Future[Expect[JsValue]] = {
+//    for {
+//      name <- EitherT(getClassName(model))
+//      entityClass = Class.forName(name.entityClass)
+//      pkClass = Class.forName(name.pK)
+//      tableDefClass = Class.forName(name.tableDef)
+//
+//      input = Class.forName(name+"In")
+//      out = Class.forName(name+"Out")
+//
+//      tableQuery = TableQuery(tag =>
+//        tableDefClass.getConstructor(classOf[Tag])
+//          .newInstance(tag)
+//          .asInstanceOf[PKTable[Entity, BaseColumnType[_]]])
+//          //.asInstanceOf[slick.lifted.AbstractTable[?]])
+////        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
+//
+//
+////      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
+////      validatedJs <- EitherT(crudAutoService.jsonValidate(json, input, classInfo._4))
+////      jsToAdd <- EitherT(crudAutoService.completeAdd(ref, input, singleton, validatedJs, classInfo._3, classInfo._4))
+//      found <- EitherT(crudAutoService.findAll(tableQuery))
+////      newJson <- EitherT(crudAutoService.toJsValue(found, ref, singleton, out))
+//    } yield Json.obj()
+//  }.run
 //
 //  def updateFlow(model: String, json: JsObject, id: UUID): Future[Expect[JsValue]] = {
 //    for {
@@ -268,16 +285,16 @@ trait AbstractCrudService {
 //
 //
 //}
-//
-//class CrudService @Inject()(val crudAutoService: CrudAutoService,
-//                            crudClassName: CrudClassName) extends AbstractCrudService{
-//
-//  override def getClassName(model: String): Future[Expect[CrudClassNameValue[_ <: Entity, _: BaseColumnType, _ <: PKTable[_, _]]]] = {
-//    crudClassName.getClassNames[_, _, _](model) match {
-//      case Some(className) => Future.successful(\/-(className))
-//      case None => Future.successful(-\/(FailError("this model is not supported")))
-//    }
-//  }
-//}
+
+class CrudService @Inject()(val crudAutoService: CrudAutoService,
+                            crudClassName: CrudClassName) extends AbstractCrudService{
+
+  override def getClassName(model: String): Future[Expect[CrudClassNameValue]] = {
+    crudClassName.getClassNames(model) match {
+      case Some(className) => Future.successful(\/-(className))
+      case None => Future.successful(-\/(FailError("this model is not supported")))
+    }
+  }
+}
 
 

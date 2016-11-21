@@ -33,7 +33,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
 
 
-  def findAll[E <: Entity, PK: BaseColumnType](tableQuery: TableQuery[PKTable[E, PK]]): Future[Expect[Seq[E]]] =
+  def findAll[E <: Entity, PK](tableQuery: TableQuery[PKTable[E, PK]]): Future[Expect[Seq[E]]] =
     dao.runForAll(tableQuery)
 
 
@@ -373,7 +373,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
     )
   }
 
-  def toJsValue[T, A, C](newObject: List[T], model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
+  def toJsValue[T, A, C](newObject: List[T], model: Class[_], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
