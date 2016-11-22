@@ -1,11 +1,8 @@
 package com.noeupapp.middleware.crudauto
 
 
-import slick.driver._
 import slick.driver.PostgresDriver.api._
-import slick.lifted.{TableQuery, Tag}
 
-import scala.collection.immutable.HashMap
 import scala.language.existentials
 import scala.reflect.ClassTag
 
@@ -17,8 +14,8 @@ trait CrudClassName {
   // TODO : why cast is necessary here ?
   protected def configuration[E, PK, V <: Table[E]]()(implicit eClass: ClassTag[E], pkClass: ClassTag[PK], vClass: ClassTag[V], baseColumnType: BaseColumnType[PK]) =
     Some(CrudConfiguration[E, PK, V](eClass.runtimeClass.asInstanceOf[Class[E]],
-                                     pkClass.runtimeClass.asInstanceOf[Class[PK]],
-                                     vClass.runtimeClass.asInstanceOf[Class[V]]))
+      pkClass.runtimeClass.asInstanceOf[Class[PK]],
+      vClass.runtimeClass.asInstanceOf[Class[V]]))
 }
 
 case class CrudConfiguration[E, PK, V <: Table[E]](entityClass: Class[E], pK: Class[PK], tableDef: Class[V])(implicit val baseColumnType: BaseColumnType[PK])

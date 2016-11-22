@@ -27,12 +27,6 @@ import slick.lifted.{TableQuery, Tag}
 
 class CrudAutoService @Inject()(dao: Dao)() {
 
-
-
-
-
-
-
   def findAll[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]]): Future[Expect[Seq[E]]] =
     dao.runForAll(tableQuery)
 
