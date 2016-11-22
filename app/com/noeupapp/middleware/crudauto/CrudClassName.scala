@@ -7,15 +7,22 @@ import slick.lifted.{TableQuery, Tag}
 
 import scala.collection.immutable.HashMap
 import scala.language.existentials
+import scala.reflect.ClassTag
 
 trait CrudClassName {
 
-  def getClassNames(modelName: String): Option[CrudClassNameValue[_,_,_]]
+  def configure(modelName: String): Option[CrudConfiguration[_,_,_]]
 
+
+  // TODO : why cast is necessary here ?
+  protected def configuration[E, PK, V <: Table[E]]()(implicit eClass: ClassTag[E], pkClass: ClassTag[PK], vClass: ClassTag[V], baseColumnType: BaseColumnType[PK]) =
+    Some(CrudConfiguration[E, PK, V](eClass.runtimeClass.asInstanceOf[Class[E]],
+                                     pkClass.runtimeClass.asInstanceOf[Class[PK]],
+                                     vClass.runtimeClass.asInstanceOf[Class[V]]))
 }
 
-case class CrudClassNameValue[E, PK, V <: Table[E]](entityClass: Class[E], pK: Class[PK], tableDef: Class[V])(implicit val baseColumnType: BaseColumnType[PK])
+case class CrudConfiguration[E, PK, V <: Table[E]](entityClass: Class[E], pK: Class[PK], tableDef: Class[V])(implicit val baseColumnType: BaseColumnType[PK])
 
-// TODO : CrudClassNameValue fails to compile. CrudClassNameValue is needed to validate types
+// TODO : CrudConfiguration fails to compile. CrudConfiguration is needed to validate types
 // Ugly trick to make it work
-case class CrudClassNameValueUnTyped(entityClass: Class[_], pK: Class[_], tableDef: Class[_], baseColumnType: BaseColumnType[_])
+case class CrudConfigurationUnTyped(entityClass: Class[_], pK: Class[_], tableDef: Class[_], baseColumnType: BaseColumnType[_])

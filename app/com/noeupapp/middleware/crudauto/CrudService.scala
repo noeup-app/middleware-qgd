@@ -263,7 +263,7 @@ trait AbstractCrudService {
 //    } yield del
 //  }.run
 
-  protected def getClassName(model: String): Future[Expect[CrudClassNameValueUnTyped]]
+  protected def getClassName(model: String): Future[Expect[CrudConfigurationUnTyped]]
 
 }
 
@@ -313,10 +313,10 @@ trait AbstractCrudService {
 class CrudService @Inject()(val crudAutoService: CrudAutoService,
                             crudClassName: CrudClassName) extends AbstractCrudService{
 
-  override def getClassName(model: String): Future[Expect[CrudClassNameValueUnTyped]] = {
-    crudClassName.getClassNames(model) match {
+  override def getClassName(model: String): Future[Expect[CrudConfigurationUnTyped]] = {
+    crudClassName.configure(model) match {
       case Some(className) => Future.successful(\/- {
-        CrudClassNameValueUnTyped(
+        CrudConfigurationUnTyped(
           entityClass    = className.entityClass,
           pK             = className.pK,
           tableDef       = className.tableDef,
