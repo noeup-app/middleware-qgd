@@ -20,18 +20,18 @@ class Cruds @Inject()(crudService: CrudService,
                       scopeAndRoleAuthorization: ScopeAndRoleAuthorization
                          ) extends Silhouette[Account, BearerTokenAuthenticator] {
 
-//  def fetchById(model: String, id: UUID/*, omit: Option[String], include: Option[String]*/) = UserAwareAction.async { implicit request =>
-//
-////    val omits    = omit.map(_.split(",").toList)
-////    val includes = include.map(_.split(",").toList)
-//
-//    crudService.findByIdFlow(model, id) map {
-//      case -\/(error) =>
-//        Logger.error(error.toString)
-//        InternalServerError(Json.toJson("Error while fetching "+model))
-//      case \/-(json) =>  Ok(Json.toJson(json))
-//    }
-//  }
+  def fetchById(model: String, id: UUID/*, omit: Option[String], include: Option[String]*/) = UserAwareAction.async { implicit request =>
+
+//    val omits    = omit.map(_.split(",").toList)
+//    val includes = include.map(_.split(",").toList)
+
+    crudService.findByIdFlow(model, id) map {
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while fetching "+model))
+      case \/-(json) =>  Ok(Json.toJson(json))
+    }
+  }
 
   def fetchAll(model: String) = UserAwareAction.async { implicit request =>
 

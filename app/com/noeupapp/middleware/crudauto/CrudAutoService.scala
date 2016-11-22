@@ -33,27 +33,27 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
 
 
-  def findAll[E <: Entity, PK](tableQuery: TableQuery[PKTable[E, PK]]): Future[Expect[Seq[E]]] =
+  def findAll[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]]): Future[Expect[Seq[E]]] =
     dao.runForAll(tableQuery)
 
 
-  def find[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V], id: PK): Future[Expect[Option[E]]] =
+  def find[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]], id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] =
     dao.runForHeadOption(tableQuery.filter(_.id === id))
 
 
-  def add[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V], entity: E): Future[Expect[E]] =
+  def add[E <: Entity, PK: BaseColumnType, V <: Table[E] with PKTable[PK]](tableQuery: TableQuery[V], entity: E): Future[Expect[E]] =
     dao.run(tableQuery += entity).map(_.map(_ => entity))
 
 
-  def upsert[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V], entity: E): Future[Expect[E]] =
+  def upsert[E <: Entity, PK: BaseColumnType, V <: Table[E] with PKTable[PK]](tableQuery: TableQuery[V], entity: E): Future[Expect[E]] =
     dao.run(tableQuery.insertOrUpdate(entity)).map(_.map(_ => entity))
 
 
-  def update[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V], id: PK, entity: E): Future[Expect[E]] =
+  def update[E <: Entity, PK: BaseColumnType, V <: Table[E] with PKTable[PK]](tableQuery: TableQuery[V], id: PK, entity: E): Future[Expect[E]] =
     dao.run(tableQuery.filter(_.id === id).update(entity)).map(_.map(_ => entity))
 
 
-  def delete[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](tableQuery: TableQuery[V], id: PK): Future[Expect[PK]] =
+  def delete[E <: Entity, PK: BaseColumnType, V <: Table[E] with PKTable[PK]](tableQuery: TableQuery[V], id: PK): Future[Expect[PK]] =
     dao.run(tableQuery.filter(_.id === id).delete).map(_.map(_ => id))
 
 
@@ -68,7 +68,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
 //  def findById[T, U : Table[T]](model: Class[T], id: UUID, tableQuery: TableQuery[U]): Future[Expect[Option[T]]] =
 //    dao.run(tableQuery.filter(_.primaryKeys.head.columns.head === id)).headOption
 //
-//  def findAll[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](model: Class[E], pK: Class[PK], tableQuery: TableQuery[V]): Future[Expect[Seq[U]]] =
+//  def findAll[E <: Entity, PK: BaseColumnType, V <: Table[E] with PKTable[PK](model: Class[E], pK: Class[PK], tableQuery: TableQuery[V]): Future[Expect[Seq[U]]] =
 //    dao.db.run(tableQuery.result)
 //      .map(\/-(_))
 //      .recover{

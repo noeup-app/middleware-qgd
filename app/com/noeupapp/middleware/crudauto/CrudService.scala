@@ -137,42 +137,66 @@ import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.TypeCustom._
 import play.api.Logger
 import play.api.libs.json._
+import slick.ast.BaseTypedType
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz._
 import slick.driver._
 import slick.driver.PostgresDriver.api._
+import slick.jdbc.JdbcType
 import slick.lifted.TableQuery
+
+import scala.language.existentials
 
 trait AbstractCrudService {
 
   val crudAutoService: CrudAutoService
 
-//  def findByIdFlow(model:String, id: UUID): Future[Expect[JsValue]] = {
-//    for {
-//      entity <- EitherT(getClassName(model))
-//      found <- EitherT(crudAutoService.findById(entity.entityClass, id, entity.tableQuery)
-////      json <- EitherT(crudAutoService.toJsValue(found, ref, singleton, out))
-//    } yield JsArray
-//  }.run
+  def findByIdFlow(model:String, id: UUID): Future[Expect[JsValue]] =
+    {
+      for {
+        name <- EitherT(getClassName(model))
+        entityClass = name.entityClass
+        pkClass = name.pK
+        tableDefClass = name.tableDef
+        singleton = Class.forName(name.entityClass.getName + "$")
+        //
+        //        input = Class.forName(name+"In")
+        out = Class.forName(name.entityClass.getName + "Out")
+
+        tableQuery = TableQuery(tag =>
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[Table[Entity] with PKTable[Object]])
+        //.asInstanceOf[slick.lifted.AbstractTable[?]])
+        //        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
+
+        found <- EitherT(
+          crudAutoService.find(tableQuery, id)
+                              (name.baseColumnType.asInstanceOf[BaseColumnType[Object]])
+        )
+        newJson <- EitherT(crudAutoService.toJsValue(found.toList, entityClass, singleton, out))
+      } yield newJson
+    }.run
+
 
   def findAllFlow(model:String): Future[Expect[JsValue]] =
     {
       for {
         name <- EitherT(getClassName(model))
-        entityClass = Class.forName(name.entityClass)
-        pkClass = Class.forName(name.pK)
-        tableDefClass = Class.forName(name.tableDef)
-        singleton = Class.forName(name.entityClass + "$")
+        entityClass = name.entityClass
+        pkClass = name.pK
+        tableDefClass = name.tableDef
+        singleton = Class.forName(name.entityClass.getName + "$")
 //
 //        input = Class.forName(name+"In")
-        out = Class.forName(name.entityClass + "Out")
+        out = Class.forName(name.entityClass.getName + "Out")
 
         tableQuery = TableQuery(tag =>
-          tableDefClass.getConstructor(classOf[Tag])
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
             .newInstance(tag)
-            .asInstanceOf[PKTable[Entity, BaseColumnType[_]]])
+            .asInstanceOf[Table[Entity] with PKTable[BaseColumnType[_]]])
         //.asInstanceOf[slick.lifted.AbstractTable[?]])
         //        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
 
@@ -239,7 +263,7 @@ trait AbstractCrudService {
 //    } yield del
 //  }.run
 
-  protected def getClassName(model: String): Future[Expect[CrudClassNameValue]]
+  protected def getClassName(model: String): Future[Expect[CrudClassNameValueUnTyped]]
 
 }
 
@@ -289,9 +313,16 @@ trait AbstractCrudService {
 class CrudService @Inject()(val crudAutoService: CrudAutoService,
                             crudClassName: CrudClassName) extends AbstractCrudService{
 
-  override def getClassName(model: String): Future[Expect[CrudClassNameValue]] = {
+  override def getClassName(model: String): Future[Expect[CrudClassNameValueUnTyped]] = {
     crudClassName.getClassNames(model) match {
-      case Some(className) => Future.successful(\/-(className))
+      case Some(className) => Future.successful(\/- {
+        CrudClassNameValueUnTyped(
+          entityClass    = className.entityClass,
+          pK             = className.pK,
+          tableDef       = className.tableDef,
+          baseColumnType = className.baseColumnType
+        )
+      })
       case None => Future.successful(-\/(FailError("this model is not supported")))
     }
   }
