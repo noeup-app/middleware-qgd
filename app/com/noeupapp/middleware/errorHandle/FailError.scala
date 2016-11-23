@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz._
 
-final case class FailError(message: String, cause: Option[\/[Throwable, Error]] = None, errorType: Status = InternalServerError) {
+final case class FailError(message: String, cause: Option[\/[Throwable, Error]] = None, errorType: Status = InternalServerError, prevError: Option[FailError] = None) {
 
   def getException = {
     cause match {
@@ -52,7 +52,7 @@ final case class FailError(message: String, cause: Option[\/[Throwable, Error]] 
           exception.getStackTrace.toList.mkString("\n")
       case \/-(fail) => fail.toString
       //    cause
-    }}, $origin)"
+    }}, $origin)" ++ prevError.map(e => s"\n Previous Error : $e").getOrElse("")
 }
 
 class FailErrorException(msg: String) extends Exception(msg)
@@ -60,6 +60,14 @@ class FailErrorException(msg: String) extends Exception(msg)
 object FailError {
 
   type Expect[T] = \/[FailError, T]
+
+
+  implicit val failErrorMonoid = new Monoid[FailError] {
+    override def zero: FailError = FailError("no error")
+
+    override def append(f1: FailError, f2: => FailError): FailError =
+      f2.copy(prevError = Some(f1))
+  }
 
   // Alternative constructor to simplify error creation
   def apply(message: String, cause: Throwable): FailError = FailError(message, Some(-\/(cause)))
