@@ -124,20 +124,34 @@ trait AbstractCrudService {
         newJson     <- EitherT(crudAutoService.toJsValue(Some(found), entityClass.asInstanceOf[Class[Any]], singleton, out))
       } yield newJson
     }.run
-  //
-  //  def deleteFlow(model:String, id: UUID, purge:Option[Boolean]): Future[Expect[Boolean]] = {
-  //    for {
-  //      name <- EitherT(getClassName(model))
-  //      ref = Class.forName(name)
-  //      singleton = Class.forName(name+"$")
-  //      input = Class.forName(name+"In")
-  //
-  //      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-  //      foundOpt <- EitherT(crudAutoService.findById(ref, id, classInfo._1, classInfo._2))
-  //      found <- EitherT(foundOpt |> "couldn't find this entity")
-  //      del <- EitherT(crudAutoService.delete(id, classInfo._1, purge))
-  //    } yield del
-  //  }.run
+
+    def deleteFlow[T](model:String, id: T, purge:Option[Boolean]): Future[Expect[T]] = {
+      for {
+        configuration <- EitherT(getConfiguration(model))
+        entityClass = configuration.entityClass
+        tableDefClass = configuration.tableDef
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        input = Class.forName(configuration.entityClass.getName + "In")
+
+        tableQuery = TableQuery(tag =>
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[Table[Entity] with PKTable[Any]])
+
+
+        classInfo <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
+        foundOpt <- EitherT(
+          crudAutoService.find(tableQuery, id)
+          (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]])
+        )
+        _ <- EitherT(foundOpt |> "couldn't find this entity")
+        _ <- EitherT(
+          crudAutoService.delete(tableQuery, id)
+          (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]])
+        )
+      } yield id
+    }.run
 
   protected def getConfiguration(model: String): Future[Expect[CrudConfigurationUnTyped]]
 

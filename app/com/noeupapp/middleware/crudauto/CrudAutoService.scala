@@ -58,8 +58,15 @@ class CrudAutoService @Inject()(dao: Dao)() {
     dao.run(tableQuery.filter(_.id === id).update(entity)).map(_.map(_ => entity))
 
 
-  def delete[E <: Entity, PK: BaseColumnType, V <: Table[E]](tableQuery: TableQuery[V with PKTable[PK]], id: PK): Future[Expect[PK]] =
+  def delete[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]],
+                              id: PK)
+                             (implicit bct: BaseColumnType[PK]): Future[Expect[PK]] =
     dao.run(tableQuery.filter(_.id === id).delete).map(_.map(_ => id))
+
+
+
+
+
 
 
 

@@ -85,15 +85,14 @@ class Cruds @Inject()(crudService: CrudService,
       case \/-(js) =>  Ok(Json.toJson(js))
     }
   }
-//
-//  def delete(model: String, id: UUID, purge:Option[Boolean]) = UserAwareAction.async { implicit request =>
-//
-//    crudService.deleteFlow(model, id, purge) map {
-//      case -\/(error) =>
-//        Logger.error(error.toString)
-//        InternalServerError(Json.toJson("Error while deleting "+model))
-//      case \/-(true) => Ok(Json.toJson("deletion successful"))
-//      case \/-(false) => InternalServerError("deletion failed")
-//    }
-//  }
+
+  def delete(model: String, id: UUID, purge:Option[Boolean]) = UserAwareAction.async {
+
+    crudService.deleteFlow(model, id, purge) map {
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while deleting "+model))
+      case \/-(pk) => Ok(Json.toJson(pk))
+    }
+  }
 }
