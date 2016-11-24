@@ -41,7 +41,9 @@ class CrudAutoService @Inject()(dao: Dao)() {
     dao.runForHeadOption(tableQuery.filter(_.id === id))
 
 
-  def add[E, PK, V <: Table[E]](tableQuery: TableQuery[V], entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
+  def add[E <: Entity, PK, V <: Table[E]](tableQuery: TableQuery[V],
+                                          entity: E)
+                                         (implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
     dao.run(tableQuery += entity).map(_.map(_ => entity))
 
 
@@ -49,11 +51,14 @@ class CrudAutoService @Inject()(dao: Dao)() {
     dao.run(tableQuery.insertOrUpdate(entity)).map(_.map(_ => entity))
 
 
-  def update[E <: Entity, PK: BaseColumnType, V <: Table[E] with PKTable[PK]](tableQuery: TableQuery[V], id: PK, entity: E): Future[Expect[E]] =
+  def update[E <: Entity, PK, V <: Table[E]](tableQuery: TableQuery[V with PKTable[PK]],
+                                   id: PK,
+                                   entity: E)
+                                   (implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
     dao.run(tableQuery.filter(_.id === id).update(entity)).map(_.map(_ => entity))
 
 
-  def delete[E <: Entity, PK: BaseColumnType, V <: Table[E] with PKTable[PK]](tableQuery: TableQuery[V], id: PK): Future[Expect[PK]] =
+  def delete[E <: Entity, PK: BaseColumnType, V <: Table[E]](tableQuery: TableQuery[V with PKTable[PK]], id: PK): Future[Expect[PK]] =
     dao.run(tableQuery.filter(_.id === id).delete).map(_.map(_ => id))
 
 
@@ -73,16 +78,16 @@ class CrudAutoService @Inject()(dao: Dao)() {
     }
   }//.run
 
-  def completeUpdate[T](entity: T, json: JsObject, id: UUID, format: Format[T]): Future[Expect[JsObject]] = {
-    //Deprecated
-    // for {
-    //   js1 <- EitherT(completeDeleted(json+(("id", JsString(id.toString)))))
-    //   js2 <- EitherT(completeTime(js1))
-    // } yield js2
+  def completeUpdate[T](entity: T, json: JsObject, id: UUID, format: Format[T]): Future[Expect[T]] = Future {
     implicit val reads = format
+
     val oldJson = Json.toJson(entity).as[JsObject]
-    Future.successful(\/-(oldJson ++ json))
-  }//.run
+
+    (oldJson ++ json).validate[T] match {
+      case JsSuccess(value, _) => \/-(value)
+      case JsError(errors)     => -\/(FailError(s"Unable to completeUpdate error : $errors"))
+    }
+  }
 
   def jsonValidate[B](json: JsObject, in: Class[B], formatIn: Format[B]): Future[Expect[B]] = Future {
     implicit val format = formatIn
@@ -206,8 +211,27 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
   // TODO merge 2 functions
 
-  def toJsValue[T, A, C](newObject: Option[T], model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] =
-    toJsValue[T, A, C](newObject.toList, model, singleton, out)
+  def toJsValue[T, A, C](newObject: Option[T], model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
+    val const = singleton.getDeclaredConstructors()(0)
+    const.setAccessible(true)
+    val obj = const.newInstance()
+    val jsFormat = singleton.getDeclaredField(out.getName.split('.').last+"Format")
+    jsFormat.setAccessible(true)
+    implicit val format = jsFormat.get(obj).asInstanceOf[Format[C]]
+    val toOut: Method = singleton.getDeclaredMethod("to"+out.getName.split('.').last, model)
+    Future.successful(
+      \/-(
+        Json.toJson(
+          newObject
+            .map{ o =>
+              toOut
+                .invoke(obj, o.asInstanceOf[Object])
+                .asInstanceOf[C]
+            }
+        )
+      )
+    )
+  }
 
   def toJsValue[T, A, C](newObject: List[T], model: Class[_], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
     val const = singleton.getDeclaredConstructors()(0)

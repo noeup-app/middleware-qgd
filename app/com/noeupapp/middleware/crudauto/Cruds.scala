@@ -68,23 +68,23 @@ class Cruds @Inject()(crudService: CrudService,
       case \/-(js) =>  Ok(Json.toJson(js))
     }
   }
-//
-//  def update(model: String, id: UUID) = UserAwareAction.async(parse.json) { implicit request =>
-//
-//    val json = request.body.as[JsObject]
-//    crudService.updateFlow(model, json, id) map {
-//      case -\/(error) =>
-//        error.message match {
-//          case m if m.contains("fields") =>
-//            Logger.error(error.toString)
-//            BadRequest(m)
-//          case _ =>
-//            Logger.error(error.toString)
-//            InternalServerError(Json.toJson("Error while adding new "+model))
-//        }
-//      case \/-(js) =>  Ok(Json.toJson(js))
-//    }
-//  }
+
+  def update(model: String, id: UUID) = UserAwareAction.async(parse.json) { implicit request =>
+
+    val json = request.body.as[JsObject]
+    crudService.updateFlow(model, json, id) map {
+      case -\/(error) =>
+        error.message match {
+          case m if m.contains("fields") =>
+            Logger.error(error.toString)
+            BadRequest(m)
+          case _ =>
+            Logger.error(error.toString)
+            InternalServerError(Json.toJson("Error while adding new "+model))
+        }
+      case \/-(js) =>  Ok(Json.toJson(js))
+    }
+  }
 //
 //  def delete(model: String, id: UUID, purge:Option[Boolean]) = UserAwareAction.async { implicit request =>
 //

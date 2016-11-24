@@ -31,7 +31,6 @@ trait AbstractCrudService {
       for {
         configuration <- EitherT(getConfiguration(model))
         entityClass = configuration.entityClass
-        pkClass = configuration.pK
         tableDefClass = configuration.tableDef
         singleton = Class.forName(configuration.entityClass.getName + "$")
 
@@ -41,8 +40,6 @@ trait AbstractCrudService {
           tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
             .newInstance(tag)
             .asInstanceOf[Table[Entity] with PKTable[Object]])
-        //.asInstanceOf[slick.lifted.AbstractTable[?]])
-        //        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
 
         found <- EitherT(
           crudAutoService.find(tableQuery, id)
@@ -58,19 +55,15 @@ trait AbstractCrudService {
       for {
         configuration <- EitherT(getConfiguration(model))
         entityClass = configuration.entityClass
-        pkClass = configuration.pK
         tableDefClass = configuration.tableDef
         singleton = Class.forName(configuration.entityClass.getName + "$")
-        //
-        //        input = Class.forName(configuration+"In")
+
         out = Class.forName(configuration.entityClass.getName + "Out")
 
         tableQuery = TableQuery(tag =>
           tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
             .newInstance(tag)
             .asInstanceOf[Table[Entity] with PKTable[BaseColumnType[_]]])
-        //.asInstanceOf[slick.lifted.AbstractTable[?]])
-        //        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
 
         found <- EitherT(crudAutoService.findAll(tableQuery))
         newJson <- EitherT(crudAutoService.toJsValue(found.toList, entityClass, singleton, out))
@@ -81,7 +74,6 @@ trait AbstractCrudService {
       for {
         configuration <- EitherT(getConfiguration(model))
         entityClass = configuration.entityClass
-        pkClass = configuration.pK
         tableDefClass = configuration.tableDef
         singleton = Class.forName(configuration.entityClass.getName + "$")
 
@@ -92,9 +84,6 @@ trait AbstractCrudService {
           tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
             .newInstance(tag)
             .asInstanceOf[Table[Entity] with PKTable[BaseColumnType[_]]])
-            //.asInstanceOf[slick.lifted.AbstractTable[?]])
-  //        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
-
 
         classInfo   <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
         entityIn <- EitherT(crudAutoService.jsonValidate(json, input, classInfo._4))
@@ -105,24 +94,36 @@ trait AbstractCrudService {
         newJson     <- EitherT(crudAutoService.toJsValue(Some(found), entityClass.asInstanceOf[Class[Any]], singleton, out))
       } yield newJson
     }.run
-  //
-  //  def updateFlow(model: String, json: JsObject, id: UUID): Future[Expect[JsValue]] = {
-  //    for {
-  //      name <- EitherT(getClassName(model))
-  //      ref = Class.forName(name)
-  //      singleton = Class.forName(name+"$")
-  //      input = Class.forName(name+"In")
-  //      out = Class.forName(name+"Out")
-  //
-  //      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-  //      validatedJs <- EitherT(crudAutoService.jsonUpdateValidate(json, input, classInfo._4))
-  //      foundOpt <- EitherT(crudAutoService.findById(ref, id, classInfo._1, classInfo._2))
-  //      found <- EitherT(foundOpt |> "couldn't find this entity")
-  //      jsToUpdate <- EitherT(crudAutoService.completeUpdate(found, validatedJs, id, classInfo._3))
-  //      update <- EitherT(crudAutoService.update(ref, singleton, jsToUpdate, id, classInfo._1, classInfo._2, classInfo._3))
-  //      newJson <- EitherT(crudAutoService.toJsValue(update, ref, singleton, out))
-  //    } yield newJson
-  //  }.run
+
+    def updateFlow(model: String, json: JsObject, id: UUID): Future[Expect[JsValue]] = {
+      for {
+        configuration <- EitherT(getConfiguration(model))
+        entityClass = configuration.entityClass
+        tableDefClass = configuration.tableDef
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        input = Class.forName(configuration.entityClass.getName + "In")
+        out = Class.forName(configuration.entityClass.getName + "Out")
+
+        tableQuery = TableQuery(tag =>
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[Table[Entity] with PKTable[Object]])
+
+        classInfo   <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
+        entityIn <- EitherT(crudAutoService.jsonUpdateValidate(json, input, classInfo._4))
+        foundOpt <- EitherT(
+          crudAutoService.find(tableQuery, id)
+          (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]])
+        )
+        found <- EitherT(foundOpt |> "Unable to find entity")
+        entityToUpdate     <- EitherT(crudAutoService.completeUpdate(found, entityIn, id, classInfo._3.asInstanceOf[Format[Any]]))
+        found       <- EitherT(
+          crudAutoService.update(tableQuery, id.asInstanceOf[Object], entityToUpdate.asInstanceOf[Entity])
+          (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]]))
+        newJson     <- EitherT(crudAutoService.toJsValue(Some(found), entityClass.asInstanceOf[Class[Any]], singleton, out))
+      } yield newJson
+    }.run
   //
   //  def deleteFlow(model:String, id: UUID, purge:Option[Boolean]): Future[Expect[Boolean]] = {
   //    for {
@@ -143,15 +144,16 @@ trait AbstractCrudService {
 }
 
 
-
-//class CrudServiceFactory[T, U] @Inject()(val crudAutoService: CrudAutoService)(implicit val typeLit: TypeLiteral[T]) {
+//
+//class CrudServiceFactory[T, U] @Inject()(val crudAutoService: CrudAutoService,
+//                                         crudService: CrudService)(implicit val typeLit: TypeLiteral[T]) {
 //
 //  private val name = typeLit.getType.getTypeName
 //
 //  private val that = this
 //
 //  def findAll()(implicit uReads: Reads[U]): Future[Expect[List[U]]] =
-//    abstractCrudService.findAllFlow("").map{
+//    crudService.findAllFlow(name).map{
 //      case \/-(elements) =>
 //        elements.validate(Reads.list(uReads)) match {
 //          case JsSuccess(res, _) => \/-(res)
@@ -162,25 +164,17 @@ trait AbstractCrudService {
 //      case e@ -\/(_) => e
 //    }
 //
-////  def findById(id: UUID)(implicit uReads: Reads[U]): Future[Expect[Option[U]]] =
-////    abstractCrudService.findByIdFlow("", id).map{
-////      case \/-(element) =>
-////        element.validateOpt(uReads) match {
-////          case JsSuccess(res, _) => \/-(res)
-////          case JsError(errors)   =>
-////            Logger.error(s"JsValue.validate error : ${errors.mkString(", ")}")
-////            -\/(FailError("Unable to validate JsValue"))
-////        }
-////      case e@ -\/(_) => e
-////    }
-//
-//  private def abstractCrudService = new AbstractCrudService {
-//    override protected def getClassName[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](model: String): Future[Expect[String]] =
-//      Future.successful(\/-(name))
-//
-//    override val crudAutoService: CrudAutoService = that.crudAutoService
-//  }
-//
+//  def findById(id: UUID)(implicit uReads: Reads[U]): Future[Expect[Option[U]]] =
+//    crudService.findByIdFlow(name, id).map{
+//      case \/-(element) =>
+//        element.validateOpt(uReads) match {
+//          case JsSuccess(res, _) => \/-(res)
+//          case JsError(errors)   =>
+//            Logger.error(s"JsValue.validate error : ${errors.mkString(", ")}")
+//            -\/(FailError("Unable to validate JsValue"))
+//        }
+//      case e@ -\/(_) => e
+//    }
 //
 //
 //}
