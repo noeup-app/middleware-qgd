@@ -58,64 +58,6 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
 
 
-
-
-
-
-
-  //  val crudAutoDAO: CrudAutoDAO
-
-//  def findById[T, U : Table[T]](model: Class[T], id: UUID, tableQuery: TableQuery[U]): Future[Expect[Option[T]]] =
-//    dao.run(tableQuery.filter(_.primaryKeys.head.columns.head === id)).headOption
-//
-//  def findAll[E <: Entity, PK: BaseColumnType, V <: Table[E] with PKTable[PK](model: Class[E], pK: Class[PK], tableQuery: TableQuery[V]): Future[Expect[Seq[U]]] =
-//    dao.db.run(tableQuery.result)
-//      .map(\/-(_))
-//      .recover{
-//        case e: Exception => -\/(FailError(e))
-//      }
-//    dao.run(tableQuery)
-
-//  def add[T, A](model: Class[T], singleton: Class[A], json: JsObject, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
-//    TryBDCall{ implicit c=>
-//      implicit val jsFormat = format
-//      val entity:T = json.as[T]
-//      val request = buildAddRequest(entity, singleton, tableName)
-//      crudAutoDAO.add(tableName, entity, singleton, request._1, request._2)
-//      \/-(Some(entity))
-//    }
-//  }
-//
-//  def update[T, A](model: Class[T], singleton: Class[A], json: JsObject, id: UUID, tableName: String, parser: RowParser[T], format: Format[T]): Future[Expect[Option[T]]] = {
-//    TryBDCall{ implicit c=>
-//      implicit val jsFormat = format
-//      val entity:T = json.as[T]
-//      val request = buildUpdateRequest(model, json, singleton, tableName, format)
-//      crudAutoDAO.update(tableName, request, id)
-//      \/-(Some(entity))
-//    }
-//  }
-//
-//  def delete(id: UUID, tableName: String, purge: Option[Boolean]): Future[Expect[Boolean]] = {
-//    TryBDCall{ implicit c =>
-//      purge match {
-//        case Some(true) => crudAutoDAO.purge(tableName, id) match {
-//          case 0 => \/-(false)
-//          case 1 => \/-(true)
-//          case i:Int => -\/(FailError("More than one row deleted (" + i + ")"))
-//        }
-//        case _ =>
-//          crudAutoDAO.delete(tableName, id) match {
-//            case 0 => \/-(false)
-//            case 1 => \/-(true)
-//            case i:Int => -\/(FailError("More than one row deleted (" + i + ")"))
-//          }
-//      }
-//
-//
-//    }
-//  }
-
   def completeAdd[T, A, B](model: Class[T], in: Class[B], singleton: Class[A], modelIn: B, format: Format[T], formatIn: Format[B]): Future[Expect[T]] = {
     implicit val form = format
     implicit val formIn  = formatIn
@@ -142,101 +84,12 @@ class CrudAutoService @Inject()(dao: Dao)() {
     Future.successful(\/-(oldJson ++ json))
   }//.run
 
-  //Deprecated
-  /*def completeDeleted(json: JsObject): Future[Expect[JsObject]] = {
-    (json \ "deleted").asOpt[Boolean] match {
-      case Some(field) => field match {
-        case false => Future.successful(\/-(json))
-        case _ => Future.successful(\/-(json+(("deleted", JsBoolean(false)))))
-      }
-      case None => Future.successful(\/-(json+(("deleted", JsBoolean(false)))))
-    }
-  }*/
-
-  //Deprecated
-  /*def completeId(json: JsObject): Future[Expect[JsObject]] = {
-    (json \ "id").asOpt[String] match {
-      case Some(field) => field match {
-        case t if isUUID(t) => Future.successful(\/-(json))
-        case _ => Future.successful(\/-(json+(("id", JsString(UUID.randomUUID().toString)))))
-      }
-      case None => Future.successful(\/-(json+(("id", JsString(UUID.randomUUID().toString)))))
-    }
-  }*/
-
-  //Deprecated
-  /*def completeTime(json: JsObject): Future[Expect[JsObject]] = {
-    json.fields.filter(field => field._2.isInstanceOf[JsString] &&
-      (field._2.as[String].split(' ').head == "time_plus" |
-       field._2.as[String].split(' ').head == "time_minus" |
-       field._2.as[String].split(' ').head == "time_now")) match {
-      case Nil => Future.successful(\/-(json))
-      case fields =>
-        val newJs = JsObject(fields.map(f =>
-          f._1 -> JsString(getTime(f._2.as[String], f._2.as[String].split(' ').head))))
-        Future.successful(\/-(json++newJs))
-    }
-  }*/
-
-  //Deprecated
-  /*def getTime(jsValue: String, operation: String): String = {
-    operation match {
-      case "time_plus" => jsValue.split(' ')(1) match {
-        case "years" => DateTime.now.plusYears(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "months" => DateTime.now.plusMonths(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "weeks" => DateTime.now.plusWeeks(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "days" => DateTime.now.plusDays(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "hours" => DateTime.now.plusHours(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "minutes" => DateTime.now.plusMinutes(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "seconds" => DateTime.now.plusSeconds(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "millis" => DateTime.now.plusMillis(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case _ => DateTime.now.toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-      }
-      case "time_minus" => jsValue.split(' ')(1) match {
-        case "years" => DateTime.now.minusYears(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "months" => DateTime.now.minusMonths(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "weeks" => DateTime.now.minusWeeks(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "days" => DateTime.now.minusDays(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "hours" => DateTime.now.minusHours(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "minutes" => DateTime.now.minusMinutes(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "seconds" => DateTime.now.minusSeconds(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case "millis" => DateTime.now.minusMillis(jsValue.split(' ').last.toInt).toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-        case _ => DateTime.now.toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-      }
-      case "time_now" => DateTime.now.toString("yyyy-MM-dd'T'HH:mm:ss'Z'")
-    }
-  }*/
-
-  //Unused (could be moved to utils)
-  def isUUID(value: String): Boolean = {
-    try{
-      UUID.fromString(value)
-      true
-    } catch{
-      case e:IllegalArgumentException => false
-    }
-  }
-
   def jsonValidate[B](json: JsObject, in: Class[B], formatIn: Format[B]): Future[Expect[B]] = Future {
-
     implicit val format = formatIn
     json.validate[B] match {
       case JsSuccess(value, _) => \/-(value)
       case JsError(errors) => -\/(FailError(s"Unable to validate json. Errors : $errors"))
     }
-
-//
-//    try{
-//      implicit val format = formatIn
-//      val input:B = json.as[B]
-//      Future.successful(\/-(json))
-//    } catch {
-//      case e:Exception =>
-//        Logger.error(e.getMessage)
-//        val fields = in.getDeclaredFields.map{f=> (f.getName, f.getName + " : " + f.getGenericType.getTypeName.split('.').last)}
-//        val missing = fields.filter(f => e.getMessage.contains(f._1))
-//        Future.successful(-\/(FailError(e.getMessage + "\nError while validating json. "+ "Missing fields are : \n" + missing.map{f=>f._2}.mkString("\n"))))
-//    }
   }
 
   def jsonUpdateValidate[B](json: JsObject, in: Class[B], formatIn: Format[B]): Future[Expect[JsObject]] = {
@@ -353,27 +206,8 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
   // TODO merge 2 functions
 
-  def toJsValue[T, A, C](newObject: Option[T], model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
-    val const = singleton.getDeclaredConstructors()(0)
-    const.setAccessible(true)
-    val obj = const.newInstance()
-    val jsFormat = singleton.getDeclaredField(out.getName.split('.').last+"Format")
-    jsFormat.setAccessible(true)
-    implicit val format = jsFormat.get(obj).asInstanceOf[Format[C]]
-    val toOut: Method = singleton.getDeclaredMethod("to"+out.getName.split('.').last, model)
-    Future.successful(
-      \/-(
-        Json.toJson(
-          newObject
-            .map{ o =>
-              toOut
-                .invoke(obj, o.asInstanceOf[Object])
-                .asInstanceOf[C]
-            }
-        )
-      )
-    )
-  }
+  def toJsValue[T, A, C](newObject: Option[T], model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] =
+    toJsValue[T, A, C](newObject.toList, model, singleton, out)
 
   def toJsValue[T, A, C](newObject: List[T], model: Class[_], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
     val const = singleton.getDeclaredConstructors()(0)

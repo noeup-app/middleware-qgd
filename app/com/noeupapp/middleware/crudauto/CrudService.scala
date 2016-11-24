@@ -34,8 +34,7 @@ trait AbstractCrudService {
         pkClass = configuration.pK
         tableDefClass = configuration.tableDef
         singleton = Class.forName(configuration.entityClass.getName + "$")
-        //
-        //        input = Class.forName(configuration+"In")
+
         out = Class.forName(configuration.entityClass.getName + "Out")
 
         tableQuery = TableQuery(tag =>
