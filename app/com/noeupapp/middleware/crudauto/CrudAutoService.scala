@@ -41,11 +41,11 @@ class CrudAutoService @Inject()(dao: Dao)() {
     dao.runForHeadOption(tableQuery.filter(_.id === id))
 
 
-  def add[E <: Entity, PK: BaseColumnType, V <: Table[E] with PKTable[PK]](tableQuery: TableQuery[V], entity: E): Future[Expect[E]] =
+  def add[E, PK, V <: Table[E]](tableQuery: TableQuery[V], entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
     dao.run(tableQuery += entity).map(_.map(_ => entity))
 
 
-  def upsert[E <: Entity, PK: BaseColumnType, V <: Table[E] with PKTable[PK]](tableQuery: TableQuery[V], entity: E): Future[Expect[E]] =
+  def upsert[E <: Entity, PK, V <: Table[E] with PKTable[PK]](tableQuery: TableQuery[V], entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
     dao.run(tableQuery.insertOrUpdate(entity)).map(_.map(_ => entity))
 
 
@@ -116,23 +116,17 @@ class CrudAutoService @Inject()(dao: Dao)() {
 //    }
 //  }
 
-  def completeAdd[T,A, B](model: Class[T], in: Class[B], singleton: Class[A], json: JsObject, format: Format[T], formatIn: Format[B]): Future[Expect[JsObject]] = {
-    //Deprecated
-    /*for {
-      js1 <- EitherT(completeId(json))
-      js2 <- EitherT(completeDeleted(js1))
-      js3 <- EitherT(completeTime(js2))
-    }yield js3*/
+  def completeAdd[T, A, B](model: Class[T], in: Class[B], singleton: Class[A], modelIn: B, format: Format[T], formatIn: Format[B]): Future[Expect[T]] = {
     implicit val form = format
     implicit val formIn  = formatIn
-    val input:B = json.as[B]
+//    val input:B = json.as[B]
     val consts = model.getDeclaredConstructors
     val const = consts.find(r=> r.getParameterTypes.contains(in))
     Logger.debug(const.mkString)
     const match {
       case Some(init) => init.setAccessible(true)
-        val entity: T = init.newInstance(input.asInstanceOf[Object]).asInstanceOf[T]
-        Future.successful(\/-(Json.toJson(entity).as[JsObject]))
+        val entity: T = init.newInstance(modelIn.asInstanceOf[Object]).asInstanceOf[T]
+        Future.successful(\/-(entity))
       case None => Future.successful(-\/(FailError("couldn't find constructor")))
     }
   }//.run
@@ -223,18 +217,26 @@ class CrudAutoService @Inject()(dao: Dao)() {
     }
   }
 
-  def jsonValidate[B](json: JsObject, in: Class[B], formatIn: Format[B]): Future[Expect[JsObject]] = {
-    try{
-      implicit val format = formatIn
-      val input:B = json.as[B]
-      Future.successful(\/-(json))
-    } catch {
-      case e:Exception =>
-        Logger.error(e.getMessage)
-        val fields = in.getDeclaredFields.map{f=> (f.getName, f.getName + " : " + f.getGenericType.getTypeName.split('.').last)}
-        val missing = fields.filter(f => e.getMessage.contains(f._1))
-        Future.successful(-\/(FailError(e.getMessage + "\nError while validating json. "+ "Missing fields are : \n" + missing.map{f=>f._2}.mkString("\n"))))
+  def jsonValidate[B](json: JsObject, in: Class[B], formatIn: Format[B]): Future[Expect[B]] = Future {
+
+    implicit val format = formatIn
+    json.validate[B] match {
+      case JsSuccess(value, _) => \/-(value)
+      case JsError(errors) => -\/(FailError(s"Unable to validate json. Errors : $errors"))
     }
+
+//
+//    try{
+//      implicit val format = formatIn
+//      val input:B = json.as[B]
+//      Future.successful(\/-(json))
+//    } catch {
+//      case e:Exception =>
+//        Logger.error(e.getMessage)
+//        val fields = in.getDeclaredFields.map{f=> (f.getName, f.getName + " : " + f.getGenericType.getTypeName.split('.').last)}
+//        val missing = fields.filter(f => e.getMessage.contains(f._1))
+//        Future.successful(-\/(FailError(e.getMessage + "\nError while validating json. "+ "Missing fields are : \n" + missing.map{f=>f._2}.mkString("\n"))))
+//    }
   }
 
   def jsonUpdateValidate[B](json: JsObject, in: Class[B], formatIn: Format[B]): Future[Expect[JsObject]] = {
