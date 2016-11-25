@@ -26,7 +26,7 @@ trait AbstractCrudService {
 
   val crudAutoService: CrudAutoService
 
-  def findByIdFlow(model:String, id: UUID): Future[Expect[JsValue]] =
+  def findByIdFlow(model:String, id: UUID): Future[Expect[Option[JsValue]]] =
     {
       for {
         configuration <- EitherT(getConfiguration(model))
@@ -45,7 +45,7 @@ trait AbstractCrudService {
           crudAutoService.find(tableQuery, id)
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]])
         )
-        newJson <- EitherT(crudAutoService.toJsValue(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
+        newJson <- EitherT(crudAutoService.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
       } yield newJson
     }.run
 
@@ -66,7 +66,7 @@ trait AbstractCrudService {
             .asInstanceOf[Table[Entity] with PKTable[BaseColumnType[_]]])
 
         found <- EitherT(crudAutoService.findAll(tableQuery))
-        newJson <- EitherT(crudAutoService.toJsValue(found.toList, entityClass, singleton, out))
+        newJson <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
       } yield newJson
     }.run
 
@@ -91,7 +91,7 @@ trait AbstractCrudService {
         found       <- EitherT(
           crudAutoService.add(tableQuery, entityToInsert.asInstanceOf[Entity])
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]]))
-        newJson     <- EitherT(crudAutoService.toJsValue(Some(found), entityClass.asInstanceOf[Class[Any]], singleton, out))
+        newJson     <- EitherT(crudAutoService.toJsValue(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
       } yield newJson
     }.run
 
@@ -128,24 +128,19 @@ trait AbstractCrudService {
     def deleteFlow[T](model:String, id: T, purge:Option[Boolean]): Future[Expect[T]] = {
       for {
         configuration <- EitherT(getConfiguration(model))
-        entityClass = configuration.entityClass
         tableDefClass = configuration.tableDef
-        singleton = Class.forName(configuration.entityClass.getName + "$")
-
-        input = Class.forName(configuration.entityClass.getName + "In")
 
         tableQuery = TableQuery(tag =>
           tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
             .newInstance(tag)
             .asInstanceOf[Table[Entity] with PKTable[Any]])
 
-
-        classInfo <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
         foundOpt <- EitherT(
           crudAutoService.find(tableQuery, id)
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]])
         )
         _ <- EitherT(foundOpt |> "couldn't find this entity")
+
         _ <- EitherT(
           crudAutoService.delete(tableQuery, id)
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]])

@@ -29,7 +29,8 @@ class Cruds @Inject()(crudService: CrudService,
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while fetching "+model))
-      case \/-(json) =>  Ok(Json.toJson(json))
+      case \/-(Some(json)) =>  Ok(Json.toJson(json))
+      case \/-(None)       =>  NotFound("Entity not found")
     }
   }
 

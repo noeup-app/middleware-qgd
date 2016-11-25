@@ -218,7 +218,11 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
   // TODO merge 2 functions
 
-  def toJsValue[T, A, C](newObject: Option[T], model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
+  def toJsValueOpt[T, A, C](newObject: Option[T], model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[Option[JsValue]]] = {
+
+    if (newObject.isEmpty)
+      return Future.successful(\/-(None))
+
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
@@ -228,19 +232,41 @@ class CrudAutoService @Inject()(dao: Dao)() {
     val toOut: Method = singleton.getDeclaredMethod("to"+out.getName.split('.').last, model)
     Future.successful(
       \/-(
-        Json.toJson(
-          newObject
-            .map{ o =>
-              toOut
-                .invoke(obj, o.asInstanceOf[Object])
-                .asInstanceOf[C]
-            }
+        Some(
+          Json.toJson(
+            newObject
+              .map{ o =>
+                toOut
+                  .invoke(obj, o.asInstanceOf[Object])
+                  .asInstanceOf[C]
+              }
+          )
         )
       )
     )
   }
 
-  def toJsValue[T, A, C](newObject: List[T], model: Class[_], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
+  def toJsValue[T, A, C](newObject: T, model: Class[T], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
+    val const = singleton.getDeclaredConstructors()(0)
+    const.setAccessible(true)
+    val obj = const.newInstance()
+    val jsFormat = singleton.getDeclaredField(out.getName.split('.').last + "Format")
+    jsFormat.setAccessible(true)
+    implicit val format = jsFormat.get(obj).asInstanceOf[Format[C]]
+    val toOut: Method = singleton.getDeclaredMethod("to" + out.getName.split('.').last, model)
+    Future.successful(
+      \/-(
+        Json.toJson(
+
+          toOut
+            .invoke(obj, newObject.asInstanceOf[Object])
+            .asInstanceOf[C]
+        )
+      )
+    )
+  }
+
+  def toJsValueList[T, A, C](newObject: List[T], model: Class[_], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
