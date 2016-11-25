@@ -19,6 +19,7 @@ import slick.driver._
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.JdbcType
 import slick.lifted.TableQuery
+import play.api.mvc.Results._
 
 import scala.language.existentials
 
@@ -86,8 +87,8 @@ trait AbstractCrudService {
             .asInstanceOf[Table[Entity] with PKTable[BaseColumnType[_]]])
 
         classInfo   <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
-        entityIn <- EitherT(crudAutoService.jsonValidate(json, input, classInfo._4))
-        entityToInsert     <- EitherT(crudAutoService.completeAdd(entityClass, input, singleton, entityIn, classInfo._3, classInfo._4))
+        entityIn <- EitherT(crudAutoService.jsonValidate(json, input, classInfo.jsonInFormat))
+        entityToInsert     <- EitherT(crudAutoService.completeAdd(entityClass, input, singleton, entityIn, classInfo.jsonFormat, classInfo.jsonInFormat))
         found       <- EitherT(
           crudAutoService.add(tableQuery, entityToInsert.asInstanceOf[Entity])
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]]))
@@ -111,13 +112,13 @@ trait AbstractCrudService {
             .asInstanceOf[Table[Entity] with PKTable[Object]])
 
         classInfo   <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
-        entityIn <- EitherT(crudAutoService.jsonUpdateValidate(json, input, classInfo._4))
+        entityIn <- EitherT(crudAutoService.jsonUpdateValidate(json, input, classInfo.jsonInFormat))
         foundOpt <- EitherT(
           crudAutoService.find(tableQuery, id)
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]])
         )
         found <- EitherT(foundOpt |> "Unable to find entity")
-        entityToUpdate     <- EitherT(crudAutoService.completeUpdate(found, entityIn, id, classInfo._3.asInstanceOf[Format[Any]]))
+        entityToUpdate     <- EitherT(crudAutoService.completeUpdate(found, entityIn, id, classInfo.jsonFormat.asInstanceOf[Format[Any]]))
         found       <- EitherT(
           crudAutoService.update(tableQuery, id.asInstanceOf[Object], entityToUpdate.asInstanceOf[Entity])
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]]))

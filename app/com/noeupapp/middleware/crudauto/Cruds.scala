@@ -58,14 +58,12 @@ class Cruds @Inject()(crudService: CrudService,
 
     val json = request.body.as[JsObject]
     crudService.addFlow(model, json) map {
-      case -\/(error) => error.message match {
-        case m if m.contains("validating json") =>
-          Logger.error(error.toString)
-          BadRequest(m)
-        case _ =>
-          Logger.error(error.toString)
-          InternalServerError(Json.toJson("Error while adding new "+model))
-      }
+      case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
+        BadRequest(Json.toJson("Json given is not correct"))
+      case -\/(error) =>
+        println(error.errorType)
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while adding new " + model))
       case \/-(js) =>  Ok(Json.toJson(js))
     }
   }

@@ -126,13 +126,25 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         await(createTable)
 
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
         val toAdd = TestIn("my super name", "my type", 12345)
 
         val Some(result) =
           route(FakeRequest(POST, "/tests")
                 .withBody(Json.toJson(toAdd)))
 
+
         status(result) must be equalTo OK
+
+        val testsAfter: Seq[Test] = await(all)
+
+        sameElementsAs(
+          contentAsJson(result).as[Test] :: testsBefore.toList,
+          testsAfter
+        ) must beTrue
 
       }
     }

@@ -24,6 +24,8 @@ import scalaz._, Scalaz._
 import slick.driver._
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{TableQuery, Tag}
+import play.api.mvc.Results._
+
 
 class CrudAutoService @Inject()(dao: Dao)() {
 
@@ -100,7 +102,8 @@ class CrudAutoService @Inject()(dao: Dao)() {
     implicit val format = formatIn
     json.validate[B] match {
       case JsSuccess(value, _) => \/-(value)
-      case JsError(errors) => -\/(FailError(s"Unable to validate json. Errors : $errors"))
+      case JsError(errors) =>
+        -\/(FailError(s"Unable to validate json. Errors : $errors", errorType = BadRequest))
     }
   }
 
@@ -196,23 +199,23 @@ class CrudAutoService @Inject()(dao: Dao)() {
     }
   }
 
-  def getClassInfo[T, A, B](model: Class[T], singleton: Class[A], className: String, in: Class[B]): Future[Expect[(String, RowParser[T], Format[T], Format[B])]] = {
+
+  case class ClassInfo[T, B](tableName: String, jsonFormat: Format[T], jsonInFormat: Format[B])
+
+  def getClassInfo[T, A, B](model: Class[T], singleton: Class[A], className: String, in: Class[B]): Future[Expect[ClassInfo[T, B]]] = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
     val table = singleton.getDeclaredField("tableName")
     table.setAccessible(true)
-    val parse = singleton.getDeclaredField("parse")
-    parse.setAccessible(true)
     val jsFormat = singleton.getDeclaredField(className.split('.').last+"Format")
     jsFormat.setAccessible(true)
     val jsFormatIn = singleton.getDeclaredField(in.getName.split('.').last+"Format")
     jsFormatIn.setAccessible(true)
     val format = jsFormat.get(obj).asInstanceOf[Format[T]]
     val formatIn = jsFormatIn.get(obj).asInstanceOf[Format[B]]
-    val parser = parse.get(obj).asInstanceOf[anorm.RowParser[T]]
     val name = table.get(singleton.cast(obj)).asInstanceOf[String]
-    Future.successful(\/-((name, parser, format, formatIn)))
+    Future.successful(\/-(ClassInfo(name, format, formatIn)))
   }
 
 
