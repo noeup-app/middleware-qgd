@@ -116,10 +116,14 @@ trait CrudAutoContext extends Scope {
 
   def createTable = Test.createTable(dao.db)
   def populate = Test.populate(dao.db, pk)
+  def all = Test.all(dao.db, pk)
   def dropTable = Test.dropTable(dao.db)
 
 
 
+
+  def sameElementsAs[A](s1: Seq[A], s2: Seq[A]) =
+    s1.forall(s2.contains) && s2.forall(s1.contains)
 
 
 }

@@ -125,7 +125,7 @@ trait AbstractCrudService {
       } yield newJson
     }.run
 
-    def deleteFlow[T](model:String, id: T, purge:Option[Boolean]): Future[Expect[T]] = {
+    def deleteFlow[T](model:String, id: T, purge:Option[Boolean]): Future[Expect[Option[T]]] = {
       for {
         configuration <- EitherT(getConfiguration(model))
         tableDefClass = configuration.tableDef
@@ -139,14 +139,17 @@ trait AbstractCrudService {
           crudAutoService.find(tableQuery, id)
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]])
         )
-        _ <- EitherT(foundOpt |> "couldn't find this entity")
+        _ <- EitherT(foundOpt |> ("couldn't find this entity", NotFound))
 
         _ <- EitherT(
           crudAutoService.delete(tableQuery, id)
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]])
         )
-      } yield id
-    }.run
+      } yield Some(id)
+    }.run map {
+      case -\/(error) if error.errorType == NotFound => \/-(None)
+      case res => res
+    }
 
   protected def getConfiguration(model: String): Future[Expect[CrudConfigurationUnTyped]]
 

@@ -63,12 +63,18 @@ object Test extends GlobalReadsWrites {
         }
 
   def dropTable(db: JdbcBackend#DatabaseDef) = db.run(DBIO.seq(tq.schema.drop))
+
   def populate(db: JdbcBackend#DatabaseDef, id: UUID) =
     db.run(
       tq ++= Seq(
         Test(id, "my test 1", "super type", 5),
         Test(UUID.randomUUID(), "my test 2", "type", 1234)
       )
+    )
+
+  def all(db: JdbcBackend#DatabaseDef, id: UUID) =
+    db.run(
+      tq.result
     )
 }
 

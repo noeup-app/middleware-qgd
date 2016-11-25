@@ -93,7 +93,8 @@ class Cruds @Inject()(crudService: CrudService,
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while deleting "+model))
-      case \/-(pk) => Ok(Json.toJson(pk))
+      case \/-(Some(json)) =>  Ok(Json.toJson(json))
+      case \/-(None)       =>  NotFound("Entity not found")
     }
   }
 }

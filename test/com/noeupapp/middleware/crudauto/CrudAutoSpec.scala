@@ -84,6 +84,41 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
       }
     }
   }
+  "crud auto delete" should {
+    "return not found" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        val Some(result) =
+          route(FakeRequest(DELETE, "/tests/" + UUID.randomUUID()))
+
+        status(result) must be equalTo NOT_FOUND
+
+      }
+    }
+    "return 200 if model designed by id is found" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val toDelete = testsBefore.head
+
+        val Some(result) =
+          route(FakeRequest(DELETE, s"/tests/${toDelete.id}"))
+
+        val testsAfter: Seq[Test] = await(all)
+
+        status(result) must be equalTo OK
+        testsBefore.filterNot(_.id == toDelete.id) must be equalTo testsAfter
+
+      }
+    }
+  }
 
   "crud auto add" should {
     "work if input is correct" in new CrudAutoContext {
