@@ -112,7 +112,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
     val inputFields = in.getDeclaredFields.map{f=>f.getName}
     val fields = jsFields.intersect(inputFields)
     fields match {
-      case Nil => Future.successful(-\/(FailError("Error, these fields do not exist or cannot be updated")))
+      case Nil => Future.successful(-\/(FailError("Error, these fields do not exist or cannot be updated", errorType = BadRequest)))
       case t => Future.successful(\/-(JsObject(json.fields.filter(f=> t.contains(f._1)))))
     }
   }
@@ -217,6 +217,47 @@ class CrudAutoService @Inject()(dao: Dao)() {
     val name = table.get(singleton.cast(obj)).asInstanceOf[String]
     Future.successful(\/-(ClassInfo(name, format, formatIn)))
   }
+
+
+
+  def filterOmitsAndRequiredFieldsOfJsValue(jsValue: Option[JsValue], omits: List[String], require: List[String]): Future[Expect[Option[JsValue]]] =
+    jsValue match {
+      case None     => Future.successful(\/-(None))
+      case Some(js) =>
+        filterOmitsAndRequiredFieldsOfJsValue(js, omits, require).map(_.map(Some(_)))
+    }
+
+  def filterOmitsAndRequiredFieldsOfJsValue(jsValue: JsValue, omits: List[String], require: List[String]): Future[Expect[JsValue]] = Future {
+
+    val filter: (JsObject) => JsObject =
+      filterOmitFieldsOfJsValue(omits)_ andThen filterRequiredFieldsOfJsValue(require)
+
+    jsValue match {
+      case JsArray(elements) =>
+        \/-(
+          Json.toJson(
+            elements.map{
+              case obj: JsObject => filter(obj)
+              case res => res
+            }
+          )
+        )
+      case obj: JsObject => \/-(filter(obj))
+      case others => \/-(others)
+    }
+  }
+
+  private def filterOmitFieldsOfJsValue(omits: List[String])(jsObj: JsObject): JsObject =
+    omits.foldLeft[JsObject](jsObj)(_ - _)
+
+  private def filterRequiredFieldsOfJsValue(requires: List[String])(jsObj: JsObject): JsObject =
+    requires match {
+      case Nil => jsObj
+      case _ =>
+        requires.foldLeft(Json.obj()) { (acc, e) =>
+          jsObj.fieldSet.find(_._1 == e).map(acc + _).getOrElse(acc)
+        }
+    }
 
 
   // TODO merge 2 functions

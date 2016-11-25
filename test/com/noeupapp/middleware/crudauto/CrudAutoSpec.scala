@@ -10,7 +10,7 @@ import com.noeupapp.testhelpers.Context
 import org.specs2.mock.Mockito
 import play.api.Play.current
 import play.api.db.DB
-import play.api.libs.json.{JsArray, Json}
+import play.api.libs.json.{JsArray, JsObject, Json}
 import play.api.test.{FakeRequest, PlaySpecification, WithApplication}
 import com.noeupapp.middleware.crudauto.Test._
 
@@ -28,7 +28,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
           route(FakeRequest("GET", "/tests"))
 
         status(result) must be equalTo OK
-
+        contentAsJson(result) must be equalTo Json.arr()
 
       }
     }
@@ -48,7 +48,130 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         contentAsJson(result) match {
           case JsArray(elems) => elems must haveSize(2)
           case json =>
-            dropTable
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
+
+      }
+    }
+    "with not empty table and omit 1 field" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val Some(result) =
+          route(FakeRequest("GET", "/tests?omit=id"))
+
+        status(result) must be equalTo OK
+
+
+        contentAsJson(result) match {
+          case JsArray(elems) =>
+            elems must haveSize(2)
+
+            sameElementsAs(
+              testsBefore.map{ t =>
+                Json.toJson(t).asInstanceOf[JsObject].-("id")
+              },
+              elems
+            ) must beTrue
+          case json =>
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
+
+      }
+    }
+    "with not empty table and omit several fields" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val Some(result) =
+          route(FakeRequest("GET", "/tests?omit=id,name"))
+
+        status(result) must be equalTo OK
+
+
+        contentAsJson(result) match {
+          case JsArray(elems) =>
+            elems must haveSize(2)
+
+            sameElementsAs(
+              testsBefore.map{ t =>
+                Json.toJson(t).asInstanceOf[JsObject].-("id").-("name")
+              },
+              elems
+            ) must beTrue
+          case json =>
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
+
+      }
+    }
+    "with not empty table and require 1 field" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val Some(result) =
+          route(FakeRequest("GET", "/tests?include=name"))
+
+        status(result) must be equalTo OK
+
+
+        contentAsJson(result) match {
+          case JsArray(elems) =>
+            elems must haveSize(2)
+
+            sameElementsAs(
+              testsBefore.map{ t =>
+                Json.toJson(t).asInstanceOf[JsObject].-("id").-("typeL").-("priority")
+              },
+              elems
+            ) must beTrue
+          case json =>
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
+
+      }
+    }
+    "with not empty table and require several fields" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val Some(result) =
+          route(FakeRequest("GET", "/tests?include=name,typeL"))
+
+        status(result) must be equalTo OK
+
+
+        contentAsJson(result) match {
+          case JsArray(elems) =>
+            elems must haveSize(2)
+
+            sameElementsAs(
+              testsBefore.map{ t =>
+                Json.toJson(t).asInstanceOf[JsObject].-("id").-("priority")
+              },
+              elems
+            ) must beTrue
+          case json =>
             (false must beTrue).setMessage(s"Unexpected json : $json")
         }
 
@@ -76,11 +199,98 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         await(populate)
 
+        val testsBefore: Seq[Test] = await(all)
+
         val Some(result) =
           route(FakeRequest(GET, s"/tests/$pk"))
 
         status(result) must be equalTo OK
+        contentAsJson(result).as[Test] must be equalTo testsBefore.find(_.id == pk).get
 
+      }
+    }
+    "return 200 if model designed by id is found and omit 1 field" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val toGet = testsBefore.head
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/${toGet.id}?omit=name"))
+
+        status(result) must be equalTo OK
+        contentAsJson(result) must be equalTo Json.obj(
+          "id" -> toGet.id,
+          "typeL" -> toGet.typeL,
+          "priority" -> toGet.priority
+        )
+      }
+    }
+    "return 200 if model designed by id is found and omit several fields" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val toGet = testsBefore.head
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/${toGet.id}?omit=name,typeL"))
+
+        status(result) must be equalTo OK
+        contentAsJson(result) must be equalTo Json.obj(
+          "id" -> toGet.id,
+          "priority" -> toGet.priority
+        )
+      }
+    }
+    "return 200 if model designed by id is found and include 1 field" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val toGet = testsBefore.head
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/${toGet.id}?include=priority"))
+
+        status(result) must be equalTo OK
+        contentAsJson(result) must be equalTo Json.obj(
+          "priority" -> toGet.priority
+        )
+      }
+    }
+    "return 200 if model designed by id is found and include several fields" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val toGet = testsBefore.head
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/${toGet.id}?include=priority,id"))
+
+        status(result) must be equalTo OK
+        contentAsJson(result) must be equalTo Json.obj(
+          "id" -> toGet.id,
+          "priority" -> toGet.priority
+        )
       }
     }
   }
@@ -111,9 +321,11 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         val Some(result) =
           route(FakeRequest(DELETE, s"/tests/${toDelete.id}"))
 
-        val testsAfter: Seq[Test] = await(all)
 
         status(result) must be equalTo OK
+
+        val testsAfter: Seq[Test] = await(all)
+
         testsBefore.filterNot(_.id == toDelete.id) must be equalTo testsAfter
 
       }
@@ -159,6 +371,108 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
                 .withBody(Json.obj(
                   "aldzùmlakzdùmlakzdùmazd" -> "mlazdlkùazdùmlkazmùldkùmalzd"
                 )))
+
+        status(result) must be equalTo BAD_REQUEST
+
+      }
+    }
+  }
+
+  "crud auto update" should {
+    "work if input is correct" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val toUpdate = testsBefore.head
+        val updated = toUpdate.copy(name = "my super new name", typeL = "my wonderful new type")
+
+        val Some(result) =
+          route(FakeRequest(PUT, s"/tests/${toUpdate.id}")
+                .withBody(Json.obj(
+                  "name" -> updated.name,
+                  "typeL" -> updated.typeL
+                )))
+
+
+        status(result) must be equalTo OK
+
+        val testsAfter: Seq[Test] = await(all)
+
+        contentAsJson(result).as[Test] must be equalTo updated
+
+        sameElementsAs(
+          contentAsJson(result).as[Test] :: testsBefore.toList.filterNot(_.id == updated.id),
+          testsAfter
+        ) must beTrue
+
+      }
+    }
+    "fail if input is not correct 1" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val toUpdate = testsBefore.head
+        val updated = toUpdate.copy(name = "my super new name", typeL = "my wonderful new type")
+
+        val Some(result) =
+          route(FakeRequest(PUT, s"/tests/${toUpdate.id}")
+                .withBody(Json.obj(
+                  "aldzùmlakzdùmlakzdùmazd" -> "mlazdlkùazdùmlkazmùldkùmalzd"
+                )))
+
+        status(result) must be equalTo BAD_REQUEST
+
+      }
+    }
+    "fail if input is not correct 2" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val toUpdate = testsBefore.head
+        val updated = toUpdate.copy(name = "my super new name", typeL = "my wonderful new type")
+
+        val Some(result) =
+          route(FakeRequest(PUT, s"/tests/${toUpdate.id}")
+            .withBody(Json.obj(
+              "name" -> updated.name,
+              "typeL" -> updated.typeL,
+              "aldzùmlakzdùmlakzdùmazd" -> "mlazdlkùazdùmlkazmùldkùmalzd"
+            )))
+
+        status(result) must be equalTo BAD_REQUEST
+
+      }
+    }
+    "fail if input is not empty" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTable)
+
+        await(populate)
+
+        val testsBefore: Seq[Test] = await(all)
+
+        val toUpdate = testsBefore.head
+        val updated = toUpdate.copy(name = "my super new name", typeL = "my wonderful new type")
+
+        val Some(result) =
+          route(FakeRequest(PUT, s"/tests/${toUpdate.id}")
+            .withBody(Json.obj()))
 
         status(result) must be equalTo BAD_REQUEST
 

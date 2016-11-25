@@ -27,7 +27,7 @@ trait AbstractCrudService {
 
   val crudAutoService: CrudAutoService
 
-  def findByIdFlow(model:String, id: UUID): Future[Expect[Option[JsValue]]] =
+  def findByIdFlow(model:String, id: UUID, omits: List[String], includes: List[String]): Future[Expect[Option[JsValue]]] =
     {
       for {
         configuration <- EitherT(getConfiguration(model))
@@ -46,12 +46,13 @@ trait AbstractCrudService {
           crudAutoService.find(tableQuery, id)
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]])
         )
-        newJson <- EitherT(crudAutoService.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
-      } yield newJson
+        newJson      <- EitherT(crudAutoService.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
+        filteredJson <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
+      } yield filteredJson
     }.run
 
 
-  def findAllFlow(model:String): Future[Expect[JsValue]] =
+  def findAllFlow(model:String, omits: List[String], includes: List[String]): Future[Expect[JsValue]] =
     {
       for {
         configuration <- EitherT(getConfiguration(model))
@@ -68,7 +69,8 @@ trait AbstractCrudService {
 
         found <- EitherT(crudAutoService.findAll(tableQuery))
         newJson <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
-      } yield newJson
+        filteredJson <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
+      } yield filteredJson
     }.run
 
     def addFlow(model: String, json: JsObject): Future[Expect[JsValue]] = {
@@ -122,7 +124,7 @@ trait AbstractCrudService {
         found       <- EitherT(
           crudAutoService.update(tableQuery, id.asInstanceOf[Object], entityToUpdate.asInstanceOf[Entity])
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]]))
-        newJson     <- EitherT(crudAutoService.toJsValue(Some(found), entityClass.asInstanceOf[Class[Any]], singleton, out))
+        newJson     <- EitherT(crudAutoService.toJsValue(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
       } yield newJson
     }.run
 

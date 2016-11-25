@@ -20,12 +20,12 @@ class Cruds @Inject()(crudService: CrudService,
                       scopeAndRoleAuthorization: ScopeAndRoleAuthorization
                          ) extends Silhouette[Account, BearerTokenAuthenticator] {
 
-  def fetchById(model: String, id: UUID/*, omit: Option[String], include: Option[String]*/) = UserAwareAction.async { implicit request =>
+  def fetchById(model: String, id: UUID, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
 
-//    val omits    = omit.map(_.split(",").toList)
-//    val includes = include.map(_.split(",").toList)
+    val omits    = omit.map(_.split(",").toList).toList.flatten
+    val includes = include.map(_.split(",").toList).toList.flatten
 
-    crudService.findByIdFlow(model, id) map {
+    crudService.findByIdFlow(model, id, omits, includes) map {
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while fetching "+model))
@@ -34,9 +34,12 @@ class Cruds @Inject()(crudService: CrudService,
     }
   }
 
-  def fetchAll(model: String) = UserAwareAction.async { implicit request =>
+  def fetchAll(model: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
 
-    crudService.findAllFlow(model) map {
+    val omits    = omit.map(_.split(",").toList).toList.flatten
+    val includes = include.map(_.split(",").toList).toList.flatten
+
+    crudService.findAllFlow(model, omits, includes) map {
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while fetching "+model))
@@ -61,7 +64,6 @@ class Cruds @Inject()(crudService: CrudService,
       case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
         BadRequest(Json.toJson("Json given is not correct"))
       case -\/(error) =>
-        println(error.errorType)
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while adding new " + model))
       case \/-(js) =>  Ok(Json.toJson(js))
@@ -72,15 +74,11 @@ class Cruds @Inject()(crudService: CrudService,
 
     val json = request.body.as[JsObject]
     crudService.updateFlow(model, json, id) map {
+      case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
+        BadRequest(Json.toJson("Json given is not correct"))
       case -\/(error) =>
-        error.message match {
-          case m if m.contains("fields") =>
-            Logger.error(error.toString)
-            BadRequest(m)
-          case _ =>
-            Logger.error(error.toString)
-            InternalServerError(Json.toJson("Error while adding new "+model))
-        }
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while updating " + model))
       case \/-(js) =>  Ok(Json.toJson(js))
     }
   }

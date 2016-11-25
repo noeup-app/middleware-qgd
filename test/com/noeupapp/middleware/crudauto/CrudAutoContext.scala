@@ -13,14 +13,14 @@ import com.noeupapp.middleware.entities.user.User
 import net.codingwell.scalaguice.ScalaModule
 import org.joda.time.DateTime
 import org.specs2.matcher.Scope
-import play.api.Mode
+import play.api.{Logger, Mode}
 import play.api.db.DB
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.inject.bind
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 import play.api.Play.current
-
 import slick.driver._
 import slick.driver.PostgresDriver.api._
 
@@ -122,8 +122,17 @@ trait CrudAutoContext extends Scope {
 
 
 
-  def sameElementsAs[A](s1: Seq[A], s2: Seq[A]) =
-    s1.forall(s2.contains) && s2.forall(s1.contains)
+  def sameElementsAs[A](s1: Seq[A], s2: Seq[A]) = {
+    val res = s1.forall(s2.contains) && s2.forall(s1.contains)
+    if(! res){
+      Logger.error("")
+      Logger.error(s"Expected : $s1")
+      Logger.error("")
+      Logger.error(s"Found : $s2")
+      Logger.error("")
+    }
+    res
+  }
 
 
 }
