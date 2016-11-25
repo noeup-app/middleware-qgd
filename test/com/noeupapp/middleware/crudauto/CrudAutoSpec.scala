@@ -22,7 +22,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "with empty table" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         val Some(result) =
           route(FakeRequest("GET", "/tests"))
@@ -35,7 +35,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "with not empty table" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -56,7 +56,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "with not empty table and omit 1 field" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -87,7 +87,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "with not empty table and omit several fields" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -118,7 +118,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "with not empty table and require 1 field" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -149,7 +149,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "with not empty table and require several fields" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -179,11 +179,25 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     }
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   "crud auto find by id" should {
     "return not found" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         val Some(result) =
           route(FakeRequest(GET, "/tests/" + UUID.randomUUID()))
@@ -195,7 +209,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "return 200 if model designed by id is found" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -212,7 +226,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "return 200 if model designed by id is found and omit 1 field" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -234,7 +248,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "return 200 if model designed by id is found and omit several fields" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -255,7 +269,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "return 200 if model designed by id is found and include 1 field" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -275,7 +289,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "return 200 if model designed by id is found and include several fields" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -294,11 +308,25 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
       }
     }
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   "crud auto delete" should {
     "return not found" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         val Some(result) =
           route(FakeRequest(DELETE, "/tests/" + UUID.randomUUID()))
@@ -310,7 +338,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "return 200 if model designed by id is found" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -332,11 +360,26 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     }
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   "crud auto add" should {
     "work if input is correct" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -363,7 +406,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "fail if input is not correct" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
 
         val Some(result) =
@@ -378,11 +421,26 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     }
   }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   "crud auto update" should {
     "work if input is correct" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -415,7 +473,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "fail if input is not correct 1" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -437,7 +495,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "fail if input is not correct 2" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 
@@ -461,7 +519,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     "fail if input is not empty" in new CrudAutoContext {
       new WithApplication(application) {
 
-        await(createTable)
+        await(createTables)
 
         await(populate)
 

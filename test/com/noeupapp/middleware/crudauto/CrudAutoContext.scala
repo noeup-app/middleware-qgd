@@ -114,7 +114,12 @@ trait CrudAutoContext extends Scope {
 
   val pk = UUID.randomUUID()
 
-  def createTable = Test.createTable(dao.db)
+  def createTables = {
+    for {
+      _ <- Thing.createTable(dao.db)
+      _ <- Test.createTable(dao.db)
+    } yield ()
+  }
   def populate = Test.populate(dao.db, pk)
   def all = Test.all(dao.db, pk)
   def dropTable = Test.dropTable(dao.db)
