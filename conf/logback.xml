@@ -17,6 +17,7 @@
   <logger name="com.jolbox.bonecp" level="WARN" />
 
   <root level="ERROR">
+<!--<logger name="slick.jdbc.JdbcBackend.statement"  level="DEBUG" />-->
     <appender-ref ref="STDOUT" />
   </root>
 

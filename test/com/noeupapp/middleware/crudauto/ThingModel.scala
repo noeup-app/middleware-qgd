@@ -51,6 +51,9 @@ object Thing extends GlobalReadsWrites {
   val tq = TableQuery[ThingTableDef]
 
 
+//  tq.baseTableRow.testFk.
+
+
   def createTable(db: JdbcBackend#DatabaseDef): Future[Unit] = {
     db.run(DBIO.seq(tq.delete))
       .recover{
@@ -79,6 +82,6 @@ class ThingTableDef(tag: Tag) extends Table[Thing](tag, "thing") with PKTable[UU
 
   def pk = primaryKey("thing_pk", id)
 
-  def testFk = foreignKey("test_fkey", test, Test.tq)(_.id)
+  def testFk = foreignKey("tests_fkey", test, Test.tq)(_.id)
 
 }

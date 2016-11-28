@@ -46,6 +46,36 @@ class Cruds @Inject()(crudService: CrudService,
       case \/-(json) =>  Ok(Json.toJson(json))
     }
   }
+
+  def deepFetchAll(model1: String, id: UUID, model2: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+
+    val omits    = omit.map(_.split(",").toList).toList.flatten
+    val includes = include.map(_.split(",").toList).toList.flatten
+
+    crudService.deepFetchAllFlow(model1, id, model2, omits, includes) map {
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson(s"Error while fetching /$model1/$id/$model2"))
+      case \/-(None) => NotFound(Json.toJson(s"`/$model1/$id` is not found"))
+      case \/-(json) => Ok(Json.toJson(json))
+    }
+  }
+
+  def deepFetchById(model1: String, id1: UUID, model2: String, id2: UUID, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+
+    val omits    = omit.map(_.split(",").toList).toList.flatten
+    val includes = include.map(_.split(",").toList).toList.flatten
+
+    crudService.deepFetchByIdFlow(model1, id1, model2, id2, omits, includes) map {
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson(s"Error while fetching /$model1/$id1/$model2/$id2"))
+      case \/-(None) => NotFound(Json.toJson(s"`/model1/$id1/$model2/$id2` is not found"))
+      case \/-(json) => Ok(Json.toJson(json))
+    }
+  }
+
+
 //
 //  def fetchName(model: String) = UserAwareAction.async { implicit request =>
 //

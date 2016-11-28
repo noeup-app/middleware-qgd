@@ -73,6 +73,87 @@ trait AbstractCrudService {
       } yield filteredJson
     }.run
 
+
+  def deepFetchAllFlow(model1: String, id: UUID, model2: String, omits: List[String], includes: List[String]): Future[Expect[Option[JsValue]]] =
+    {
+      for {
+
+        entity1Found <- EitherT(this.findByIdFlow(model1, id, Nil, Nil))
+
+        _ <- EitherT(entity1Found |> (s"`/$model1/$id` is not found", NotFound))
+
+        configuration <- EitherT(getConfiguration(model2))
+        entityClass = configuration.entityClass
+        tableDefClass = configuration.tableDef
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        input = Class.forName(configuration.entityClass.getName + "In")
+        out = Class.forName(configuration.entityClass.getName + "Out")
+
+        tableQuery2 = TableQuery(tag =>
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[Table[Entity] with PKTable[Object]])
+
+
+
+        fkOpt = tableQuery2.baseTableRow.foreignKeys.find(_.name == s"${model1}_fkey")
+
+        fk <- EitherT(fkOpt |> s"Foreign key (`${model1}_fkey`) is not found")
+
+        classInfo   <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
+        found <- EitherT(
+          crudAutoService.deepFindAll(tableQuery2, id, fk.targetTable.tableName)
+          (classInfo.jsonFormat.asInstanceOf[Format[Entity]])
+        )
+        newJson <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
+        filteredJson <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
+      } yield filteredJson
+    }.run map {
+      case -\/(error) if error.errorType == NotFound => \/-(None)
+      case \/-(res) => \/-(Some(res))
+    }
+
+  def deepFetchByIdFlow(model1: String, id1: UUID, model2: String, id2: UUID, omits: List[String], includes: List[String]): Future[Expect[Option[JsValue]]] =
+    {
+      for {
+
+        entity1Found <- EitherT(this.findByIdFlow(model1, id1, Nil, Nil))
+
+        _ <- EitherT(entity1Found |> (s"`/$model1/$id1` is not found", NotFound))
+
+        configuration <- EitherT(getConfiguration(model2))
+        entityClass = configuration.entityClass
+        tableDefClass = configuration.tableDef
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        input = Class.forName(configuration.entityClass.getName + "In")
+        out = Class.forName(configuration.entityClass.getName + "Out")
+
+        tableQuery2 = TableQuery(tag =>
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[Table[Entity] with PKTable[Object]])
+
+
+
+        fkOpt = tableQuery2.baseTableRow.foreignKeys.find(_.name == s"${model1}_fkey")
+
+        fk <- EitherT(fkOpt |> s"Foreign key (`${model1}_fkey`) is not found")
+
+        classInfo   <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
+        found <- EitherT(
+          crudAutoService.deepFindById(tableQuery2, id1, fk.targetTable.tableName, id2)
+          (classInfo.jsonFormat.asInstanceOf[Format[Entity]])
+        )
+        newJson      <- EitherT(crudAutoService.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
+        filteredJson <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
+      } yield filteredJson
+    }.run map {
+      case -\/(error) if error.errorType == NotFound => \/-(None)
+      case \/-(res) => \/-(res)
+    }
+
     def addFlow(model: String, json: JsObject): Future[Expect[JsValue]] = {
       for {
         configuration <- EitherT(getConfiguration(model))

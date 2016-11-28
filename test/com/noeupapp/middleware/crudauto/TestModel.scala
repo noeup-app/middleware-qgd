@@ -74,8 +74,8 @@ object Test extends GlobalReadsWrites {
     )
     db.run(
       Thing.tq ++= Seq(
-        Thing(id1, "thing 1", id1),
-        Thing(id2, "thing 2", id1)
+        Thing(UUID.randomUUID(), "thing 1", id1),
+        Thing(UUID.randomUUID(), "thing 2", id1)
       )
     )
   }

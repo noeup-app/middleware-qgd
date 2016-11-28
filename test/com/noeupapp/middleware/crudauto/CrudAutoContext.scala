@@ -121,7 +121,8 @@ trait CrudAutoContext extends Scope {
     } yield ()
   }
   def populate = Test.populate(dao.db, pk)
-  def all = Test.all(dao.db, pk)
+  def allTests = Test.all(dao.db, pk)
+  def allThings = Thing.all(dao.db, pk)
   def dropTable = Test.dropTable(dao.db)
 
 
@@ -150,6 +151,7 @@ class Crud extends CrudClassName {
   override def configure(modelName: String): Option[CrudConfiguration[_,_,_]] =
     modelName match {
       case "tests" => configuration[Test, UUID, TestTableDef]
+      case "things" => configuration[Thing, UUID, ThingTableDef]
       case _ => None
     }
 }

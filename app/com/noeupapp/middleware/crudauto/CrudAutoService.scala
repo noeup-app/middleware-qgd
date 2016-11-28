@@ -13,19 +13,21 @@ import com.noeupapp.middleware.utils.TypeCustom._
 import org.joda.time.DateTime
 import play.api.libs.json._
 import com.noeupapp.middleware.utils.FutureFunctor._
+import com.noeupapp.middleware.utils.slick.ResultMap
 import org.joda.time.format.DateTimeFormat
 import play.api.Logger
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
-import scalaz._, Scalaz._
-
+import scalaz._
+import Scalaz._
 import slick.driver._
 import slick.driver.PostgresDriver.api._
-import slick.lifted.{TableQuery, Tag}
+import slick.lifted.{ForeignKey, TableQuery, Tag}
 import play.api.mvc.Results._
-
+import slick.profile.SqlStreamingAction
+import slick.jdbc.{GetResult, PositionedResult}
 
 class CrudAutoService @Inject()(dao: Dao)() {
 
@@ -37,6 +39,77 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
   def findAll[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]]): Future[Expect[Seq[E]]] =
     dao.runForAll(tableQuery)
+
+
+
+
+  def deepFindAll[E <: Entity, F <: Entity, PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable[PKF]],
+                                                       id: PKE,
+                                                       joinedTableName: String
+                                                      )(implicit formatF: Format[F]): Future[Expect[Seq[F]]] = {
+
+
+    val tableName = tableQuery.baseTableRow.tableName
+
+    val q: SqlStreamingAction[Vector[Map[String, Any]], Map[String, Any], Effect] =
+      sql"""SELECT t.*
+            FROM #$tableName t
+            INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id.toString}::UUID"""
+      .as(ResultMap)
+
+
+
+    dao.runTransformer[Vector[Map[String, Any]], List[F], Map[String, Any], Effect](q) { row =>
+      row.foldLeft[JsResult[List[F]]](JsSuccess(List.empty[F])){
+        case (JsSuccess(els, _), e) =>
+
+          val toSeq = e.map{
+            case (k, v) => (k, Json.toJson(v.toString))
+          }.toSeq
+
+          JsObject(toSeq).validate[F] match {
+            case JsSuccess(el, path) => JsSuccess(el :: els, path)
+            case error @ JsError(_)  => error
+          }
+        case (error @ JsError(_), _) => error
+      }
+    }
+  }
+
+
+  def deepFindById[E <: Entity, F <: Entity, PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable[PKF]],
+                                                       id1: PKE,
+                                                       joinedTableName: String,
+                                                       id2: PKE
+                                                      )(implicit formatF: Format[F]): Future[Expect[Option[F]]] = {
+
+
+    val tableName = tableQuery.baseTableRow.tableName
+
+    val q =
+      sql"""SELECT t.*
+            FROM #$tableName t
+            INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id1.toString}::UUID
+            WHERE t.id = ${id2.toString}::UUID"""
+      .as(ResultMap)
+
+
+    dao.runTransformer(q) { row =>
+      row.foldLeft[JsResult[List[F]]](JsSuccess(List.empty[F])){
+        case (JsSuccess(els, _), e) =>
+
+          val toSeq = e.map{
+            case (k, v) => (k, Json.toJson(v.toString))
+          }.toSeq
+
+          JsObject(toSeq).validate[F] match {
+            case JsSuccess(el, path) => JsSuccess(el :: els, path)
+            case error @ JsError(_)  => error
+          }
+        case (error @ JsError(_), _) => error
+      }
+    }
+  }.map(_.map(_.headOption))
 
 
   def find[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]], id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] =
