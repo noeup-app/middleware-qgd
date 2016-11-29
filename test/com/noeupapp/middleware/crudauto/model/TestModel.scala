@@ -18,10 +18,11 @@ import scala.language.implicitConversions
 case class Test( id: UUID,
                  name: String,
                  typeL: String,
-                 priority: Int
+                 priority: Int,
+                 deleted: Boolean
                ) extends Entity {
   def this(l: TestIn) =
-    this(UUID.randomUUID(), l.name, l.typeL, l.priority)
+    this(UUID.randomUUID(), l.name, l.typeL, l.priority, deleted = false)
 }
 case class TestOut( id: UUID,
                     name: String,
@@ -67,8 +68,8 @@ object Test extends GlobalReadsWrites {
     val id2 = UUID.randomUUID()
     db.run(
       tq ++= Seq(
-        Test(id1, "my test 1", "super type", 5),
-        Test(id2, "my test 2", "type", 1234)
+        Test(id1, "my test 1", "super type", 5, deleted = false),
+        Test(id2, "my test 2", "type", 1234, deleted = false)
       )
     )
     db.run(
@@ -92,7 +93,8 @@ class TestTableDef(tag: Tag) extends Table[Test](tag, "test") with PKTable[UUID]
   def name           = column[String]("name")
   def typeL          = column[String]("type")
   def priority       = column[Int]("priority")
-  override def *     = (id, name, typeL, priority) <> ((Test.apply _).tupled, Test.unapply)
+  def deleted        = column[Boolean]("deleted")
+  override def *     = (id, name, typeL, priority, deleted) <> ((Test.apply _).tupled, Test.unapply)
   // A reified foreign key relation that can be navigated to create a join
 
   def pk = primaryKey("test_pk", id)

@@ -6,7 +6,7 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import anorm._
-import com.noeupapp.middleware.crudauto.model.{Test, TestIn}
+import com.noeupapp.middleware.crudauto.model.{Test, TestIn, TestOut}
 import com.noeupapp.testhelpers.Context
 import org.specs2.mock.Mockito
 import play.api.Play.current
@@ -61,7 +61,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         await(populate)
 
-        val testsBefore: Seq[Test] = await(allTests)
+        val testsBefore: Seq[TestOut] = await(allTests).map(toTestOut)
 
         val Some(result) =
           route(FakeRequest(GET, "/tests?omit=id"))
@@ -92,7 +92,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         await(populate)
 
-        val testsBefore: Seq[Test] = await(allTests)
+        val testsBefore: Seq[TestOut] = await(allTests).map(toTestOut)
 
         val Some(result) =
           route(FakeRequest(GET, "/tests?omit=id,name"))
@@ -123,7 +123,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         await(populate)
 
-        val testsBefore: Seq[Test] = await(allTests)
+        val testsBefore: Seq[TestOut] = await(allTests).map(toTestOut)
 
         val Some(result) =
           route(FakeRequest(GET, "/tests?include=name"))
@@ -154,7 +154,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         await(populate)
 
-        val testsBefore: Seq[Test] = await(allTests)
+        val testsBefore: Seq[TestOut] = await(allTests).map(toTestOut)
 
         val Some(result) =
           route(FakeRequest(GET, "/tests?include=name,typeL"))
@@ -417,7 +417,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         await(createTables)
         await(populate)
 
-        val tests = await(allTests)
+        val tests = await(allTests).map(toTestOut)
         val things = await(allThings)
 
         val test = tests.head
@@ -437,7 +437,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         await(createTables)
         await(populate)
 
-        val tests = await(allTests)
+        val tests = await(allTests).map(toTestOut)
         val things = await(allThings)
 
         val test = tests.head
@@ -457,7 +457,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         await(createTables)
         await(populate)
 
-        val tests = await(allTests)
+        val tests = await(allTests).map(toTestOut)
         val things = await(allThings)
 
         val test = tests.head
@@ -477,7 +477,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         await(createTables)
         await(populate)
 
-        val tests = await(allTests)
+        val tests = await(allTests).map(toTestOut)
         val things = await(allThings)
 
         val test = tests.head
@@ -497,7 +497,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         await(createTables)
         await(populate)
 
-        val tests = await(allTests)
+        val tests = await(allTests).map(toTestOut)
         val things = await(allThings)
 
         val test = tests.head
@@ -546,13 +546,13 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         await(populate)
 
-        val testsBefore: Seq[Test] = await(allTests)
+        val testsBefore: Seq[TestOut] = await(allTests).map(toTestOut)
 
         val Some(result) =
           route(FakeRequest(GET, s"/tests/$pk"))
 
         status(result) must be equalTo OK
-        contentAsJson(result).as[Test] must be equalTo testsBefore.find(_.id == pk).get
+        contentAsJson(result).as[TestOut] must be equalTo testsBefore.find(_.id == pk).get
 
       }
     }
@@ -716,7 +716,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         await(populate)
 
-        val testsBefore: Seq[Test] = await(allTests)
+        val testsBefore: Seq[TestOut] = await(allTests).map(toTestOut)
 
         val toAdd = TestIn("my super name", "my type", 12345)
 
@@ -727,10 +727,10 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         status(result) must be equalTo OK
 
-        val testsAfter: Seq[Test] = await(allTests)
+        val testsAfter: Seq[TestOut] = await(allTests).map(toTestOut)
 
         sameElementsAs(
-          contentAsJson(result).as[Test] :: testsBefore.toList,
+          contentAsJson(result).as[TestOut] :: testsBefore.toList,
           testsAfter
         ) must beTrue
 
@@ -777,7 +777,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         await(populate)
 
-        val testsBefore: Seq[Test] = await(allTests)
+        val testsBefore: Seq[TestOut] = await(allTests).map(toTestOut)
 
         val toUpdate = testsBefore.head
         val updated = toUpdate.copy(name = "my super new name", typeL = "my wonderful new type")
@@ -792,12 +792,12 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         status(result) must be equalTo OK
 
-        val testsAfter: Seq[Test] = await(allTests)
+        val testsAfter: Seq[TestOut] = await(allTests).map(toTestOut)
 
-        contentAsJson(result).as[Test] must be equalTo updated
+        contentAsJson(result).as[TestOut] must be equalTo updated
 
         sameElementsAs(
-          contentAsJson(result).as[Test] :: testsBefore.toList.filterNot(_.id == updated.id),
+          contentAsJson(result).as[TestOut] :: testsBefore.toList.filterNot(_.id == updated.id),
           testsAfter
         ) must beTrue
 
