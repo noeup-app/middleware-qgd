@@ -14,6 +14,7 @@ import play.api.db.DB
 import play.api.libs.json.{JsArray, JsObject, Json}
 import play.api.test.{FakeRequest, PlaySpecification, WithApplication}
 import com.noeupapp.middleware.crudauto.model.Test._
+import com.noeupapp.middleware.crudauto.model.Thing._
 
 class CrudAutoSpec extends PlaySpecification with Mockito {
 
@@ -48,6 +49,30 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         contentAsJson(result) match {
           case JsArray(elems) => elems must haveSize(2)
+          case json =>
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
+
+      }
+    }
+    "with not empty table and deleted elements" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate({
+          case h :: tail => h.copy(deleted = true) :: tail
+        }))
+
+
+        val Some(result) =
+          route(FakeRequest(GET, "/tests"))
+
+        status(result) must be equalTo OK
+
+
+        contentAsJson(result) match {
+          case JsArray(elems) => elems must haveSize(1)
           case json =>
             (false must beTrue).setMessage(s"Unexpected json : $json")
         }
@@ -206,6 +231,25 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
           route(FakeRequest(GET, s"/tests/${UUID.randomUUID()}/things"))
 
         status(result) must be equalTo NOT_FOUND
+      }
+
+    }
+    "return not found of entity designed by id is deleted" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+        await(populate(_.map{
+          case t if t.id == pk => t.copy(deleted = true)
+          case t => t
+        }))
+
+        val expected = await(allThings)
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/$pk/things"))
+
+        status(result) must be equalTo NOT_FOUND
+
       }
 
     }
@@ -393,6 +437,25 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
       }
 
     }
+    "return not found if first entity is deleted" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+        await(populate({
+          case h :: tail => h.copy(deleted = true) :: tail
+        }))
+
+        val tests = await(allTests)
+
+        val test = tests.find(_.deleted == true).get
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/${test.id}/things/${UUID.randomUUID()}"))
+
+        status(result) must be equalTo NOT_FOUND
+      }
+
+    }
     "return a 404 if second entity does not exists" in new CrudAutoContext {
       new WithApplication(application) {
 
@@ -539,6 +602,26 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
       }
     }
+    "return not found if model is deleted" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate({
+          case h :: tail => h.copy(deleted = true) :: tail
+        }))
+
+        val testsBefore = await(allTests)
+
+        val test = testsBefore.find(_.deleted == true).get
+
+        val Some(result) =
+          route(FakeRequest(GET, "/tests/" + test.id))
+
+        status(result) must be equalTo NOT_FOUND
+
+      }
+    }
     "return 200 if model designed by id is found" in new CrudAutoContext {
       new WithApplication(application) {
 
@@ -668,12 +751,73 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
       }
     }
-    "return 200 if model designed by id is found" in new CrudAutoContext {
+    "return 200 if entities depend on what we want to purge delete" in new CrudAutoContext {
       new WithApplication(application) {
 
         await(createTables)
 
         await(populate)
+
+        val testsBefore = await(allTests)
+        val thingsBefore = await(allThings)
+
+        val test = testsBefore.find(t => thingsBefore.map(_.test).contains(t.id)).get
+
+        val Some(result) =
+          route(FakeRequest(DELETE, "/tests/" + test.id))
+
+        status(result) must be equalTo OK
+
+      }
+    }
+    "return 500 if entities depend on what we want to delete" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate)
+
+        val testsBefore = await(allTests)
+        val thingsBefore = await(allThings)
+
+        val test = testsBefore.find(t => thingsBefore.map(_.test).contains(t.id)).get
+
+        val Some(result) =
+          route(FakeRequest(DELETE, s"/tests/${test.id}?force_delete=true"))
+
+        status(result) must be equalTo INTERNAL_SERVER_ERROR
+
+      }
+    }
+
+    "return not found if model is deleted" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate({
+          case h :: tail => h.copy(deleted = true) :: tail
+        },{ things =>
+          Seq.empty
+        }))
+
+        val testsBefore: Seq[Test] = await(allTests)
+
+        val test = testsBefore.find(_.deleted == true).get
+
+        val Some(result) =
+          route(FakeRequest(DELETE, "/tests/" + test.id))
+
+        status(result) must be equalTo NOT_FOUND
+
+      }
+    }
+    "return 200 if model designed by id is found and contains field deleted" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate(identity[Seq[Test]], _ => Seq.empty))
 
         val testsBefore: Seq[Test] = await(allTests)
 
@@ -687,7 +831,53 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         val testsAfter: Seq[Test] = await(allTests)
 
+        testsAfter.find(_.id == toDelete.id).get.deleted must beTrue
+
+      }
+    }
+    "return 200 if model designed by id is found, contains field deleted and ask to force delete" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate(identity[Seq[Test]], _ => Seq.empty))
+
+        val testsBefore: Seq[TestOut] = await(allTests).map(toTestOut)
+
+        val toDelete = testsBefore.head
+
+        val Some(result) =
+          route(FakeRequest(DELETE, s"/tests/${toDelete.id}?force_delete=true"))
+
+
+        status(result) must be equalTo OK
+
+        val testsAfter: Seq[TestOut] = await(allTests).map(toTestOut)
+
         testsBefore.filterNot(_.id == toDelete.id) must be equalTo testsAfter
+
+      }
+    }
+    "return 200 if model designed by id is found, does not contains field deleted and ask" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate)
+
+        val thingsBefore = await(allThings).map(toThingOut)
+
+        val toDelete = thingsBefore.head
+
+        val Some(result) =
+          route(FakeRequest(DELETE, s"/things/${toDelete.id}"))
+
+
+        status(result) must be equalTo OK
+
+        val thingsAfter = await(allThings).map(toThingOut)
+
+        thingsBefore.filterNot(_.id == toDelete.id) must be equalTo thingsAfter
 
       }
     }
@@ -770,6 +960,40 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
 
   "crud auto update" should {
+    "fail if entity does not exists" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        val Some(result) =
+          route(FakeRequest(PUT, "/tests/" + UUID.randomUUID())
+            .withBody(Json.obj()))
+
+        status(result) must be equalTo NOT_FOUND
+
+      }
+    }
+    "fail if entity is deleted" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate({
+          case h :: tail => h.copy(deleted = true) :: tail
+        }))
+
+        val testsBefore: Seq[Test] = await(allTests)
+
+        val test = testsBefore.find(_.deleted == true).get
+
+        val Some(result) =
+          route(FakeRequest(PUT, "/tests/" + test.id)
+            .withBody(Json.obj()))
+
+        status(result) must be equalTo NOT_FOUND
+
+      }
+    }
     "work if input is correct" in new CrudAutoContext {
       new WithApplication(application) {
 

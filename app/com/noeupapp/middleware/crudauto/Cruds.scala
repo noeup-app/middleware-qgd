@@ -109,13 +109,14 @@ class Cruds @Inject()(crudService: CrudService,
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while updating " + model))
-      case \/-(js) =>  Ok(Json.toJson(js))
+      case \/-(Some(js)) =>  Ok(Json.toJson(js))
+      case \/-(None)     =>  NotFound(Json.toJson(s"/$model/$id is not found"))
     }
   }
 
-  def delete(model: String, id: UUID, purge:Option[Boolean]) = UserAwareAction.async {
+  def delete(model: String, id: UUID, purge:Option[Boolean], force_delete: Option[Boolean] = None) = UserAwareAction.async {
 
-    crudService.deleteFlow(model, id, purge) map {
+    crudService.deleteFlow(model, id, purge, force_delete.getOrElse(false)) map {
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while deleting "+model))

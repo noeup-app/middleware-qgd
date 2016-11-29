@@ -135,8 +135,6 @@ trait AbstractCrudService {
             .newInstance(tag)
             .asInstanceOf[Table[Entity] with PKTable[Object]])
 
-
-
         fkOpt = tableQuery2.baseTableRow.foreignKeys.find(_.name == s"${model1}_fkey")
 
         fk <- EitherT(fkOpt |> s"Foreign key (`${model1}_fkey`) is not found")
@@ -179,8 +177,13 @@ trait AbstractCrudService {
       } yield newJson
     }.run
 
-    def updateFlow(model: String, json: JsObject, id: UUID): Future[Expect[JsValue]] = {
+    def updateFlow(model: String, json: JsObject, id: UUID): Future[Expect[Option[JsValue]]] = {
       for {
+
+        entity1Found <- EitherT(this.findByIdFlow(model, id, Nil, Nil))
+
+        _ <- EitherT(entity1Found |> (s"`/$model/$id` is not found", NotFound))
+
         configuration <- EitherT(getConfiguration(model))
         entityClass = configuration.entityClass
         tableDefClass = configuration.tableDef
@@ -207,9 +210,13 @@ trait AbstractCrudService {
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]]))
         newJson     <- EitherT(crudAutoService.toJsValue(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
       } yield newJson
-    }.run
+    }.run map {
+      case -\/(error) if error.errorType == NotFound => \/-(None)
+      case error @ -\/(_) => error
+      case \/-(res) => \/-(Some(res))
+    }
 
-    def deleteFlow[T](model:String, id: T, purge:Option[Boolean]): Future[Expect[Option[T]]] = {
+    def deleteFlow[T](model:String, id: T, purge:Option[Boolean], force_delete: Boolean): Future[Expect[Option[T]]] = {
       for {
         configuration <- EitherT(getConfiguration(model))
         tableDefClass = configuration.tableDef
@@ -226,12 +233,13 @@ trait AbstractCrudService {
         _ <- EitherT(foundOpt |> ("couldn't find this entity", NotFound))
 
         _ <- EitherT(
-          crudAutoService.delete(tableQuery, id)
+          crudAutoService.delete(tableQuery, id, force_delete)
           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]])
         )
       } yield Some(id)
     }.run map {
       case -\/(error) if error.errorType == NotFound => \/-(None)
+      case error @ -\/(_) => error
       case res => res
     }
 

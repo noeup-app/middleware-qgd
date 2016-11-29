@@ -48,7 +48,7 @@ trait CrudAutoContext extends Scope {
   /**
     * An identity.
     */
-  val identity = Account(
+  val id = Account(
     loginInfo = loginInfo,
     user = User(
       id = UUID.randomUUID(),
@@ -67,7 +67,7 @@ trait CrudAutoContext extends Scope {
     * A Silhouette fake environment.
     */
   implicit val env: Environment[Account, BearerTokenAuthenticator] = {
-    new FakeEnvironment[Account, BearerTokenAuthenticator](Seq(loginInfo -> identity))
+    new FakeEnvironment[Account, BearerTokenAuthenticator](Seq(loginInfo -> id))
   }
 
   val db_driver: String = "org.postgresql.Driver"
@@ -121,7 +121,10 @@ trait CrudAutoContext extends Scope {
       _ <- Test.createTable(dao.db)
     } yield ()
   }
-  def populate = Test.populate(dao.db, pk)
+  def populate = Test.populate(dao.db, pk, identity[Seq[Test]], identity[Seq[Thing]])
+  def populate(f: (Seq[Test]) => Seq[Test]) = Test.populate(dao.db, pk, f, identity[Seq[Thing]])
+  def populate(f: (Seq[Test]) => Seq[Test], g: (Seq[Thing]) => Seq[Thing]) =
+    Test.populate(dao.db, pk, f, g)
   def allTests = Test.all(dao.db, pk)
   def allThings = Thing.all(dao.db, pk)
   def dropTable = Test.dropTable(dao.db)

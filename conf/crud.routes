@@ -11,4 +11,4 @@ GET    /:model1/:id1/:model2/:id2                                               
 
 POST   /:model                                                                              com.noeupapp.middleware.crudauto.Cruds.add(model: String)
 PUT    /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.update(model: String, id: java.util.UUID)
-DELETE /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.delete(model: String, id: java.util.UUID, purge:Option[Boolean])
+DELETE /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.delete(model: String, id: java.util.UUID, purge:Option[Boolean], force_delete: Option[Boolean])

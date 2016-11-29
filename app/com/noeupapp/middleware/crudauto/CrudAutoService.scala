@@ -20,8 +20,9 @@ import play.api.Logger
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.higherKinds
-import scalaz._
-import Scalaz._
+import scalaz.{-\/, \/-}
+//import scalaz._
+//import Scalaz._
 import slick.driver._
 import slick.driver.PostgresDriver.api._
 import slick.lifted.{ForeignKey, TableQuery, Tag}
@@ -37,9 +38,12 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
 
 
-  def findAll[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]]): Future[Expect[Seq[E]]] =
-    dao.runForAll(tableQuery)
-
+  def findAll[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]]): Future[Expect[Seq[E]]] = {
+    if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted"))
+      dao.runForAll(tableQuery.filter(_.column[Boolean]("deleted") === false))
+    else
+      dao.runForAll(tableQuery)
+  }
 
 
 
@@ -52,10 +56,20 @@ class CrudAutoService @Inject()(dao: Dao)() {
     val tableName = tableQuery.baseTableRow.tableName
 
     val q: SqlStreamingAction[Vector[Map[String, Any]], Map[String, Any], Effect] =
-      sql"""SELECT t.*
+      if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted")) {
+        sql"""SELECT t.*
+            FROM #$tableName t
+            INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id.toString}::UUID
+            WHERE t.deleted = FALSE"""
+          .as(ResultMap)
+      }else{
+        sql"""SELECT t.*
             FROM #$tableName t
             INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id.toString}::UUID"""
-      .as(ResultMap)
+          .as(ResultMap)
+      }
+
+
 
 
 
@@ -83,15 +97,24 @@ class CrudAutoService @Inject()(dao: Dao)() {
                                                        id2: PKE
                                                       )(implicit formatF: Format[F]): Future[Expect[Option[F]]] = {
 
-
     val tableName = tableQuery.baseTableRow.tableName
 
-    val q =
-      sql"""SELECT t.*
+
+    val q: SqlStreamingAction[Vector[Map[String, Any]], Map[String, Any], Effect] =
+      if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted")) {
+        sql"""SELECT t.*
+            FROM #$tableName t
+            INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id1.toString}::UUID
+            WHERE t.deleted = FALSE AND t.id = ${id2.toString}::UUID"""
+          .as(ResultMap)
+      }else{
+        sql"""SELECT t.*
             FROM #$tableName t
             INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id1.toString}::UUID
             WHERE t.id = ${id2.toString}::UUID"""
-      .as(ResultMap)
+          .as(ResultMap)
+      }
+
 
 
     dao.runTransformer(q) { row =>
@@ -112,8 +135,14 @@ class CrudAutoService @Inject()(dao: Dao)() {
   }.map(_.map(_.headOption))
 
 
-  def find[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]], id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] =
-    dao.runForHeadOption(tableQuery.filter(_.id === id))
+  def find[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]], id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] = {
+    if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted"))
+//      dao.runForAll(tableQuery.filter(_.column[Boolean]("deleted") === false))
+      dao.runForHeadOption(tableQuery.filter(row =>
+        row.id === id && row.column[Boolean]("deleted") === false))
+    else
+      dao.runForHeadOption(tableQuery.filter(_.id === id))
+  }
 
 
   def add[E <: Entity, PK, V <: Table[E]](tableQuery: TableQuery[V],
@@ -134,9 +163,23 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
 
   def delete[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]],
-                              id: PK)
-                             (implicit bct: BaseColumnType[PK]): Future[Expect[PK]] =
-    dao.run(tableQuery.filter(_.id === id).delete).map(_.map(_ => id))
+                              id: PK,
+                              force_delete: Boolean)
+                             (implicit bct: BaseColumnType[PK]): Future[Expect[PK]] = {
+    if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted") && ! force_delete) {
+      dao.run{
+        tableQuery.filter(_.id === id)
+          .map(_.column[Boolean]("deleted"))
+            .update(true)
+      }.map(_.map(_ => id))
+    }else{
+      dao.run{
+        tableQuery.filter(_.id === id).delete
+      }.map(_.map(_ => id))
+    }
+  }.recover{
+    case e: Exception => -\/(FailError(e))
+  }
 
 
 
@@ -184,6 +227,9 @@ class CrudAutoService @Inject()(dao: Dao)() {
     val jsFields = json.fields.map{f=> f._1}
     val inputFields = in.getDeclaredFields.map{f=>f.getName}
     val fields = jsFields.intersect(inputFields)
+    if(jsFields.diff(inputFields).nonEmpty)
+      return Future.successful(-\/(FailError("Unexpected field in json input", errorType = BadRequest)))
+
     fields match {
       case Nil => Future.successful(-\/(FailError("Error, these fields do not exist or cannot be updated", errorType = BadRequest)))
       case t => Future.successful(\/-(JsObject(json.fields.filter(f=> t.contains(f._1)))))

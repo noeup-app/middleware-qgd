@@ -63,20 +63,20 @@ object Test extends GlobalReadsWrites {
 
   def dropTable(db: JdbcBackend#DatabaseDef) = db.run(DBIO.seq(tq.schema.drop))
 
-  def populate(db: JdbcBackend#DatabaseDef, id: UUID) = {
+  def populate(db: JdbcBackend#DatabaseDef, id: UUID, f: (Seq[Test]) => Seq[Test], g: (Seq[Thing]) => Seq[Thing]) = {
     val id1 = id
     val id2 = UUID.randomUUID()
     db.run(
-      tq ++= Seq(
+      tq ++= f(Seq(
         Test(id1, "my test 1", "super type", 5, deleted = false),
         Test(id2, "my test 2", "type", 1234, deleted = false)
-      )
+      ))
     )
     db.run(
-      Thing.tq ++= Seq(
+      Thing.tq ++= g(Seq(
         Thing(UUID.randomUUID(), "thing 1", id1),
         Thing(UUID.randomUUID(), "thing 2", id1)
-      )
+      ))
     )
   }
 
