@@ -6,13 +6,14 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import anorm._
+import com.noeupapp.middleware.crudauto.model.{Test, TestIn}
 import com.noeupapp.testhelpers.Context
 import org.specs2.mock.Mockito
 import play.api.Play.current
 import play.api.db.DB
 import play.api.libs.json.{JsArray, JsObject, Json}
 import play.api.test.{FakeRequest, PlaySpecification, WithApplication}
-import com.noeupapp.middleware.crudauto.Test._
+import com.noeupapp.middleware.crudauto.model.Test._
 
 class CrudAutoSpec extends PlaySpecification with Mockito {
 
@@ -25,7 +26,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         await(createTables)
 
         val Some(result) =
-          route(FakeRequest("GET", "/tests"))
+          route(FakeRequest(GET, "/tests"))
 
         status(result) must be equalTo OK
         contentAsJson(result) must be equalTo Json.arr()
@@ -40,7 +41,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         await(populate)
 
         val Some(result) =
-          route(FakeRequest("GET", "/tests"))
+          route(FakeRequest(GET, "/tests"))
 
         status(result) must be equalTo OK
 
@@ -63,7 +64,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         val testsBefore: Seq[Test] = await(allTests)
 
         val Some(result) =
-          route(FakeRequest("GET", "/tests?omit=id"))
+          route(FakeRequest(GET, "/tests?omit=id"))
 
         status(result) must be equalTo OK
 
@@ -94,7 +95,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         val testsBefore: Seq[Test] = await(allTests)
 
         val Some(result) =
-          route(FakeRequest("GET", "/tests?omit=id,name"))
+          route(FakeRequest(GET, "/tests?omit=id,name"))
 
         status(result) must be equalTo OK
 
@@ -125,7 +126,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         val testsBefore: Seq[Test] = await(allTests)
 
         val Some(result) =
-          route(FakeRequest("GET", "/tests?include=name"))
+          route(FakeRequest(GET, "/tests?include=name"))
 
         status(result) must be equalTo OK
 
@@ -156,7 +157,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
         val testsBefore: Seq[Test] = await(allTests)
 
         val Some(result) =
-          route(FakeRequest("GET", "/tests?include=name,typeL"))
+          route(FakeRequest(GET, "/tests?include=name,typeL"))
 
         status(result) must be equalTo OK
 

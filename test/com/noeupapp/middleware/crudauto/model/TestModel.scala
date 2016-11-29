@@ -1,17 +1,16 @@
-package com.noeupapp.middleware.crudauto
+package com.noeupapp.middleware.crudauto.model
 
 import java.util.UUID
 
-import anorm.SqlParser.get
-import anorm._
+import com.noeupapp.middleware.crudauto.{Entity, PKTable}
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 import play.api.libs.json.Json
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.JdbcBackend
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.implicitConversions
-import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
   * Created by damien on 24/11/2016.
