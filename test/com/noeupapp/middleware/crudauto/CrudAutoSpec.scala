@@ -190,7 +190,12 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
 
 
-  "crud auto deep find all " should {
+
+
+
+
+
+  "crud auto deep find all" should {
     "return not found if first entity does not exists" in new CrudAutoContext {
       new WithApplication(application) {
 
@@ -233,6 +238,126 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
       }
 
     }
+    "return a list of things and omit 1 field" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+        await(populate)
+
+        val expected = await(allThings)
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/$pk/things?omit=id"))
+
+        status(result) must be equalTo OK
+
+
+        contentAsJson(result) match {
+          case JsArray(elems) =>
+
+            sameElementsAs(
+              expected.map{ t =>
+                Json.toJson(t).asInstanceOf[JsObject].-("id")
+              },
+              elems
+            ) must beTrue
+          case json =>
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
+
+      }
+
+    }
+    "return a list of things and omit several fields" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+        await(populate)
+
+        val expected = await(allThings)
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/$pk/things?omit=id,name"))
+
+        status(result) must be equalTo OK
+
+
+        contentAsJson(result) match {
+          case JsArray(elems) =>
+
+            sameElementsAs(
+              expected.map{ t =>
+                Json.toJson(t).asInstanceOf[JsObject].-("id").-("name")
+              },
+              elems
+            ) must beTrue
+          case json =>
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
+
+      }
+
+    }
+    "return a list of things and require 1 field" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+        await(populate)
+
+        val expected = await(allThings)
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/$pk/things?include=id"))
+
+        status(result) must be equalTo OK
+
+
+        contentAsJson(result) match {
+          case JsArray(elems) =>
+
+            sameElementsAs(
+              expected.map{ t =>
+                Json.toJson(t).asInstanceOf[JsObject].-("test").-("name")
+              },
+              elems
+            ) must beTrue
+          case json =>
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
+
+      }
+
+    }
+    "return a list of things and require several fields" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+        await(populate)
+
+        val expected = await(allThings)
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/$pk/things?include=id,name"))
+
+        status(result) must be equalTo OK
+
+
+        contentAsJson(result) match {
+          case JsArray(elems) =>
+
+            sameElementsAs(
+              expected.map{ t =>
+                Json.toJson(t).asInstanceOf[JsObject].-("test")
+              },
+              elems
+            ) must beTrue
+          case json =>
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
+
+      }
+
+    }
   }
 
 
@@ -249,7 +374,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
 
 
-  "crud auto deep find by id " should {
+  "crud auto deep find by id" should {
     "return not found if first entity does not exists" in new CrudAutoContext {
       new WithApplication(application) {
 
@@ -302,6 +427,86 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         status(result) must be equalTo OK
         contentAsJson(result) must be equalTo Json.toJson(thing)
+      }
+
+    }
+    "return a thing and omit 1 field" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+        await(populate)
+
+        val tests = await(allTests)
+        val things = await(allThings)
+
+        val test = tests.head
+        val thing = things.head
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/${test.id}/things/${thing.id}?omit=id"))
+
+        status(result) must be equalTo OK
+        contentAsJson(result) must be equalTo Json.toJson(thing).asInstanceOf[JsObject].-("id")
+      }
+
+    }
+    "return a thing and omit several fields" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+        await(populate)
+
+        val tests = await(allTests)
+        val things = await(allThings)
+
+        val test = tests.head
+        val thing = things.head
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/${test.id}/things/${thing.id}?omit=id,test"))
+
+        status(result) must be equalTo OK
+        contentAsJson(result) must be equalTo Json.toJson(thing).asInstanceOf[JsObject].-("id").-("test")
+      }
+
+    }
+    "return a thing and require 1 field" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+        await(populate)
+
+        val tests = await(allTests)
+        val things = await(allThings)
+
+        val test = tests.head
+        val thing = things.head
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/${test.id}/things/${thing.id}?include=id"))
+
+        status(result) must be equalTo OK
+        contentAsJson(result) must be equalTo Json.toJson(thing).asInstanceOf[JsObject].-("test").-("name")
+      }
+
+    }
+    "return a thing and require several fields" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+        await(populate)
+
+        val tests = await(allTests)
+        val things = await(allThings)
+
+        val test = tests.head
+        val thing = things.head
+
+        val Some(result) =
+          route(FakeRequest(GET, s"/tests/${test.id}/things/${thing.id}?include=id,test"))
+
+        status(result) must be equalTo OK
+        contentAsJson(result) must be equalTo Json.toJson(thing).asInstanceOf[JsObject].-("name")
       }
 
     }
