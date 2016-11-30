@@ -1,22 +1,28 @@
 package com.noeupapp.middleware.crudauto
 
+import java.util.UUID
 import javax.inject.Inject
 
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json.{JsError, JsResult, JsSuccess}
 import slick.backend.DatabaseConfig
 import slick.dbio.{Effect, NoStream}
+import slick.driver
 import slick.driver.JdbcProfile
-import slick.jdbc.JdbcBackend
+import slick.jdbc.{JdbcBackend, PositionedParameters, SetParameter}
 import slick.driver._
 import slick.driver.PostgresDriver.api._
-import slick.profile.FixedSqlAction
+import slick.profile.{BasicAction, FixedSqlAction, SqlStreamingAction}
 
 import scala.concurrent.Future
 import scala.language.higherKinds
 import scalaz.{-\/, \/, \/-}
 import scala.concurrent.ExecutionContext.Implicits.global
+import slick.driver._
+import slick.driver.PostgresDriver.api._
+
 
 /**
   * Created by damien on 15/11/2016.
@@ -27,9 +33,21 @@ class Dao @Inject()(dbConfigProvider: DatabaseConfigProvider) {
   lazy val db: JdbcBackend#DatabaseDef           = dbConfig.db
 
 
-  def run[R, S <: NoStream, F <: Effect](query: FixedSqlAction[R, S, F]): Future[Expect[R]] = {
+  def run[R, S <: NoStream, F <: Effect](query: BasicAction[R, S, F]): Future[Expect[R]] = {
     db.run(query)
       .map(\/-(_))
+      .recover{
+        case e: Exception => -\/(FailError(e))
+      }
+  }
+
+  def runTransformer[R, T, S, F <: Effect](query: SqlStreamingAction[R, S, F])(transformer: (R) => JsResult[T]): Future[Expect[T]] = {
+    db.run(query)
+      .map(transformer)
+      .map{
+        case JsSuccess(value, _) => \/-(value)
+        case JsError(errors) => -\/(FailError(s"Unable to validate json, errors : ${errors.mkString(", ")}"))
+      }
       .recover{
         case e: Exception => -\/(FailError(e))
       }

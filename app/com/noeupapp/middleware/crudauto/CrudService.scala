@@ -1,130 +1,3 @@
-/*
-package crud
-
-private val name = typeLit.getType.getTypeName
-
-  private val that = this
-
-  private def abstractCrudService = new AbstractCrudService {
-    override protected def getClassName(model: String): Future[Expect[String]] =
-      Future.successful(\/-(name))
-
-    override val crudAutoService: CrudAutoService = that.crudAutoService
-  }
-
-  def findAll()(implicit uReads: Reads[U]): Future[Expect[List[U]]] =
-    abstractCrudService.findAllFlow("").map{
-      case \/-(elements) =>
-        elements.validate(Reads.list(uReads)) match {
-          case JsSuccess(res, _) => \/-(res)
-          case JsError(errors)   =>
-            Logger.error(s"JsValue.validate error : ${errors.mkString(", ")}")
-            -\/(FailError("Unable to validate JsValue"))
-        }
-      case e@ -\/(_) => e
-    }
-
-  def findById(id: UUID)(implicit uReads: Reads[U]): Future[Expect[Option[U]]] =
-    abstractCrudService.findByIdFlow("", id).map{
-      case \/-(element) =>
-        element.validateOpt(uReads) match {
-          case JsSuccess(res, _) => \/-(res)
-          case JsError(errors)   =>
-            Logger.error(s"JsValue.validate error : ${errors.mkString(", ")}")
-            -\/(FailError("Unable to validate JsValue"))
-        }
-      case e@ -\/(_) => e
-    }
-
-
-
-}
-
-trait AbstractCrudService {
-
-  protected def getClassName(model: String): Future[Expect[String]]
-
-  val crudAutoService: CrudAutoService
-
-  def findByIdFlow(model:String, id: UUID): Future[Expect[JsValue]] = {
-    for {
-      name <- EitherT(getClassName(model))
-      ref = Class.forName(name)
-      singleton = Class.forName(name+"$")
-      input = Class.forName(name+"In")
-      out = Class.forName(name+"Out")
-
-      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-      found <- EitherT(crudAutoService.findById(ref, id, classInfo._1, classInfo._2))
-      json <- EitherT(crudAutoService.toJsValue(found, ref, singleton, out))
-    } yield json
-  }.run
-
-  def findAllFlow(model:String): Future[Expect[JsValue]] = {
-    for {
-      name <- EitherT(getClassName(model))
-      ref = Class.forName(name)
-      singleton = Class.forName(name+"$")
-      input = Class.forName(name+"In")
-      out = Class.forName(name+"Out")
-
-      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-      found <- EitherT(crudAutoService.findAll(ref, classInfo._1, classInfo._2))
-      json <- EitherT(crudAutoService.toJsValue(found, ref, singleton, out))
-    } yield json
-  }.run
-
-  def addFlow(model: String, json: JsObject): Future[Expect[JsValue]] = {
-    for {
-      name <- EitherT(getClassName(model))
-      ref = Class.forName(name)
-      singleton = Class.forName(name+"$")
-      input = Class.forName(name+"In")
-      out = Class.forName(name+"Out")
-
-      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-      validatedJs <- EitherT(crudAutoService.jsonValidate(json, input, classInfo._4))
-      jsToAdd <- EitherT(crudAutoService.completeAdd(ref, input, singleton, validatedJs, classInfo._3, classInfo._4))
-      found <- EitherT(crudAutoService.add(ref, singleton, jsToAdd, classInfo._1, classInfo._2, classInfo._3))
-      newJson <- EitherT(crudAutoService.toJsValue(found, ref, singleton, out))
-    } yield newJson
-  }.run
-
-  def updateFlow(model: String, json: JsObject, id: UUID): Future[Expect[JsValue]] = {
-    for {
-      name <- EitherT(getClassName(model))
-      ref = Class.forName(name)
-      singleton = Class.forName(name+"$")
-      input = Class.forName(name+"In")
-      out = Class.forName(name+"Out")
-
-      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-      validatedJs <- EitherT(crudAutoService.jsonUpdateValidate(json, input, classInfo._4))
-      foundOpt <- EitherT(crudAutoService.findById(ref, id, classInfo._1, classInfo._2))
-      found <- EitherT(foundOpt |> "couldn't find this entity")
-      jsToUpdate <- EitherT(crudAutoService.completeUpdate(found, validatedJs, id, classInfo._3))
-      update <- EitherT(crudAutoService.update(ref, singleton, jsToUpdate, id, classInfo._1, classInfo._2, classInfo._3))
-      newJson <- EitherT(crudAutoService.toJsValue(update, ref, singleton, out))
-    } yield newJson
-  }.run
-
-  def deleteFlow(model:String, id: UUID): Future[Expect[Boolean]] = {
-    for {
-      name <- EitherT(getClassName(model))
-      ref = Class.forName(name)
-      singleton = Class.forName(name+"$")
-      input = Class.forName(name+"In")
-
-      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-      foundOpt <- EitherT(crudAutoService.findById(ref, id, classInfo._1, classInfo._2))
-      found <- EitherT(foundOpt |> "couldn't find this entity")
-      del <- EitherT(crudAutoService.delete(id, classInfo._1))
-    } yield del
-  }.run
-
-}
-*/
-
 package com.noeupapp.middleware.crudauto
 
 import java.util.UUID
@@ -146,6 +19,7 @@ import slick.driver._
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.JdbcType
 import slick.lifted.TableQuery
+import play.api.mvc.Results._
 
 import scala.language.existentials
 
@@ -153,130 +27,237 @@ trait AbstractCrudService {
 
   val crudAutoService: CrudAutoService
 
-  def findByIdFlow(model:String, id: UUID): Future[Expect[JsValue]] =
+  def findByIdFlow(model:String, id: UUID, omits: List[String], includes: List[String]): Future[Expect[Option[JsValue]]] =
     {
       for {
-        name <- EitherT(getClassName(model))
-        entityClass = name.entityClass
-        pkClass = name.pK
-        tableDefClass = name.tableDef
-        singleton = Class.forName(name.entityClass.getName + "$")
-        //
-        //        input = Class.forName(name+"In")
-        out = Class.forName(name.entityClass.getName + "Out")
+        configuration <- EitherT(getConfiguration(model))
+        entityClass = configuration.entityClass
+        tableDefClass = configuration.tableDef
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        out = Class.forName(configuration.entityClass.getName + "Out")
 
         tableQuery = TableQuery(tag =>
           tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
             .newInstance(tag)
             .asInstanceOf[Table[Entity] with PKTable[Object]])
-        //.asInstanceOf[slick.lifted.AbstractTable[?]])
-        //        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
 
         found <- EitherT(
           crudAutoService.find(tableQuery, id)
-                              (name.baseColumnType.asInstanceOf[BaseColumnType[Object]])
+          (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]])
         )
-        newJson <- EitherT(crudAutoService.toJsValue(found.toList, entityClass, singleton, out))
-      } yield newJson
+        newJson      <- EitherT(crudAutoService.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
+        filteredJson <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
+      } yield filteredJson
     }.run
 
 
-  def findAllFlow(model:String): Future[Expect[JsValue]] =
+  def findAllFlow(model:String, omits: List[String], includes: List[String]): Future[Expect[JsValue]] =
     {
       for {
-        name <- EitherT(getClassName(model))
-        entityClass = name.entityClass
-        pkClass = name.pK
-        tableDefClass = name.tableDef
-        singleton = Class.forName(name.entityClass.getName + "$")
-//
-//        input = Class.forName(name+"In")
-        out = Class.forName(name.entityClass.getName + "Out")
+        configuration <- EitherT(getConfiguration(model))
+        entityClass = configuration.entityClass
+        tableDefClass = configuration.tableDef
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        out = Class.forName(configuration.entityClass.getName + "Out")
 
         tableQuery = TableQuery(tag =>
           tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
             .newInstance(tag)
             .asInstanceOf[Table[Entity] with PKTable[BaseColumnType[_]]])
-        //.asInstanceOf[slick.lifted.AbstractTable[?]])
-        //        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
 
         found <- EitherT(crudAutoService.findAll(tableQuery))
-        newJson <- EitherT(crudAutoService.toJsValue(found.toList, entityClass, singleton, out))
-      } yield newJson
-  }.run
-//
-//  def addFlow(model: String, json: JsObject): Future[Expect[JsValue]] = {
-//    for {
-//      name <- EitherT(getClassName(model))
-//      entityClass = Class.forName(name.entityClass)
-//      pkClass = Class.forName(name.pK)
-//      tableDefClass = Class.forName(name.tableDef)
-//
-//      input = Class.forName(name+"In")
-//      out = Class.forName(name+"Out")
-//
-//      tableQuery = TableQuery(tag =>
-//        tableDefClass.getConstructor(classOf[Tag])
-//          .newInstance(tag)
-//          .asInstanceOf[PKTable[Entity, BaseColumnType[_]]])
-//          //.asInstanceOf[slick.lifted.AbstractTable[?]])
-////        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
-//
-//
-////      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-////      validatedJs <- EitherT(crudAutoService.jsonValidate(json, input, classInfo._4))
-////      jsToAdd <- EitherT(crudAutoService.completeAdd(ref, input, singleton, validatedJs, classInfo._3, classInfo._4))
-//      found <- EitherT(crudAutoService.findAll(tableQuery))
-////      newJson <- EitherT(crudAutoService.toJsValue(found, ref, singleton, out))
-//    } yield Json.obj()
-//  }.run
-//
-//  def updateFlow(model: String, json: JsObject, id: UUID): Future[Expect[JsValue]] = {
-//    for {
-//      name <- EitherT(getClassName(model))
-//      ref = Class.forName(name)
-//      singleton = Class.forName(name+"$")
-//      input = Class.forName(name+"In")
-//      out = Class.forName(name+"Out")
-//
-//      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-//      validatedJs <- EitherT(crudAutoService.jsonUpdateValidate(json, input, classInfo._4))
-//      foundOpt <- EitherT(crudAutoService.findById(ref, id, classInfo._1, classInfo._2))
-//      found <- EitherT(foundOpt |> "couldn't find this entity")
-//      jsToUpdate <- EitherT(crudAutoService.completeUpdate(found, validatedJs, id, classInfo._3))
-//      update <- EitherT(crudAutoService.update(ref, singleton, jsToUpdate, id, classInfo._1, classInfo._2, classInfo._3))
-//      newJson <- EitherT(crudAutoService.toJsValue(update, ref, singleton, out))
-//    } yield newJson
-//  }.run
-//
-//  def deleteFlow(model:String, id: UUID, purge:Option[Boolean]): Future[Expect[Boolean]] = {
-//    for {
-//      name <- EitherT(getClassName(model))
-//      ref = Class.forName(name)
-//      singleton = Class.forName(name+"$")
-//      input = Class.forName(name+"In")
-//
-//      classInfo <- EitherT(crudAutoService.getClassInfo(ref, singleton, name, input))
-//      foundOpt <- EitherT(crudAutoService.findById(ref, id, classInfo._1, classInfo._2))
-//      found <- EitherT(foundOpt |> "couldn't find this entity")
-//      del <- EitherT(crudAutoService.delete(id, classInfo._1, purge))
-//    } yield del
-//  }.run
+        newJson <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
+        filteredJson <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
+      } yield filteredJson
+    }.run
 
-  protected def getClassName(model: String): Future[Expect[CrudConfigurationUnTyped]]
+
+  def deepFetchAllFlow(model1: String, id: UUID, model2: String, omits: List[String], includes: List[String]): Future[Expect[Option[JsValue]]] =
+    {
+      for {
+
+        entity1Found <- EitherT(this.findByIdFlow(model1, id, Nil, Nil))
+
+        _ <- EitherT(entity1Found |> (s"`/$model1/$id` is not found", NotFound))
+
+        configuration <- EitherT(getConfiguration(model2))
+        entityClass = configuration.entityClass
+        tableDefClass = configuration.tableDef
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        input = Class.forName(configuration.entityClass.getName + "In")
+        out = Class.forName(configuration.entityClass.getName + "Out")
+
+        tableQuery2 = TableQuery(tag =>
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[Table[Entity] with PKTable[Object]])
+
+
+
+        fkOpt = tableQuery2.baseTableRow.foreignKeys.find(_.name == s"${model1}_fkey")
+
+        fk <- EitherT(fkOpt |> s"Foreign key (`${model1}_fkey`) is not found")
+
+        classInfo   <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
+        found <- EitherT(
+          crudAutoService.deepFindAll(tableQuery2, id, fk.targetTable.tableName)
+          (classInfo.jsonFormat.asInstanceOf[Format[Entity]])
+        )
+        newJson <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
+        filteredJson <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
+      } yield filteredJson
+    }.run map {
+      case -\/(error) if error.errorType == NotFound => \/-(None)
+      case \/-(res) => \/-(Some(res))
+    }
+
+  def deepFetchByIdFlow(model1: String, id1: UUID, model2: String, id2: UUID, omits: List[String], includes: List[String]): Future[Expect[Option[JsValue]]] =
+    {
+      for {
+
+        entity1Found <- EitherT(this.findByIdFlow(model1, id1, Nil, Nil))
+
+        _ <- EitherT(entity1Found |> (s"`/$model1/$id1` is not found", NotFound))
+
+        configuration <- EitherT(getConfiguration(model2))
+        entityClass = configuration.entityClass
+        tableDefClass = configuration.tableDef
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        input = Class.forName(configuration.entityClass.getName + "In")
+        out = Class.forName(configuration.entityClass.getName + "Out")
+
+        tableQuery2 = TableQuery(tag =>
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[Table[Entity] with PKTable[Object]])
+
+        fkOpt = tableQuery2.baseTableRow.foreignKeys.find(_.name == s"${model1}_fkey")
+
+        fk <- EitherT(fkOpt |> s"Foreign key (`${model1}_fkey`) is not found")
+
+        classInfo   <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
+        found <- EitherT(
+          crudAutoService.deepFindById(tableQuery2, id1, fk.targetTable.tableName, id2)
+          (classInfo.jsonFormat.asInstanceOf[Format[Entity]])
+        )
+        newJson      <- EitherT(crudAutoService.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
+        filteredJson <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
+      } yield filteredJson
+    }.run map {
+      case -\/(error) if error.errorType == NotFound => \/-(None)
+      case \/-(res) => \/-(res)
+    }
+
+    def addFlow(model: String, json: JsObject): Future[Expect[JsValue]] = {
+      for {
+        configuration <- EitherT(getConfiguration(model))
+        entityClass = configuration.entityClass
+        tableDefClass = configuration.tableDef
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        input = Class.forName(configuration.entityClass.getName + "In")
+        out = Class.forName(configuration.entityClass.getName + "Out")
+
+        tableQuery = TableQuery(tag =>
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[Table[Entity] with PKTable[BaseColumnType[_]]])
+
+        classInfo   <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
+        entityIn <- EitherT(crudAutoService.jsonValidate(json, input, classInfo.jsonInFormat))
+        entityToInsert     <- EitherT(crudAutoService.completeAdd(entityClass, input, singleton, entityIn, classInfo.jsonFormat, classInfo.jsonInFormat))
+        found       <- EitherT(
+          crudAutoService.add(tableQuery, entityToInsert.asInstanceOf[Entity])
+          (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]]))
+        newJson     <- EitherT(crudAutoService.toJsValue(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
+      } yield newJson
+    }.run
+
+    def updateFlow(model: String, json: JsObject, id: UUID): Future[Expect[Option[JsValue]]] = {
+      for {
+
+        entity1Found <- EitherT(this.findByIdFlow(model, id, Nil, Nil))
+
+        _ <- EitherT(entity1Found |> (s"`/$model/$id` is not found", NotFound))
+
+        configuration <- EitherT(getConfiguration(model))
+        entityClass = configuration.entityClass
+        tableDefClass = configuration.tableDef
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        input = Class.forName(configuration.entityClass.getName + "In")
+        out = Class.forName(configuration.entityClass.getName + "Out")
+
+        tableQuery = TableQuery(tag =>
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[Table[Entity] with PKTable[Object]])
+
+        classInfo   <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
+        entityIn <- EitherT(crudAutoService.jsonUpdateValidate(json, input, classInfo.jsonInFormat))
+        foundOpt <- EitherT(
+          crudAutoService.find(tableQuery, id)
+          (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]])
+        )
+        found <- EitherT(foundOpt |> "Unable to find entity")
+        entityToUpdate     <- EitherT(crudAutoService.completeUpdate(found, entityIn, id, classInfo.jsonFormat.asInstanceOf[Format[Any]]))
+        found       <- EitherT(
+          crudAutoService.update(tableQuery, id.asInstanceOf[Object], entityToUpdate.asInstanceOf[Entity])
+          (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]]))
+        newJson     <- EitherT(crudAutoService.toJsValue(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
+      } yield newJson
+    }.run map {
+      case -\/(error) if error.errorType == NotFound => \/-(None)
+      case error @ -\/(_) => error
+      case \/-(res) => \/-(Some(res))
+    }
+
+    def deleteFlow[T](model:String, id: T, purge:Option[Boolean], force_delete: Boolean): Future[Expect[Option[T]]] = {
+      for {
+        configuration <- EitherT(getConfiguration(model))
+        tableDefClass = configuration.tableDef
+
+        tableQuery = TableQuery(tag =>
+          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+            .newInstance(tag)
+            .asInstanceOf[Table[Entity] with PKTable[Any]])
+
+        foundOpt <- EitherT(
+          crudAutoService.find(tableQuery, id)
+          (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]])
+        )
+        _ <- EitherT(foundOpt |> ("couldn't find this entity", NotFound))
+
+        _ <- EitherT(
+          crudAutoService.delete(tableQuery, id, force_delete)
+          (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]])
+        )
+      } yield Some(id)
+    }.run map {
+      case -\/(error) if error.errorType == NotFound => \/-(None)
+      case error @ -\/(_) => error
+      case res => res
+    }
+
+  protected def getConfiguration(model: String): Future[Expect[CrudConfigurationUnTyped]]
 
 }
 
 
-
-//class CrudServiceFactory[T, U] @Inject()(val crudAutoService: CrudAutoService)(implicit val typeLit: TypeLiteral[T]) {
+//
+//class CrudServiceFactory[T, U] @Inject()(val crudAutoService: CrudAutoService,
+//                                         crudService: CrudService)(implicit val typeLit: TypeLiteral[T]) {
 //
 //  private val name = typeLit.getType.getTypeName
 //
 //  private val that = this
 //
 //  def findAll()(implicit uReads: Reads[U]): Future[Expect[List[U]]] =
-//    abstractCrudService.findAllFlow("").map{
+//    crudService.findAllFlow(name).map{
 //      case \/-(elements) =>
 //        elements.validate(Reads.list(uReads)) match {
 //          case JsSuccess(res, _) => \/-(res)
@@ -287,25 +268,17 @@ trait AbstractCrudService {
 //      case e@ -\/(_) => e
 //    }
 //
-////  def findById(id: UUID)(implicit uReads: Reads[U]): Future[Expect[Option[U]]] =
-////    abstractCrudService.findByIdFlow("", id).map{
-////      case \/-(element) =>
-////        element.validateOpt(uReads) match {
-////          case JsSuccess(res, _) => \/-(res)
-////          case JsError(errors)   =>
-////            Logger.error(s"JsValue.validate error : ${errors.mkString(", ")}")
-////            -\/(FailError("Unable to validate JsValue"))
-////        }
-////      case e@ -\/(_) => e
-////    }
-//
-//  private def abstractCrudService = new AbstractCrudService {
-//    override protected def getClassName[E <: Entity, PK: BaseColumnType, V <: PKTable[E, PK]](model: String): Future[Expect[String]] =
-//      Future.successful(\/-(name))
-//
-//    override val crudAutoService: CrudAutoService = that.crudAutoService
-//  }
-//
+//  def findById(id: UUID)(implicit uReads: Reads[U]): Future[Expect[Option[U]]] =
+//    crudService.findByIdFlow(name, id).map{
+//      case \/-(element) =>
+//        element.validateOpt(uReads) match {
+//          case JsSuccess(res, _) => \/-(res)
+//          case JsError(errors)   =>
+//            Logger.error(s"JsValue.validate error : ${errors.mkString(", ")}")
+//            -\/(FailError("Unable to validate JsValue"))
+//        }
+//      case e@ -\/(_) => e
+//    }
 //
 //
 //}
@@ -313,7 +286,7 @@ trait AbstractCrudService {
 class CrudService @Inject()(val crudAutoService: CrudAutoService,
                             crudClassName: CrudClassName) extends AbstractCrudService{
 
-  override def getClassName(model: String): Future[Expect[CrudConfigurationUnTyped]] = {
+  override def getConfiguration(model: String): Future[Expect[CrudConfigurationUnTyped]] = {
     crudClassName.configure(model) match {
       case Some(className) => Future.successful(\/- {
         CrudConfigurationUnTyped(
