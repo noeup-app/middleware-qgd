@@ -28,11 +28,16 @@ trait AbstractCrudService {
   val crudAutoService: CrudAutoService
 
   def parseStringToType[T](strClass: Class[T], str: String): Future[Expect[T]] = Future {
-    strClass match {
-      case s if s == classOf[UUID] => \/-(UUID.fromString(str).asInstanceOf[T])
-      case s if s == classOf[Int]  => \/-(str.toInt.asInstanceOf[T])
-      case s if s == classOf[String] => \/-(str.asInstanceOf[T])
-      case _ => -\/(FailError("id type is not correct", errorType = BadRequest))
+    try {
+      strClass match {
+        case s if s == classOf[UUID] => \/-(UUID.fromString(str).asInstanceOf[T])
+        case s if s == classOf[Int]  => \/-(str.toInt.asInstanceOf[T])
+        case s if s == classOf[Long] => \/-(str.toLong.asInstanceOf[T])
+        case s if s == classOf[String] => \/-(str.asInstanceOf[T])
+        case _ => -\/(FailError(s"id type known (id given : `$str` ; expected `$strClass`)", errorType = BadRequest))
+      }
+    }catch {
+      case _: Exception => -\/(FailError(s"id type is not what I was expected (id given : `$str` ; expected `$strClass`)", errorType = BadRequest))
     }
   }
 

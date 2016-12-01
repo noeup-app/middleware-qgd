@@ -1052,27 +1052,61 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
 
   "crud auto with generic type of Id" should {
-    "fail if entity is deleted" in new CrudAutoContext {
+
+    "works using find by id" in new CrudAutoContext {
       new WithApplication(application) {
-
         await(createTables)
+        await(populate)
 
-        await(populate({
-          case h :: tail => h.copy(deleted = true) :: tail
-        }))
+        val rels = await(allRel)
 
-        val testsBefore: Seq[Test] = await(allTests)
-
-        val test = testsBefore.find(_.deleted == true).get
+        val rel = rels.head
 
         val Some(result) =
-          route(FakeRequest(PUT, "/rel/" + test.id)
-            .withBody(Json.obj()))
+          route(FakeRequest(GET, "/rel/" + rel.id))
 
-        status(result) must be equalTo NOT_FOUND
-
+        status(result) must be equalTo OK
       }
     }
+
+
+    "return bad request using find by id if UUID is given" in new CrudAutoContext {
+      new WithApplication(application) {
+        await(createTables)
+        await(populate)
+
+        val rels = await(allRel)
+
+        val rel = rels.head
+
+        val Some(result) =
+          route(FakeRequest(GET, "/rel/" + UUID.randomUUID()))
+
+        status(result) must be equalTo BAD_REQUEST
+      }
+    }
+
+//    "fail if entity is deleted" in new CrudAutoContext {
+//      new WithApplication(application) {
+//
+//        await(createTables)
+//
+//        await(populate({
+//          case h :: tail => h.copy(deleted = true) :: tail
+//        }))
+//
+//        val testsBefore: Seq[Test] = await(allTests)
+//
+//        val test = testsBefore.find(_.deleted == true).get
+//
+//        val Some(result) =
+//          route(FakeRequest(PUT, "/rel/" + test.id)
+//            .withBody(Json.obj()))
+//
+//        status(result) must be equalTo NOT_FOUND
+//
+//      }
+//    }
   }
 
 

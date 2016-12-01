@@ -128,6 +128,7 @@ trait CrudAutoContext extends Scope {
     Test.populate(dao.db, pk, f, g)
   def allTests = Test.all(dao.db, pk)
   def allThings = Thing.all(dao.db, pk)
+  def allRel = RelTestThing.all(dao.db, pk)
   def dropTable = Test.dropTable(dao.db)
 
 
