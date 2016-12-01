@@ -354,22 +354,19 @@ class CrudAutoService @Inject()(dao: Dao)() {
   }
 
 
-  case class ClassInfo[T, B](tableName: String, jsonFormat: Format[T], jsonInFormat: Format[B])
+  case class ClassInfo[T, B](jsonFormat: Format[T], jsonInFormat: Format[B])
 
   def getClassInfo[T, A, B](model: Class[T], singleton: Class[A], className: String, in: Class[B]): Future[Expect[ClassInfo[T, B]]] = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
-    val table = singleton.getDeclaredField("tableName")
-    table.setAccessible(true)
     val jsFormat = singleton.getDeclaredField(className.split('.').last+"Format")
     jsFormat.setAccessible(true)
     val jsFormatIn = singleton.getDeclaredField(in.getName.split('.').last+"Format")
     jsFormatIn.setAccessible(true)
     val format = jsFormat.get(obj).asInstanceOf[Format[T]]
     val formatIn = jsFormatIn.get(obj).asInstanceOf[Format[B]]
-    val name = table.get(singleton.cast(obj)).asInstanceOf[String]
-    Future.successful(\/-(ClassInfo(name, format, formatIn)))
+    Future.successful(\/-(ClassInfo(format, formatIn)))
   }
 
 
