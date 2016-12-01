@@ -52,7 +52,7 @@ object Test extends GlobalReadsWrites {
   implicit def toTestOut(p:Test):TestOut =
     TestOut(p.id, p.name, p.typeL, p.priority)
 
-  val tableName = "test"
+//  val tableName = "test"
 
 
   val tq = TableQuery[TestTableDef]
