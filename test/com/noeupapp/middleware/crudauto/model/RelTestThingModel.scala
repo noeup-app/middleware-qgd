@@ -13,11 +13,15 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.implicitConversions
 
-case class RelTestThing( id: Long, test: UUID, thing: UUID) extends Entity {
+case class RelTestThing( id: Long, test: UUID, thing: UUID) extends Entity[Long] {
   def this(l: RelTestThingIn) = this(0, l.test, l.thing)
+
+  override def withNewId(id: Long): Entity[Long] = copy(id = id)
 }
-case class RelTestThingOut( id: Long, test: UUID, thing: UUID) extends Entity
-case class RelTestThingIn( test: UUID, thing: UUID) extends Entity
+case class RelTestThingOut( id: Long, test: UUID, thing: UUID) extends Entity[Long] {
+  override def withNewId(id: Long): Entity[Long] = copy(id = id)
+}
+case class RelTestThingIn( test: UUID, thing: UUID)
 
 object RelTestThing extends GlobalReadsWrites {
 

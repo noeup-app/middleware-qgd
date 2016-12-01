@@ -6,7 +6,7 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import anorm._
-import com.noeupapp.middleware.crudauto.model.{Test, TestIn, TestOut}
+import com.noeupapp.middleware.crudauto.model._
 import com.noeupapp.testhelpers.Context
 import org.specs2.mock.Mockito
 import play.api.Play.current
@@ -15,6 +15,7 @@ import play.api.libs.json.{JsArray, JsObject, Json}
 import play.api.test.{FakeRequest, PlaySpecification, WithApplication}
 import com.noeupapp.middleware.crudauto.model.Test._
 import com.noeupapp.middleware.crudauto.model.Thing._
+import com.noeupapp.middleware.crudauto.model.RelTestThing._
 
 class CrudAutoSpec extends PlaySpecification with Mockito {
 
@@ -871,6 +872,42 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
                 )))
 
         status(result) must be equalTo BAD_REQUEST
+
+      }
+    }
+    "work with auto increment" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate)
+
+        val tests  = await(allTests)
+        val things = await(allThings)
+
+        val test = tests.head
+        val thing = things.head
+
+        val relBefore = await(allRel).toList
+
+        val Some(result) =
+          route(FakeRequest(POST, "/rel")
+                .withBody(Json.toJson(RelTestThingIn(test.id, thing.id))))
+
+        val relAfter = await(allRel)
+
+        val expectedId = relBefore.map(_.id).max + 1
+
+
+        status(result) must be equalTo OK
+
+        contentAsJson(result).as[RelTestThing] must be equalTo RelTestThing(expectedId, test.id, thing.id)
+
+        sameElementsAs(
+            RelTestThing(expectedId, test.id, thing.id) :: relBefore,
+            relAfter
+        ) must beTrue
+
 
       }
     }
