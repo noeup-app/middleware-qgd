@@ -2,13 +2,12 @@
 
 
 GET    /:model                                                                              com.noeupapp.middleware.crudauto.Cruds.fetchAll(model: String, omit: Option[String], include: Option[String])
-GET    /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.fetchById(model: String, id: java.util.UUID, omit: Option[String], include: Option[String])
+GET    /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.fetchById(model: String, id: String, omit: Option[String], include: Option[String])
 
-GET    /:model1/:id/:model2                                                                 com.noeupapp.middleware.crudauto.Cruds.deepFetchAll(model1: String, id: java.util.UUID, model2: String, omit: Option[String], include: Option[String])
-GET    /:model1/:id1/:model2/:id2                                                           com.noeupapp.middleware.crudauto.Cruds.deepFetchById(model1: String, id1: java.util.UUID, model2: String, id2: java.util.UUID, omit: Option[String], include: Option[String])
-
+GET    /:model1/:id/:model2                                                                 com.noeupapp.middleware.crudauto.Cruds.deepFetchAll(model1: String, id: String, model2: String, omit: Option[String], include: Option[String])
+GET    /:model1/:id1/:model2/:id2                                                           com.noeupapp.middleware.crudauto.Cruds.deepFetchById(model1: String, id1: String, model2: String, id2: String, omit: Option[String], include: Option[String])
 
 
 POST   /:model                                                                              com.noeupapp.middleware.crudauto.Cruds.add(model: String)
-PUT    /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.update(model: String, id: java.util.UUID)
-DELETE /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.delete(model: String, id: java.util.UUID, purge:Option[Boolean], force_delete: Option[Boolean])
+PUT    /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.update(model: String, id: String)
+DELETE /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.delete(model: String, id: String, purge:Option[Boolean], force_delete: Option[Boolean])

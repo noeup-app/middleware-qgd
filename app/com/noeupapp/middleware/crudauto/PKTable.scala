@@ -3,10 +3,9 @@ package com.noeupapp.middleware.crudauto
 
 import slick.driver._
 import slick.driver.PostgresDriver.api._
+import slick.lifted.PrimaryKey
 
-/**
-  * Created by damien on 16/11/2016.
-  */
-trait PKTable[PK]{
-  def id: Rep[PK]
+
+trait PKTable{
+  def pk: PrimaryKey
 }

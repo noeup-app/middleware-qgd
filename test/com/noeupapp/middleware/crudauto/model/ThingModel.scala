@@ -70,7 +70,7 @@ object Thing extends GlobalReadsWrites {
 }
 
 
-class ThingTableDef(tag: Tag) extends Table[Thing](tag, "thing") with PKTable[UUID] {
+class ThingTableDef(tag: Tag) extends Table[Thing](tag, "thing") with PKTable {
   def id = column[UUID]("id")
   def name = column[String]("name")
   def test = column[UUID]("test")

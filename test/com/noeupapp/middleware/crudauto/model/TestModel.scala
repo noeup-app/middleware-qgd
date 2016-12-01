@@ -66,6 +66,9 @@ object Test extends GlobalReadsWrites {
   def populate(db: JdbcBackend#DatabaseDef, id: UUID, f: (Seq[Test]) => Seq[Test], g: (Seq[Thing]) => Seq[Thing]) = {
     val id1 = id
     val id2 = UUID.randomUUID()
+    val id3 = UUID.randomUUID()
+    val id4 = UUID.randomUUID()
+
     db.run(
       tq ++= f(Seq(
         Test(id1, "my test 1", "super type", 5, deleted = false),
@@ -74,9 +77,17 @@ object Test extends GlobalReadsWrites {
     )
     db.run(
       Thing.tq ++= g(Seq(
-        Thing(UUID.randomUUID(), "thing 1", id1),
-        Thing(UUID.randomUUID(), "thing 2", id1)
+        Thing(id3, "thing 1", id1),
+        Thing(id4, "thing 2", id1)
       ))
+    )
+    db.run(
+      RelTestThing.tq ++= Seq(
+        RelTestThing(1, id1, id3),
+        RelTestThing(2, id1, id4),
+        RelTestThing(3, id2, id3),
+        RelTestThing(4, id2, id4)
+      )
     )
   }
 
@@ -88,7 +99,7 @@ object Test extends GlobalReadsWrites {
 
 
 
-class TestTableDef(tag: Tag) extends Table[Test](tag, "test") with PKTable[UUID] {
+class TestTableDef(tag: Tag) extends Table[Test](tag, "test") with PKTable {
   def id             = column[UUID]("id")
   def name           = column[String]("name")
   def typeL          = column[String]("type")

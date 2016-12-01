@@ -38,7 +38,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
 
 
-  def findAll[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]]): Future[Expect[Seq[E]]] = {
+  def findAll[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable]): Future[Expect[Seq[E]]] = {
     if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted"))
       dao.runForAll(tableQuery.filter(_.column[Boolean]("deleted") === false))
     else
@@ -47,7 +47,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
 
 
-  def deepFindAll[E <: Entity, F <: Entity, PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable[PKF]],
+  def deepFindAll[E <: Entity, F <: Entity, PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable],
                                                        id: PKE,
                                                        joinedTableName: String
                                                       )(implicit formatF: Format[F]): Future[Expect[Seq[F]]] = {
@@ -91,7 +91,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
   }
 
 
-  def deepFindById[E <: Entity, F <: Entity, PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable[PKF]],
+  def deepFindById[E <: Entity, F <: Entity, PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable],
                                                        id1: PKE,
                                                        joinedTableName: String,
                                                        id2: PKE
@@ -135,13 +135,13 @@ class CrudAutoService @Inject()(dao: Dao)() {
   }.map(_.map(_.headOption))
 
 
-  def find[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]], id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] = {
+  def find[E <: Entity](tableQuery: TableQuery[Table[E] with PKTable], id: Any)(implicit bct: BaseColumnType[Any]): Future[Expect[Option[E]]] = {
     if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted"))
 //      dao.runForAll(tableQuery.filter(_.column[Boolean]("deleted") === false))
       dao.runForHeadOption(tableQuery.filter(row =>
-        row.id === id && row.column[Boolean]("deleted") === false))
+        row.column[Any]("id") === id && row.column[Boolean]("deleted") === false)) // TODO column("id") should be a generik pk
     else
-      dao.runForHeadOption(tableQuery.filter(_.id === id))
+      dao.runForHeadOption(tableQuery.filter(_.column[Any]("id") === id)) // TODO column("id") should be a generik pk
   }
 
 
@@ -151,30 +151,30 @@ class CrudAutoService @Inject()(dao: Dao)() {
     dao.run(tableQuery += entity).map(_.map(_ => entity))
 
 
-  def upsert[E <: Entity, PK, V <: Table[E] with PKTable[PK]](tableQuery: TableQuery[V], entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
+  def upsert[E <: Entity, PK, V <: Table[E] with PKTable](tableQuery: TableQuery[V], entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
     dao.run(tableQuery.insertOrUpdate(entity)).map(_.map(_ => entity))
 
 
-  def update[E <: Entity, PK, V <: Table[E]](tableQuery: TableQuery[V with PKTable[PK]],
-                                   id: PK,
+  def update[E <: Entity, PK, V <: Table[E], T](tableQuery: TableQuery[V with PKTable],
+                                   id: T,
                                    entity: E)
-                                   (implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
-    dao.run(tableQuery.filter(_.id === id).update(entity)).map(_.map(_ => entity))
+                                   (implicit bct: BaseColumnType[T]): Future[Expect[E]] =
+    dao.run(tableQuery.filter(_.column[T]("id") === id).update(entity)).map(_.map(_ => entity)) // TODO column("id") should be a generik pk
 
 
-  def delete[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable[PK]],
-                              id: PK,
-                              force_delete: Boolean)
-                             (implicit bct: BaseColumnType[PK]): Future[Expect[PK]] = {
+  def delete[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable],
+                                 id : Any,//id: PK,
+                                 force_delete: Boolean)
+                             (implicit bct: BaseColumnType[Any]): Future[Expect[Any]] = {
     if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted") && ! force_delete) {
       dao.run{
-        tableQuery.filter(_.id === id)
+        tableQuery.filter(_.column[Any]("id") === id) // TODO column("id") should be a generik pk
           .map(_.column[Boolean]("deleted"))
             .update(true)
       }.map(_.map(_ => id))
     }else{
       dao.run{
-        tableQuery.filter(_.id === id).delete
+        tableQuery.filter(_.column[Any]("id") === id).delete // TODO column("id") should be a generik pk
       }.map(_.map(_ => id))
     }
   }.recover{
@@ -203,7 +203,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
     }
   }//.run
 
-  def completeUpdate[T](entity: T, json: JsObject, id: UUID, format: Format[T]): Future[Expect[T]] = Future {
+  def completeUpdate[T](entity: T, json: JsObject, format: Format[T]): Future[Expect[T]] = Future {
     implicit val reads = format
 
     val oldJson = Json.toJson(entity).as[JsObject]
