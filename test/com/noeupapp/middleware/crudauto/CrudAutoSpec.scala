@@ -205,22 +205,6 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     }
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   "crud auto deep find all" should {
     "return not found if first entity does not exists" in new CrudAutoContext {
       new WithApplication(application) {
@@ -405,20 +389,6 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
     }
   }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   "crud auto deep find by id" should {
     "return not found if first entity does not exists" in new CrudAutoContext {
       new WithApplication(application) {
@@ -577,18 +547,6 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
   }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
   "crud auto find by id" should {
     "return not found" in new CrudAutoContext {
       new WithApplication(application) {
@@ -724,18 +682,6 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
       }
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   "crud auto delete" should {
@@ -884,20 +830,6 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
   }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   "crud auto add" should {
     "work if input is correct" in new CrudAutoContext {
       new WithApplication(application) {
@@ -943,20 +875,6 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
       }
     }
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   "crud auto update" should {
@@ -1090,6 +1008,31 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
             .withBody(Json.obj()))
 
         status(result) must be equalTo BAD_REQUEST
+
+      }
+    }
+  }
+
+
+  "crud auto with generic type of Id" should {
+    "fail if entity is deleted" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate({
+          case h :: tail => h.copy(deleted = true) :: tail
+        }))
+
+        val testsBefore: Seq[Test] = await(allTests)
+
+        val test = testsBefore.find(_.deleted == true).get
+
+        val Some(result) =
+          route(FakeRequest(PUT, "/rel/" + test.id)
+            .withBody(Json.obj()))
+
+        status(result) must be equalTo NOT_FOUND
 
       }
     }

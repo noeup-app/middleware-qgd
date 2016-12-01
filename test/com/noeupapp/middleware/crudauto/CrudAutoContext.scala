@@ -8,7 +8,7 @@ import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.noeupapp.middleware.authorizationClient.{FakeScopeAndRoleAuthorization, ScopeAndRoleAuthorization}
-import com.noeupapp.middleware.crudauto.model.{Test, TestTableDef, Thing, ThingTableDef}
+import com.noeupapp.middleware.crudauto.model._
 import com.noeupapp.middleware.entities.account.Account
 import com.noeupapp.middleware.entities.user.User
 import net.codingwell.scalaguice.ScalaModule
@@ -43,7 +43,7 @@ trait CrudAutoContext extends Scope {
 
 
 
-  val loginInfo = LoginInfo("qgd_test", "qgd_test")
+  val loginInfo = LoginInfo("np_test", "np_test")
 
   /**
     * An identity.
@@ -71,16 +71,16 @@ trait CrudAutoContext extends Scope {
   }
 
   val db_driver: String = "org.postgresql.Driver"
-  val db_url: String    = "jdbc:postgresql://localhost:5432/qgd_test"
-  val db_name: String   = "qgd_test"
+  val db_url: String    = "jdbc:postgresql://localhost:5432/test"
+  val db_name: String   = "test"
   val db_config: Map[String, String] = Map(
-    "username" -> "damien",
+    "username" -> "guillaume",
     "password" -> ""
   ).withDefaultValue("")
 
 
   val db_host = "localhost"
-  val db_port = 6379
+  val db_port = 5432
 
 
   /**
@@ -95,7 +95,7 @@ trait CrudAutoContext extends Scope {
       , "slick.dbs.default.driver"      -> "slick.driver.PostgresDriver$"
       , "slick.dbs.default.db.driver"   -> "org.postgresql.Driver"
       , "slick.dbs.default.db.url"      -> db_url//s"jdbc:postgresql://$db_host:$db_port/$db_name"
-      , "slick.dbs.default.db.user"     -> "damien"
+      , "slick.dbs.default.db.user"     -> "guillaume"
       , "slick.dbs.default.db.password" -> ""
     ))
     .in(Mode.Test)
@@ -119,6 +119,7 @@ trait CrudAutoContext extends Scope {
     for {
       _ <- Thing.createTable(dao.db)
       _ <- Test.createTable(dao.db)
+      _ <- RelTestThing.createTable(dao.db)
     } yield ()
   }
   def populate = Test.populate(dao.db, pk, identity[Seq[Test]], identity[Seq[Thing]])
@@ -156,6 +157,7 @@ class Crud extends CrudClassName {
     modelName match {
       case "tests" => configuration[Test, UUID, TestTableDef]
       case "things" => configuration[Thing, UUID, ThingTableDef]
+      case "rel" => configuration[RelTestThing, Long, RelTestThingTableDef]
       case _ => None
     }
 }

@@ -20,12 +20,15 @@ class Cruds @Inject()(crudService: CrudService,
                       scopeAndRoleAuthorization: ScopeAndRoleAuthorization
                          ) extends Silhouette[Account, BearerTokenAuthenticator] {
 
-  def fetchById(model: String, id: UUID, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+  def fetchById(model: String, id: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
 
     val omits    = omit.map(_.split(",").toList).toList.flatten
     val includes = include.map(_.split(",").toList).toList.flatten
 
     crudService.findByIdFlow(model, id, omits, includes) map {
+      case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
+        Logger.warn(error.toString)
+        BadRequest(Json.toJson(s"id type given is not correct (id given is `$id`)"))
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while fetching "+model))
@@ -47,7 +50,7 @@ class Cruds @Inject()(crudService: CrudService,
     }
   }
 
-  def deepFetchAll(model1: String, id: UUID, model2: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+  def deepFetchAll(model1: String, id: String, model2: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
 
     val omits    = omit.map(_.split(",").toList).toList.flatten
     val includes = include.map(_.split(",").toList).toList.flatten
@@ -61,7 +64,7 @@ class Cruds @Inject()(crudService: CrudService,
     }
   }
 
-  def deepFetchById(model1: String, id1: UUID, model2: String, id2: UUID, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+  def deepFetchById(model1: String, id1: String, model2: String, id2: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
 
     val omits    = omit.map(_.split(",").toList).toList.flatten
     val includes = include.map(_.split(",").toList).toList.flatten
@@ -100,7 +103,7 @@ class Cruds @Inject()(crudService: CrudService,
     }
   }
 
-  def update(model: String, id: UUID) = UserAwareAction.async(parse.json) { implicit request =>
+  def update(model: String, id: String) = UserAwareAction.async(parse.json) { implicit request =>
 
     val json = request.body.as[JsObject]
     crudService.updateFlow(model, json, id) map {
@@ -114,7 +117,7 @@ class Cruds @Inject()(crudService: CrudService,
     }
   }
 
-  def delete(model: String, id: UUID, purge:Option[Boolean], force_delete: Option[Boolean] = None) = UserAwareAction.async {
+  def delete(model: String, id: String, purge:Option[Boolean], force_delete: Option[Boolean] = None) = UserAwareAction.async {
 
     crudService.deleteFlow(model, id, purge, force_delete.getOrElse(false)) map {
       case -\/(error) =>
