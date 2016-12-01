@@ -6,7 +6,7 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import anorm._
-import com.noeupapp.middleware.crudauto.model.{Test, TestIn, TestOut}
+import com.noeupapp.middleware.crudauto.model._
 import com.noeupapp.testhelpers.Context
 import org.specs2.mock.Mockito
 import play.api.Play.current
@@ -15,6 +15,7 @@ import play.api.libs.json.{JsArray, JsObject, Json}
 import play.api.test.{FakeRequest, PlaySpecification, WithApplication}
 import com.noeupapp.middleware.crudauto.model.Test._
 import com.noeupapp.middleware.crudauto.model.Thing._
+import com.noeupapp.middleware.crudauto.model.RelTestThing._
 
 class CrudAutoSpec extends PlaySpecification with Mockito {
 
@@ -874,6 +875,42 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
       }
     }
+    "work with auto increment" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate)
+
+        val tests  = await(allTests)
+        val things = await(allThings)
+
+        val test = tests.head
+        val thing = things.head
+
+        val relBefore = await(allRel).toList
+
+        val Some(result) =
+          route(FakeRequest(POST, "/rel")
+                .withBody(Json.toJson(RelTestThingIn(test.id, thing.id))))
+
+        val relAfter = await(allRel)
+
+        val expectedId = relBefore.map(_.id).max + 1
+
+
+        status(result) must be equalTo OK
+
+        contentAsJson(result).as[RelTestThing] must be equalTo RelTestThing(expectedId, test.id, thing.id)
+
+        sameElementsAs(
+            RelTestThing(expectedId, test.id, thing.id) :: relBefore,
+            relAfter
+        ) must beTrue
+
+
+      }
+    }
   }
 
 
@@ -1015,27 +1052,60 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
 
   "crud auto with generic type of Id" should {
-    "fail if entity is deleted" in new CrudAutoContext {
+    "works using find by id" in new CrudAutoContext {
       new WithApplication(application) {
-
         await(createTables)
+        await(populate)
 
-        await(populate({
-          case h :: tail => h.copy(deleted = true) :: tail
-        }))
+        val rels = await(allRel)
 
-        val testsBefore: Seq[Test] = await(allTests)
-
-        val test = testsBefore.find(_.deleted == true).get
+        val rel = rels.head
 
         val Some(result) =
-          route(FakeRequest(PUT, "/rel/" + test.id)
-            .withBody(Json.obj()))
+          route(FakeRequest(GET, "/rel/" + rel.id))
 
-        status(result) must be equalTo NOT_FOUND
-
+        status(result) must be equalTo OK
       }
     }
+
+
+    "return bad request using find by id if UUID is given" in new CrudAutoContext {
+      new WithApplication(application) {
+        await(createTables)
+        await(populate)
+
+        val rels = await(allRel)
+
+        val rel = rels.head
+
+        val Some(result) =
+          route(FakeRequest(GET, "/rel/" + UUID.randomUUID()))
+
+        status(result) must be equalTo BAD_REQUEST
+      }
+    }
+
+//    "fail if entity is deleted" in new CrudAutoContext {
+//      new WithApplication(application) {
+//
+//        await(createTables)
+//
+//        await(populate({
+//          case h :: tail => h.copy(deleted = true) :: tail
+//        }))
+//
+//        val testsBefore: Seq[Test] = await(allTests)
+//
+//        val test = testsBefore.find(_.deleted == true).get
+//
+//        val Some(result) =
+//          route(FakeRequest(PUT, "/rel/" + test.id)
+//            .withBody(Json.obj()))
+//
+//        status(result) must be equalTo NOT_FOUND
+//
+//      }
+//    }
   }
 
 

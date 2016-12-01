@@ -5,8 +5,10 @@ import java.util.UUID
 import com.noeupapp.middleware.crudauto.{Entity, PKTable}
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 import play.api.libs.json.Json
+import slick.dbio.Effect.Write
 import slick.driver.PostgresDriver.api._
 import slick.jdbc.JdbcBackend
+import slick.profile.FixedSqlAction
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -20,21 +22,25 @@ case class Test( id: UUID,
                  typeL: String,
                  priority: Int,
                  deleted: Boolean
-               ) extends Entity {
+               ) extends Entity[UUID] {
   def this(l: TestIn) =
     this(UUID.randomUUID(), l.name, l.typeL, l.priority, deleted = false)
+
+  override def withNewId(id: UUID): Entity[UUID] = copy(id = id)
 }
 case class TestOut( id: UUID,
                     name: String,
                     typeL: String,
-                    priority: Int) extends Entity
+                    priority: Int) extends Entity[UUID] {
+  override def withNewId(id: UUID): Entity[UUID] = copy(id = id)
+}
 
 /**
   * Required parameters to add or update an new limitation
   */
 case class TestIn( name: String,
                    typeL: String,
-                   priority: Int) extends Entity
+                   priority: Int)
 
 object Test extends GlobalReadsWrites {
 

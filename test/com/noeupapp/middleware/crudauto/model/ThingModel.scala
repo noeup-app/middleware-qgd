@@ -18,21 +18,25 @@ import scala.language.implicitConversions
 case class Thing(id: UUID,
                  name: String,
                  test: UUID
-                ) extends Entity {
+                ) extends Entity[UUID] {
   def this(l: ThingIn) =
     this(UUID.randomUUID(), l.name, l.test)
+
+  override def withNewId(id: UUID): Entity[UUID] = copy(id = id)
 }
 
 case class ThingOut(id: UUID,
                     name: String,
                     test: UUID
-                   ) extends Entity
+                   ) extends Entity[UUID] {
+  override def withNewId(id: UUID): Entity[UUID] = copy(id = id)
+}
 
 /**
   * Required parameters to add or update an new limitation
   */
 case class ThingIn(name: String,
-                   test: UUID) extends Entity
+                   test: UUID)
 
 object Thing extends GlobalReadsWrites {
 

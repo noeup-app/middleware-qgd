@@ -38,7 +38,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
 
 
-  def findAll[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable]): Future[Expect[Seq[E]]] = {
+  def findAll[E <: Entity[Any], PK](tableQuery: TableQuery[Table[E] with PKTable]): Future[Expect[Seq[E]]] = {
     if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted"))
       dao.runForAll(tableQuery.filter(_.column[Boolean]("deleted") === false))
     else
@@ -72,7 +72,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
   }
 
 
-  def deepFindAll[E <: Entity, F <: Entity, PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable],
+  def deepFindAll[E <: Entity[Any], F <: Entity[Any], PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable],
                                                        id: PKE,
                                                        joinedTableName: String
                                                       )(implicit formatF: Format[F]): Future[Expect[Seq[F]]] = {
@@ -117,7 +117,8 @@ class CrudAutoService @Inject()(dao: Dao)() {
     }
   }
 
-  def deepFindById[E <: Entity, F <: Entity, PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable],
+
+  def deepFindById[E <: Entity[Any], F <: Entity[Any], PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable],
                                                        id1: PKE,
                                                        joinedTableName: String,
                                                        id2: PKE
@@ -164,7 +165,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
   }.map(_.map(_.headOption))
 
 
-  def find[E <: Entity](tableQuery: TableQuery[Table[E] with PKTable], id: Any)(implicit bct: BaseColumnType[Any]): Future[Expect[Option[E]]] = {
+  def find[E <: Entity[Any]](tableQuery: TableQuery[Table[E] with PKTable], id: Any)(implicit bct: BaseColumnType[Any]): Future[Expect[Option[E]]] = {
     if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted"))
 //      dao.runForAll(tableQuery.filter(_.column[Boolean]("deleted") === false))
       dao.runForHeadOption(tableQuery.filter(row =>
@@ -174,24 +175,29 @@ class CrudAutoService @Inject()(dao: Dao)() {
   }
 
 
-  def add[E <: Entity, PK, V <: Table[E]](tableQuery: TableQuery[V],
+  def add[E <: Entity[Any], PK, V <: Table[E]](tableQuery: TableQuery[V],
                                           entity: E)
-                                         (implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
-    dao.run(tableQuery += entity).map(_.map(_ => entity))
+                                         (implicit bct: BaseColumnType[PK]): Future[Expect[E]] = {
+    // TODO column("id") should be a generik pk
+    val insertQuery: PostgresDriver.IntoInsertActionComposer[E, E] = tableQuery returning tableQuery.map(_.column[PK]("id")) into { (e, id) =>
+      e.withNewId(id = id).asInstanceOf[E] // TODO find a way to do that with out ugly cast
+    }
+    dao.run(insertQuery += entity)
+  }
 
 
-  def upsert[E <: Entity, PK, V <: Table[E] with PKTable](tableQuery: TableQuery[V], entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
+  def upsert[E <: Entity[Any], PK, V <: Table[E] with PKTable](tableQuery: TableQuery[V], entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
     dao.run(tableQuery.insertOrUpdate(entity)).map(_.map(_ => entity))
 
 
-  def update[E <: Entity, PK, V <: Table[E], T](tableQuery: TableQuery[V with PKTable],
+  def update[E <: Entity[Any], PK, V <: Table[E], T](tableQuery: TableQuery[V with PKTable],
                                    id: T,
                                    entity: E)
                                    (implicit bct: BaseColumnType[T]): Future[Expect[E]] =
     dao.run(tableQuery.filter(_.column[T]("id") === id).update(entity)).map(_.map(_ => entity)) // TODO column("id") should be a generik pk
 
 
-  def delete[E <: Entity, PK](tableQuery: TableQuery[Table[E] with PKTable],
+  def delete[E <: Entity[Any], PK](tableQuery: TableQuery[Table[E] with PKTable],
                                  id : Any,//id: PK,
                                  force_delete: Boolean)
                              (implicit bct: BaseColumnType[Any]): Future[Expect[Any]] = {

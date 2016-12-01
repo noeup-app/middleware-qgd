@@ -22,7 +22,9 @@ import scalaz.{-\/, \/, \/-}
 import scala.concurrent.ExecutionContext.Implicits.global
 import slick.driver._
 import slick.driver.PostgresDriver.api._
+import slick.lifted.TableQuery
 
+import scala.language.implicitConversions
 
 /**
   * Created by damien on 15/11/2016.
@@ -53,7 +55,7 @@ class Dao @Inject()(dbConfigProvider: DatabaseConfigProvider) {
       }
   }
 
-  def runForAll[U <: Entity, V <: Table[U], C[_]](query: Query[V, U, C]): Future[Expect[C[U]]] = {
+  def runForAll[U <: Entity[Any], V <: Table[U], C[_]](query: Query[V, U, C]): Future[Expect[C[U]]] = {
     db.run(query.result)
       .map(\/-(_))
       .recover{
@@ -61,7 +63,7 @@ class Dao @Inject()(dbConfigProvider: DatabaseConfigProvider) {
       }
   }
 
-  def runForHeadOption[U <: Entity, V <: Table[U], C[_]](query: Query[V, U, C]): Future[Expect[Option[U]]] = {
+  def runForHeadOption[U <: Entity[Any], V <: Table[U], C[_]](query: Query[V, U, C]): Future[Expect[Option[U]]] = {
     db.run(query.result.headOption)
       .map(\/-(_))
       .recover{
