@@ -67,7 +67,8 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
   private def findTypeToString(id: Any) = id match {
     case t:UUID => "UUID"
-    case t:Int => "bigint"
+    case t:Long => "bigint"
+    case t:Int => "int"
     case _ => "TEXT"
   }
 
