@@ -1,15 +1,30 @@
 package com.noeupapp.middleware.crudauto
 
-
+import slick.ast.NumericTypedType
 import slick.driver._
 import slick.driver.PostgresDriver.api._
-import slick.lifted.{TableQuery, Tag}
+import slick.lifted.{Isomorphism, TableQuery, Tag}
 
 import scala.collection.immutable.HashMap
 import scala.language.existentials
 import scala.reflect.ClassTag
 
 trait CrudClassName {
+
+  // TODO this should be imported from ImplicitColumnTypes (accepted with Damien :-) )
+  implicit def isomorphicType[A, B](implicit iso: Isomorphism[A, B], ct: ClassTag[A], jt: BaseColumnType[B]): BaseColumnType[A] =
+    MappedColumnType.base[A, B](iso.map, iso.comap)
+  implicit def booleanColumnType: BaseColumnType[Boolean]
+  implicit def bigDecimalColumnType: BaseColumnType[BigDecimal] with NumericTypedType
+  implicit def byteColumnType: BaseColumnType[Byte] with NumericTypedType
+  implicit def charColumnType: BaseColumnType[Char]
+  implicit def doubleColumnType: BaseColumnType[Double] with NumericTypedType
+  implicit def floatColumnType: BaseColumnType[Float] with NumericTypedType
+  implicit def intColumnType: BaseColumnType[Int] with NumericTypedType
+  implicit def longColumnType: BaseColumnType[Long] with NumericTypedType
+  implicit def shortColumnType: BaseColumnType[Short] with NumericTypedType
+  implicit def stringColumnType: BaseColumnType[String]
+
 
   def configure(modelName: String): Option[CrudConfiguration[_,_,_]]
 
