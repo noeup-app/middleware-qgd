@@ -23,9 +23,9 @@ import play.api.mvc.Results._
 
 import scala.language.existentials
 
-trait AbstractCrudService {
+class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
+                                     crudClassName: CrudClassName){
 
-  val crudAutoService: CrudAutoService
 
   def parseStringToType[T](strClass: Class[T], str: String): Future[Expect[T]] = Future {
     try {
@@ -76,10 +76,7 @@ trait AbstractCrudService {
         singleton     = Class.forName(configuration.entityClass.getName + "$")
         out           = Class.forName(configuration.entityClass.getName + "Out")
 
-        tableQuery    = TableQuery(tag =>
-                          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
-                            .newInstance(tag)
-                            .asInstanceOf[Table[Entity[Any]] with PKTable])
+        tableQuery    = provideTableQuery(tableDefClass)
 
         found         <- EitherT(crudAutoService.findAll(tableQuery))
         newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
@@ -87,6 +84,12 @@ trait AbstractCrudService {
       } yield filteredJson
     }.run
 
+
+  def provideTableQuery(tableDefClass: Class[_]): TableQuery[Table[Entity[Any]] with PKTable] =
+    TableQuery(tag =>
+      tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+        .newInstance(tag)
+        .asInstanceOf[Table[Entity[Any]] with PKTable])
 
   def deepFetchAllFlow(model1: String, rawId: String, model2: String, omits: List[String], includes: List[String]): Future[Expect[Option[JsValue]]] =
     {
@@ -255,7 +258,19 @@ trait AbstractCrudService {
       case res => res
     }
 
-  protected def getConfiguration(model: String): Future[Expect[CrudConfigurationUnTyped]]
+  protected def getConfiguration(model: String): Future[Expect[CrudConfigurationUnTyped]] = {
+    crudClassName.getModel(model) match {
+      case Some(className) => Future.successful(\/- {
+        CrudConfigurationUnTyped(
+          entityClass    = className.entityClass,
+          pK             = className.pK,
+          tableDef       = className.tableDef,
+          baseColumnType = className.baseColumnType
+        )
+      })
+      case None => Future.successful(-\/(FailError("this model is not supported")))
+    }
+  }
 
 }
 
@@ -294,23 +309,23 @@ trait AbstractCrudService {
 //
 //
 //}
-
-class CrudService @Inject()(val crudAutoService: CrudAutoService,
-                            crudClassName: CrudClassName) extends AbstractCrudService{
-
-  override def getConfiguration(model: String): Future[Expect[CrudConfigurationUnTyped]] = {
-    crudClassName.configure(model) match {
-      case Some(className) => Future.successful(\/- {
-        CrudConfigurationUnTyped(
-          entityClass    = className.entityClass,
-          pK             = className.pK,
-          tableDef       = className.tableDef,
-          baseColumnType = className.baseColumnType
-        )
-      })
-      case None => Future.successful(-\/(FailError("this model is not supported")))
-    }
-  }
-}
+//
+//class CrudService @Inject()(val crudAutoService: CrudAutoService,
+//                            crudClassName: CrudClassName) extends AbstractCrudService{
+//
+//  override def getConfiguration(model: String): Future[Expect[CrudConfigurationUnTyped]] = {
+//    crudClassName.configure(model) match {
+//      case Some(className) => Future.successful(\/- {
+//        CrudConfigurationUnTyped(
+//          entityClass    = className.entityClass,
+//          pK             = className.pK,
+//          tableDef       = className.tableDef,
+//          baseColumnType = className.baseColumnType
+//        )
+//      })
+//      case None => Future.successful(-\/(FailError("this model is not supported")))
+//    }
+//  }
+//}
 
 

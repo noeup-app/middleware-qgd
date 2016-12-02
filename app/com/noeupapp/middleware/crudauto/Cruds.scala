@@ -14,7 +14,7 @@ import play.api.libs.json._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz._
 
-class Cruds @Inject()(crudService: CrudService,
+class Cruds @Inject()(crudService: AbstractCrudService,
                       val messagesApi: MessagesApi,
                       val env: Environment[Account, BearerTokenAuthenticator],
                       scopeAndRoleAuthorization: ScopeAndRoleAuthorization

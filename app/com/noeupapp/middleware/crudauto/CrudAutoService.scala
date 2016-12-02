@@ -5,6 +5,7 @@ import java.util.UUID
 import javax.inject.Inject
 
 import anorm.RowParser
+import com.google.inject.TypeLiteral
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.utils.MonadTransformers._
 import com.noeupapp.middleware.errorHandle.FailError
@@ -36,9 +37,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
 
 
-
-
-  def findAll[E <: Entity[Any], PK](tableQuery: TableQuery[Table[E] with PKTable]): Future[Expect[Seq[E]]] = {
+  def findAll[E <: Entity[Any]](tableQuery: TableQuery[Table[E] with PKTable]): Future[Expect[Seq[E]]] = {
     if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted"))
       dao.runForAll(tableQuery.filter(_.column[Boolean]("deleted") === false))
     else
@@ -73,7 +72,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
   }
 
 
-  def deepFindAll[E <: Entity[Any], F <: Entity[Any], PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable],
+  def deepFindAll[E <: Entity[Any], F <: Entity[Any], PKE](tableQuery: TableQuery[Table[F] with PKTable],
                                                        id: PKE,
                                                        joinedTableName: String
                                                       )(implicit formatF: Format[F]): Future[Expect[Seq[F]]] = {
@@ -483,4 +482,50 @@ class CrudAutoService @Inject()(dao: Dao)() {
       )
     )
   }
+}
+
+
+class CrudAutoFactory[E <: Entity[Any]](crudClassName: CrudClassName,
+                         crudAutoService: CrudAutoService,
+                         abstractCrudService: AbstractCrudService)(implicit val typeLit: TypeLiteral[E]) {
+
+
+  private val configurationOpt = crudClassName.configure.values.find(_.entityClass == typeLit.getRawType)
+
+  assert(configurationOpt.isEmpty, s"CrudAutoFactory - Unable to find ${typeLit.getType.getTypeName} key in configuration")
+
+  private val configuration = configurationOpt.get
+
+  private val tableQuery: TableQuery[Table[E] with PKTable] =
+    abstractCrudService.provideTableQuery(configuration.tableDef)
+      .asInstanceOf[TableQuery[Table[E] with PKTable]]
+
+  def findAll: Future[Expect[Seq[E]]] = crudAutoService.findAll(tableQuery)
+
+//  def deepFindAll[F <: Entity[Any], PKE](id: PKE, joinedTableName: String)(implicit formatF: Format[F]): Future[Expect[Seq[F]]] = ???
+//
+//
+//  def deepFindById[F <: Entity[Any], PKE, PKF](id1: PKE,
+//                                               joinedTableName: String,
+//                                               id2: PKE
+//                                              )(implicit formatF: Format[F]): Future[Expect[Option[F]]] = ???
+
+  def find[PK](id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] =
+    crudAutoService.find[E](tableQuery, id)(bct.asInstanceOf[BaseColumnType[Any]])
+
+
+  def add[PK](entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
+    crudAutoService.add[E, PK, Table[E] with PKTable](tableQuery, entity)
+
+  def upsert[PK](entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
+    crudAutoService.upsert(tableQuery, entity)(bct)
+
+  def update[PK](id: PK, entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
+    crudAutoService.update(tableQuery, id, entity)
+
+  def delete(id : Any, force_delete: Boolean)(implicit bct: BaseColumnType[Any]): Future[Expect[Any]] =
+    crudAutoService.delete(tableQuery, id, force_delete)
+
+
+
 }

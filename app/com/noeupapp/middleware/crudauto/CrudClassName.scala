@@ -35,7 +35,10 @@ trait CrudClassName {
   )
 
 
-  def configure(modelName: String): Option[CrudConfiguration[_,_,_]]
+  def configure: Map[String,CrudConfiguration[_,_,_]]
+
+
+  def getModel(modelName: String): Option[CrudConfiguration[_,_,_]] = configure.get(modelName)
 
 
   // TODO : why cast is necessary here ?
