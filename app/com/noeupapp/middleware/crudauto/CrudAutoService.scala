@@ -31,6 +31,8 @@ import play.api.mvc.Results._
 import slick.profile.SqlStreamingAction
 import slick.jdbc.{GetResult, PositionedResult}
 
+import scala.reflect.runtime.{universe => ru}
+
 class CrudAutoService @Inject()(dao: Dao)() {
 
 
@@ -190,11 +192,11 @@ class CrudAutoService @Inject()(dao: Dao)() {
     dao.run(tableQuery.insertOrUpdate(entity)).map(_.map(_ => entity))
 
 
-  def update[E <: Entity[Any], PK, V <: Table[E], T](tableQuery: TableQuery[V with PKTable],
-                                   id: T,
+  def update[E <: Entity[Any], PK, V <: Table[E]](tableQuery: TableQuery[V with PKTable],
+                                   id: PK,
                                    entity: E)
-                                   (implicit bct: BaseColumnType[T]): Future[Expect[E]] =
-    dao.run(tableQuery.filter(_.column[T]("id") === id).update(entity)).map(_.map(_ => entity)) // TODO column("id") should be a generik pk
+                                   (implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
+    dao.run(tableQuery.filter(_.column[PK]("id") === id).update(entity)).map(_.map(_ => entity)) // TODO column("id") should be a generik pk
 
 
   def delete[E <: Entity[Any], PK](tableQuery: TableQuery[Table[E] with PKTable],
@@ -485,14 +487,16 @@ class CrudAutoService @Inject()(dao: Dao)() {
 }
 
 
-class CrudAutoFactory[E <: Entity[Any]](crudClassName: CrudClassName,
+class CrudAutoFactory[E <: Entity[PK], PK](crudClassName: CrudClassName,
                          crudAutoService: CrudAutoService,
-                         abstractCrudService: AbstractCrudService)(implicit val typeLit: TypeLiteral[E]) {
+                         abstractCrudService: AbstractCrudService)
+                                           (implicit val eTypeLit: TypeLiteral[E],
+                                            val pkeTypeLit: TypeLiteral[PK]) {
 
 
-  private val configurationOpt = crudClassName.configure.values.find(_.entityClass == typeLit.getRawType)
+  private val configurationOpt = crudClassName.configure.values.find(_.entityClass == eTypeLit.getRawType)
 
-  assert(configurationOpt.isEmpty, s"CrudAutoFactory - Unable to find ${typeLit.getType.getTypeName} key in configuration")
+  assert(configurationOpt.isEmpty, s"CrudAutoFactory - Unable to find ${eTypeLit.getType.getTypeName} key in configuration")
 
   private val configuration = configurationOpt.get
 
@@ -500,7 +504,23 @@ class CrudAutoFactory[E <: Entity[Any]](crudClassName: CrudClassName,
     abstractCrudService.provideTableQuery(configuration.tableDef)
       .asInstanceOf[TableQuery[Table[E] with PKTable]]
 
-  def findAll: Future[Expect[Seq[E]]] = crudAutoService.findAll(tableQuery)
+
+  private val tableQueryAny: TableQuery[Table[Entity[Any]] with PKTable] =
+    abstractCrudService.provideTableQuery(configuration.tableDef)
+      .asInstanceOf[TableQuery[Table[Entity[Any]] with PKTable]]
+
+
+//  type PK =
+
+   val pkType: ru.Type = getType(configuration.pK)
+
+  private def getType[T](clazz: Class[T]): ru.Type = {
+    val runtimeMirror =  ru.runtimeMirror(clazz.getClassLoader)
+    runtimeMirror.classSymbol(clazz).toType
+  }
+
+  def findAll: Future[Expect[Seq[E]]] =
+    crudAutoService.findAll[Entity[Any]](tableQueryAny).map(_.map(_.map(_.asInstanceOf[E])))
 
 //  def deepFindAll[F <: Entity[Any], PKE](id: PKE, joinedTableName: String)(implicit formatF: Format[F]): Future[Expect[Seq[F]]] = ???
 //
@@ -510,21 +530,36 @@ class CrudAutoFactory[E <: Entity[Any]](crudClassName: CrudClassName,
 //                                               id2: PKE
 //                                              )(implicit formatF: Format[F]): Future[Expect[Option[F]]] = ???
 
-  def find[PK](id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] =
-    crudAutoService.find[E](tableQuery, id)(bct.asInstanceOf[BaseColumnType[Any]])
+  def find(id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] =
+    crudAutoService.find[Entity[Any]](tableQueryAny, id)(bct.asInstanceOf[BaseColumnType[Any]])
+      .map(_.map(_.map(_.asInstanceOf[E])))
 
 
-  def add[PK](entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
-    crudAutoService.add[E, PK, Table[E] with PKTable](tableQuery, entity)
+  def add(entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
+    crudAutoService.add[Entity[Any], PK, Table[Entity[Any]] with PKTable](
+      tableQueryAny,
+      entity.asInstanceOf[Entity[Any]]
+    ).map(_.map(_.asInstanceOf[E]))
 
-  def upsert[PK](entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
-    crudAutoService.upsert(tableQuery, entity)(bct)
+  def upsert(entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
+    crudAutoService.upsert[Entity[Any], PK, Table[Entity[Any]] with PKTable](
+      tableQueryAny,
+      entity.asInstanceOf[Entity[Any]]
+    )(bct).map(_.map(_.asInstanceOf[E]))
 
-  def update[PK](id: PK, entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
-    crudAutoService.update(tableQuery, id, entity)
+  def update(id: PK, entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] =
+    crudAutoService.update[Entity[Any], PK, Table[Entity[Any]]](
+      tableQueryAny,
+      id,
+      entity.asInstanceOf[Entity[Any]]
+    ).map(_.map(_.asInstanceOf[E]))
 
-  def delete(id : Any, force_delete: Boolean)(implicit bct: BaseColumnType[Any]): Future[Expect[Any]] =
-    crudAutoService.delete(tableQuery, id, force_delete)
+  def delete(id : PK, force_delete: Boolean)(implicit bct: BaseColumnType[PK]): Future[Expect[PK]] =
+    crudAutoService.delete[Entity[Any], PK](
+      tableQueryAny,
+      id,
+      force_delete
+    )(bct.asInstanceOf[BaseColumnType[Any]]).map(_.map(_.asInstanceOf[PK]))
 
 
 
