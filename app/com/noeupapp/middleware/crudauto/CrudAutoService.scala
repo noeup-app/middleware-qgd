@@ -487,16 +487,16 @@ class CrudAutoService @Inject()(dao: Dao)() {
 }
 
 
-class CrudAutoFactory[E <: Entity[PK], PK](crudClassName: CrudClassName,
-                         crudAutoService: CrudAutoService,
-                         abstractCrudService: AbstractCrudService)
-                                           (implicit val eTypeLit: TypeLiteral[E],
-                                            val pkeTypeLit: TypeLiteral[PK]) {
+class CrudAutoFactory[E <: Entity[PK], PK] @Inject()( crudClassName: CrudClassName,
+                                                      crudAutoService: CrudAutoService,
+                                                      abstractCrudService: AbstractCrudService)
+                                                      (implicit val eTypeLit: TypeLiteral[E],
+                                                       val pkeTypeLit: TypeLiteral[PK]) {
 
 
-  private val configurationOpt = crudClassName.configure.values.find(_.entityClass == eTypeLit.getRawType)
+  private val configurationOpt = crudClassName.configure.values.find(_.entityClass.getName equals eTypeLit.getRawType.getName)
 
-  assert(configurationOpt.isEmpty, s"CrudAutoFactory - Unable to find ${eTypeLit.getType.getTypeName} key in configuration")
+  assert(configurationOpt.isDefined, s"CrudAutoFactory - Unable to find ${eTypeLit.getType.getTypeName} key in configuration")
 
   private val configuration = configurationOpt.get
 
