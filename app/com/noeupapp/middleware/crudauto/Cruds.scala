@@ -14,18 +14,35 @@ import play.api.libs.json._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz._
 
-class Cruds @Inject()(crudService: CrudService,
+class Cruds @Inject()(crudService: AbstractCrudService,
                       val messagesApi: MessagesApi,
                       val env: Environment[Account, BearerTokenAuthenticator],
                       scopeAndRoleAuthorization: ScopeAndRoleAuthorization
                      ) extends Silhouette[Account, BearerTokenAuthenticator] {
 
-  def fetchById(model: String, id: UUID/*, omit: Option[String], include: Option[String]*/) = UserAwareAction.async { implicit request =>
+  def fetchById(model: String, id: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
 
-    //    val omits    = omit.map(_.split(",").toList)
-    //    val includes = include.map(_.split(",").toList)
+    val omits    = omit.map(_.split(",").toList).toList.flatten
+    val includes = include.map(_.split(",").toList).toList.flatten
 
-    crudService.findByIdFlow(model, id) map {
+    crudService.findByIdFlow(model, id, omits, includes) map {
+      case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
+        Logger.warn(error.toString)
+        BadRequest(Json.toJson(s"id type given is not correct (id given is `$id`)"))
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while fetching "+model))
+      case \/-(Some(json)) =>  Ok(Json.toJson(json))
+      case \/-(None)       =>  NotFound("Entity not found")
+    }
+  }
+
+  def fetchAll(model: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+
+    val omits    = omit.map(_.split(",").toList).toList.flatten
+    val includes = include.map(_.split(",").toList).toList.flatten
+
+    crudService.findAllFlow(model, omits, includes) map {
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while fetching "+model))
@@ -33,67 +50,69 @@ class Cruds @Inject()(crudService: CrudService,
     }
   }
 
-  def fetchAll(model: String) = UserAwareAction.async { implicit request =>
+  def deepFetchAll(model1: String, id: String, model2: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
 
-    crudService.findAllFlow(model) map {
+    val omits    = omit.map(_.split(",").toList).toList.flatten
+    val includes = include.map(_.split(",").toList).toList.flatten
+
+    crudService.deepFetchAllFlow(model1, id, model2, omits, includes) map {
       case -\/(error) =>
         Logger.error(error.toString)
-        InternalServerError(Json.toJson("Error while fetching "+model))
-      case \/-(json) =>  Ok(Json.toJson(json))
+        InternalServerError(Json.toJson(s"Error while fetching /$model1/$id/$model2"))
+      case \/-(None) => NotFound(Json.toJson(s"`/$model1/$id` is not found"))
+      case \/-(json) => Ok(Json.toJson(json))
     }
   }
-  //
-  //  def fetchName(model: String) = UserAwareAction.async { implicit request =>
-  //
-  //    crudService.getClassName(model) map {
-  //      case -\/(error) =>
-  //        Logger.error(error.toString)
-  //        InternalServerError(Json.toJson("Error while fetching "+model))
-  //      case \/-(name) =>  Ok(Json.toJson(name))
-  //    }
-  //  }
-  //
-  //  def add(model: String) = UserAwareAction.async(parse.json) { implicit request =>
-  //
-  //    val json = request.body.as[JsObject]
-  //    crudService.addFlow(model, json) map {
-  //      case -\/(error) => error.message match {
-  //        case m if m.contains("validating json") =>
-  //          Logger.error(error.toString)
-  //          BadRequest(m)
-  //        case _ =>
-  //          Logger.error(error.toString)
-  //          InternalServerError(Json.toJson("Error while adding new "+model))
-  //      }
-  //      case \/-(js) =>  Ok(Json.toJson(js))
-  //    }
-  //  }
-  //
-  //  def update(model: String, id: UUID) = UserAwareAction.async(parse.json) { implicit request =>
-  //
-  //    val json = request.body.as[JsObject]
-  //    crudService.updateFlow(model, json, id) map {
-  //      case -\/(error) =>
-  //        error.message match {
-  //          case m if m.contains("fields") =>
-  //            Logger.error(error.toString)
-  //            BadRequest(m)
-  //          case _ =>
-  //            Logger.error(error.toString)
-  //            InternalServerError(Json.toJson("Error while adding new "+model))
-  //        }
-  //      case \/-(js) =>  Ok(Json.toJson(js))
-  //    }
-  //  }
-  //
-  //  def delete(model: String, id: UUID, purge:Option[Boolean]) = UserAwareAction.async { implicit request =>
-  //
-  //    crudService.deleteFlow(model, id, purge) map {
-  //      case -\/(error) =>
-  //        Logger.error(error.toString)
-  //        InternalServerError(Json.toJson("Error while deleting "+model))
-  //      case \/-(true) => Ok(Json.toJson("deletion successful"))
-  //      case \/-(false) => InternalServerError("deletion failed")
-  //    }
-  //  }
+
+  def deepFetchById(model1: String, id1: String, model2: String, id2: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+
+    val omits    = omit.map(_.split(",").toList).toList.flatten
+    val includes = include.map(_.split(",").toList).toList.flatten
+
+    crudService.deepFetchByIdFlow(model1, id1, model2, id2, omits, includes) map {
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson(s"Error while fetching /$model1/$id1/$model2/$id2"))
+      case \/-(None) => NotFound(Json.toJson(s"`/model1/$id1/$model2/$id2` is not found"))
+      case \/-(json) => Ok(Json.toJson(json))
+    }
+  }
+
+  def add(model: String) = UserAwareAction.async(parse.json) { implicit request =>
+
+    val json = request.body.as[JsObject]
+    crudService.addFlow(model, json) map {
+      case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
+        BadRequest(Json.toJson("Json given is not correct"))
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while adding new " + model))
+      case \/-(js) =>  Ok(Json.toJson(js))
+    }
+  }
+
+  def update(model: String, id: String) = UserAwareAction.async(parse.json) { implicit request =>
+
+    val json = request.body.as[JsObject]
+    crudService.updateFlow(model, json, id) map {
+      case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
+        BadRequest(Json.toJson("Json given is not correct"))
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while updating " + model))
+      case \/-(Some(js)) =>  Ok(Json.toJson(js))
+      case \/-(None)     =>  NotFound(Json.toJson(s"/$model/$id is not found"))
+    }
+  }
+
+  def delete(model: String, id: String, purge:Option[Boolean], force_delete: Option[Boolean] = None) = UserAwareAction.async {
+
+    crudService.deleteFlow(model, id, purge, force_delete.getOrElse(false)) map {
+      case -\/(error) =>
+        Logger.error(error.toString)
+        InternalServerError(Json.toJson("Error while deleting "+model))
+      case \/-(Some(json)) =>  Ok(Json.toJson(json))
+      case \/-(None)       =>  NotFound("Entity not found")
+    }
+  }
 }

@@ -1,5 +1,7 @@
 package com.noeupapp.middleware.evolution
 
+import java.util.UUID
+
 import play.api.mvc.{Action, Controller, Result}
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 
@@ -10,17 +12,14 @@ import play.api.Logger
 import scalaz.{-\/, \/-}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-
 class Evolution extends Controller {
 
   def apply(id: Int) = Action.async {
     id match {
       case 0 => _init
-      case 1 => _1
       case _ => Future.successful(NotFound)
     }
   }
-
 
   private def applyHelper(sql: String): Future[Result] = {
     TryBDCall { implicit c =>
@@ -273,11 +272,5 @@ class Evolution extends Controller {
         |  'initial setup'
         |);
       """
-    .stripMargin)
-
-  def _1 =
-    applyHelper(
-      """
-        |
-      """.stripMargin)
+        .stripMargin)
 }

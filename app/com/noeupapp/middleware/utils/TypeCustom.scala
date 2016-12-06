@@ -2,11 +2,13 @@ package com.noeupapp.middleware.utils
 
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError._
-import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.mvc.Results.Status
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
 import scala.language.implicitConversions
+import play.api.mvc.Results._
 
 object TypeCustom {
   implicit def asBooleanCustom(boolean: Boolean): BooleanCustom = new BooleanCustom(boolean)
@@ -57,10 +59,10 @@ class OptionCustom[T](option: Option[T]) {
     * @param message message returned if option is None
     * @return
     */
-  def |>(message: String): Future[Expect[T]] = {
+  def |>(message: String, errorType: Status = InternalServerError): Future[Expect[T]] = {
     option match {
       case Some(e) => Future.successful(\/-(e))
-      case None    => Future.successful(-\/(FailError(message)))
+      case None    => Future.successful(-\/(FailError(message, errorType = errorType)))
     }
   }
 }

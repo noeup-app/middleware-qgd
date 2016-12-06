@@ -1,3 +1,4 @@
+/*
 package com.noeupapp.middleware.crudauto
 
 import java.util.UUID
@@ -101,3 +102,4 @@ class CrudService @Inject()(val crudAutoService: CrudAutoService,
   }
 }
 
+*/
