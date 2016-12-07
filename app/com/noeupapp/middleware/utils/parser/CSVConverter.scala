@@ -2,6 +2,9 @@ package com.noeupapp.middleware.utils.parser
 
 import java.io.File
 
+import com.noeupapp.middleware.errorHandle.FailError
+import com.noeupapp.middleware.errorHandle.FailError.Expect
+import org.joda.time.DateTime
 import play.api.libs.iteratee.Enumeratee.{CheckDone, Grouped}
 import play.api.libs.iteratee.Execution.Implicits._
 import play.api.libs.iteratee.{Done, Input, _}
@@ -13,6 +16,7 @@ import syntax.singleton._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.immutable.{:: => Cons}
 import scala.concurrent.{ExecutionContext, Future}
+import scalaz.{-\/, \/-}
 
 // Implementation
 
@@ -47,27 +51,54 @@ object CSVConverter {
     def to(s: String): String = s
   }
 
-  implicit def stringOptCSVConverter: CSVConverter[Option[String]] = new CSVConverter[Option[String]] {
-    def from(s: String, context: Option[Line] = Option.empty): Try[Option[String]] =
+  implicit def optCSVConverter[T](implicit st: Lazy[CSVConverter[T]]): CSVConverter[Option[T]] = new CSVConverter[Option[T]] {
+    def from(s: String, context: Option[Line] = Option.empty): Try[Option[T]] =
       s.trim match {
         case str if str.isEmpty => Success(None)
-        case str => Success(Some(str))
+        case str =>
+          for{
+            v <- st.value.from(str)
+          } yield Some(v)
       }
-    def to(s: Option[String]): String = s.getOrElse("")
+    def to(s: Option[T]): String = s.map(st.value.to).getOrElse("")
+
   }
 
   implicit def intCsvConverter: CSVConverter[Int] = new CSVConverter[Int] {
-    def from(s: String, context: Option[Line] = Option.empty): Try[Int] = Try(s.trim.toInt)
+    def from(s: String, context: Option[Line] = Option.empty): Try[Int] =
+      Try(s.trim.toInt) match {
+        case Failure(e: Exception) => Failure(new Exception(s"${e.getMessage} ; context : $context"))
+        case e => e
+    }
+
     def to(i: Int): String = i.toString
+  }
+
+  implicit def booleanCsvConverter: CSVConverter[Boolean] = new CSVConverter[Boolean] {
+    def from(s: String, context: Option[Line] = Option.empty): Try[Boolean] = Try(s.trim.toBoolean)
+
+    def to(i: Boolean): String = i.toString
+  }
+
+
+  implicit def doubleCsvConverter: CSVConverter[Double] = new CSVConverter[Double] {
+    def from(s: String, context: Option[Line] = Option.empty): Try[Double] = Try(s.trim.toDouble)
+    def to(i: Double): String = i.toString
+  }
+
+  implicit def dateTimeCsvConverter: CSVConverter[DateTime] = new CSVConverter[DateTime] {
+    def from(s: String, context: Option[Line] = Option.empty): Try[DateTime] = Try(DateTime.parse(s.trim))
+    def to(i: DateTime): String = i.toString
   }
 
   def listCsvLinesConverter[A](l: List[Line])(implicit ec: CSVConverter[A])
   : Try[List[A]] = l match {
     case Nil => Success(Nil)
-    case Cons(s,ss) => for {
-      x <- ec.from(s.value, Some(s))
-      xs <- listCsvLinesConverter(ss)(ec)
-    } yield Cons(x, xs)
+    case Cons(s,ss) =>
+      for {
+        x <- ec.from(s.value, Some(s))
+        xs <- listCsvLinesConverter(ss)(ec)
+      } yield Cons(x, xs)
   }
 
   implicit def listCsvConverter[A](implicit ec: CSVConverter[A])
@@ -97,7 +128,7 @@ object CSVConverter {
       def from(s: String, context: Option[Line] = Option.empty): Try[HNil] =
         s match {
           case "" => Success(HNil)
-          case s => fail("Cannot convert '" ++ s ++ "' to HNil", context)
+          case found => fail(s"Cannot convert `$s` to HNil (found : `$found`)", context)
         }
 
       def to(n: HNil) = ""
@@ -116,34 +147,11 @@ object CSVConverter {
               back <- sct.value.from(if (after.isEmpty) after else after.tail, context)
             } yield front :: back
 
-          case _ => fail("Cannot convert '" ++ s ++ "' to HList", context)
+          case error => fail(s"Cannot convert `$s` to HList (split returned : `$error`)", context)
         }
 
       def to(ft: V :: T): String = {
         scv.value.to(ft.head) ++ "," ++ sct.value.to(ft.tail)
-      }
-    }
-
-  implicit def deriveHConsOption[V, T <: HList]
-  (implicit scv: Lazy[CSVConverter[V]], scvOpt: Lazy[CSVConverter[Option[V]]], sct: Lazy[CSVConverter[T]])
-  : CSVConverter[Option[V] :: T] =
-    new CSVConverter[Option[V] :: T] {
-
-      def from(s: String, context: Option[Line] = Option.empty): Try[Option[V] :: T] =
-        s.trim.span(_ != ',') match {
-          case (before,after) =>
-            (for {
-              front <- scvOpt.value.from(before, context)
-              back <- sct.value.from(if (after.isEmpty) after else after.tail, context)
-            } yield front :: back).orElse {
-              sct.value.from(s.trim, context).map(None :: _)
-            }
-
-          case _ => fail("Cannot convert '" ++ s ++ "' to HList", context)
-        }
-
-      def to(ft: Option[V] :: T): String = {
-        ft.head.map(scv.value.to(_) ++ ",").getOrElse("") ++ sct.value.to(ft.tail)
       }
     }
 
@@ -158,7 +166,7 @@ object CSVConverter {
   }
 
 
-  def readHugeFile[T](file: File)(implicit st: Lazy[CSVConverter[T]]) = {
+  def readHugeFile[T](file: File, cSVAction: Option[CSVAction] = None)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[List[T]]] = {
 
 
     val chunkSize = 1024 * 8
@@ -264,25 +272,23 @@ object CSVConverter {
     val parseChunk: Iteratee[List[Line], Try[List[T]]] = {
       println("parseChunk")
       Iteratee.fold[List[Line], Try[List[T]]](Try(List.empty)) {
-        case (_, chunk) =>
+        case (_, chunk) if cSVAction.isDefined =>
           println(("chunk", chunk.size))
+          //          chunk.foreach(l => println((l.number, l.value.filter(_ == ',').length, l.value)))
+          listCsvLinesConverter[T](CSVSpitter.splitCSV(chunk, cSVAction.get))(st.value)
+        case (_, chunk) if cSVAction.isEmpty =>
+          println(("chunk", chunk.size))
+//          chunk.foreach(l => println((l.number, l.value.filter(_ == ',').length, l.value)))
           listCsvLinesConverter[T](chunk)(st.value)
       }
     }
 
 
-    val future = (enumerator &> groupByLines ><> turnIntoLines  |>> parseChunk).flatMap(_.run)
-    future.onFailure{
-      case e => println(e)
-    }
-    future.onSuccess{
-      case list =>
-        println("ok")
-        println(list)
-        println(list foreach println)
-//        println(list.mkString("\n"))
-    }
-
+//    val future =
+      (enumerator &> groupByLines ><> turnIntoLines  |>> parseChunk).flatMap(_.run) map {
+        case Success(value) => \/-(value)
+        case Failure(error) => -\/(FailError(error))
+      }
   }
 
 }
