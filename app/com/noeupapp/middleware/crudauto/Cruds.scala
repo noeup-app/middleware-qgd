@@ -83,6 +83,7 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     val json = request.body.as[JsObject]
     crudService.addFlow(model, json) map {
       case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
+        Logger.error(error.toString)
         BadRequest(Json.toJson("Json given is not correct"))
       case -\/(error) =>
         Logger.error(error.toString)

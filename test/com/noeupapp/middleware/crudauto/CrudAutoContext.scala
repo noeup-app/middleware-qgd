@@ -154,11 +154,10 @@ trait CrudAutoContext extends Scope {
 
 class Crud extends CrudClassName {
 
-  override def configure(modelName: String): Option[CrudConfiguration[_,_,_]] =
-    modelName match {
-      case "tests" => configuration[Test, UUID, TestTableDef]
-      case "things" => configuration[Thing, UUID, ThingTableDef]
-      case "rel" => configuration[RelTestThing, Long, RelTestThingTableDef]
-      case _ => None
-    }
+  override def configure: Map[String, CrudConfiguration[_, _, _]] = Map(
+    "tests"  -> configuration[Test, UUID, TestTableDef],
+    "things" -> configuration[Thing, UUID, ThingTableDef],
+    "rel"    -> configuration[RelTestThing, Long, RelTestThingTableDef]
+  )
+
 }

@@ -22,6 +22,7 @@ import slick.lifted.TableQuery
 import play.api.mvc.Results._
 
 import scala.language.existentials
+import scala.reflect.ClassTag
 
 class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
                                      crudClassName: CrudClassName){
@@ -58,7 +59,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
                             .asInstanceOf[Table[Entity[Any]] with PKTable])
 
         found         <- EitherT(
-                          crudAutoService.find(tableQuery, id)
+                          crudAutoService.find(tableQuery, id.asInstanceOf[Any])
                           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]]))
         newJson       <- EitherT(crudAutoService.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
         filteredJson  <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
@@ -214,7 +215,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
                               .asInstanceOf[Table[Entity[Any]] with PKTable])
 
         foundOpt        <- EitherT(
-                            crudAutoService.find(tableQuery, id)
+                            crudAutoService.find(tableQuery, id.asInstanceOf[Any])
                             (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]]))
         found           <- EitherT(foundOpt |> (s"`/$model/$id` is not found", NotFound))
 
@@ -245,7 +246,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
                               .asInstanceOf[Table[Entity[Any]] with PKTable])
 
         foundOpt        <- EitherT(
-                              crudAutoService.find(tableQuery, id)
+                              crudAutoService.find(tableQuery, id.asInstanceOf[Any])
                               (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]]))
         _               <- EitherT(foundOpt |> ("couldn't find this entity", NotFound))
         _               <- EitherT(

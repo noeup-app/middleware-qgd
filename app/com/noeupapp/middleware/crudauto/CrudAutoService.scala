@@ -510,7 +510,7 @@ class CrudAutoFactory[E <: Entity[PK], PK] @Inject()( crudClassName: CrudClassNa
 //                                              )(implicit formatF: Format[F]): Future[Expect[Option[F]]] = ???
 
   def find(id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] =
-    crudAutoService.find[Entity[PK], PK](tableQuery/*Any*/, id)(bct.asInstanceOf[BaseColumnType[PK]])
+    crudAutoService.find[Entity[PK], PK](tableQuery.asInstanceOf[TableQuery[Table[Entity[PK]] with PKTable]]/*Any*/, id)(bct.asInstanceOf[BaseColumnType[PK]])
       .map(_.map(_.map(_.asInstanceOf[E])))
 
 
