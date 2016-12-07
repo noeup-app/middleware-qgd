@@ -30,27 +30,21 @@ trait AbstractCrudService {
   def findByIdFlow(model:String, id: UUID): Future[Expect[JsValue]] =
     {
       for {
-        name <- EitherT(getClassName(model))
-        entityClass = name.entityClass
-        pkClass = name.pK
-        tableDefClass = name.tableDef
-        singleton = Class.forName(name.entityClass.getName + "$")
-        //
-        //        input = Class.forName(name+"In")
-        out = Class.forName(name.entityClass.getName + "Out")
+        configuration <- EitherT(getCrudConfiguration(model))
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        out = Class.forName(configuration.entityClass.getName + "Out")
 
         tableQuery = TableQuery(tag =>
-          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+          configuration.tableDef.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
             .newInstance(tag)
             .asInstanceOf[Table[Entity] with PKTable[Object]])
-        //.asInstanceOf[slick.lifted.AbstractTable[?]])
-        //        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
 
         found <- EitherT(
           crudAutoService.find(tableQuery, id)
-          (name.baseColumnType.asInstanceOf[BaseColumnType[Object]])
+                              (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]])
         )
-        newJson <- EitherT(crudAutoService.toJsValue(found.toList, entityClass, singleton, out))
+        newJson <- EitherT(crudAutoService.toJsValue(found, configuration.entityClass, singleton, out))
       } yield newJson
     }.run
 
@@ -58,28 +52,22 @@ trait AbstractCrudService {
   def findAllFlow(model:String): Future[Expect[JsValue]] =
     {
       for {
-        name <- EitherT(getClassName(model))
-        entityClass = name.entityClass
-        pkClass = name.pK
-        tableDefClass = name.tableDef
-        singleton = Class.forName(name.entityClass.getName + "$")
-        //
-        //        input = Class.forName(name+"In")
-        out = Class.forName(name.entityClass.getName + "Out")
+        configuration <- EitherT(getCrudConfiguration(model))
+        singleton = Class.forName(configuration.entityClass.getName + "$")
+
+        out = Class.forName(configuration.entityClass.getName + "Out")
 
         tableQuery = TableQuery(tag =>
-          tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
+          configuration.tableDef.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
             .newInstance(tag)
             .asInstanceOf[Table[Entity] with PKTable[BaseColumnType[_]]])
-        //.asInstanceOf[slick.lifted.AbstractTable[?]])
-        //        tableDefClass.getConstructor(classOf[Tag]).newInstance(tag))
 
         found <- EitherT(crudAutoService.findAll(tableQuery))
-        newJson <- EitherT(crudAutoService.toJsValue(found.toList, entityClass, singleton, out))
+        newJson <- EitherT(crudAutoService.toJsValue(found.toList, configuration.entityClass, singleton, out))
       } yield newJson
     }.run
 
-  protected def getClassName(model: String): Future[Expect[CrudConfigurationUnTyped]]
+  protected def getCrudConfiguration(model: String): Future[Expect[CrudConfigurationUnTyped]]
 
 }
 
@@ -87,7 +75,7 @@ trait AbstractCrudService {
 class CrudService @Inject()(val crudAutoService: CrudAutoService,
                             crudClassName: CrudClassName) extends AbstractCrudService{
 
-  override def getClassName(model: String): Future[Expect[CrudConfigurationUnTyped]] = {
+  override def getCrudConfiguration(model: String): Future[Expect[CrudConfigurationUnTyped]] = {
     crudClassName.configure(model) match {
       case Some(className) => Future.successful(\/- {
         CrudConfigurationUnTyped(
