@@ -1,11 +1,13 @@
 package com.noeupapp.middleware.utils
 
+import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.Logger
 
 import scala.annotation.tailrec
+import scala.collection.parallel.immutable.ParSeq
 import scala.concurrent.Future
 import scalaz.{-\/, \/, \/-}
 
@@ -24,6 +26,16 @@ object MonadTransformers {
   }
 
 
+  /**
+    * Execute sequentially a function on each element of a list
+    *
+    * @param list
+    * @param function
+    * @param identity
+    * @tparam T
+    * @tparam U
+    * @return
+    */
   def listMonadTransformation[T, U](list: List[T], function: T => Future[Expect[U]], identity: U): Future[Expect[U]] = list match {
     case x :: xs  =>
       function(x) flatMap {
@@ -37,16 +49,33 @@ object MonadTransformers {
     }
   }
 
+  def paralleleListProcessing[T, U](list: List[T], function: T => Future[FailError\/U]): Future[(List[(T, FailError)], List[(T, U)])] = {
+    val a: Future[List[(T, FailError\/U)]] =
+      Future.sequence{
+        list
+//          .par
+          .map(e => function(e).map((e, _)))
+      }
+
+
+    a.map(_.foldLeft((List.empty[(T, FailError)], List.empty[(T, U)])){
+      case ((fails, successes), (e, res)) if res.isLeft =>
+        ((e, res.toEither.left.get) :: fails, successes)
+      case ((fails, successes), (e, res)) if res.isRight =>
+        (fails, (e, res.toEither.right.get) :: successes)
+    })
+
+  }
 
   def convertListEitherToListTuple[A, E](l: List[E\/A]): (List[E], List[A]) = {
-    val r: (List[E\/A], List[E\/A]) =
-      l.partition(_.isLeft)
-    val left: List[E] = r._1
-      .map(_.toEither)
-      .foldLeft(List.empty[E]) ((acc, e) => acc ++ List(e.left.get))
-    val right: List[A] = r._2
-      .map(_.toEither)
-      .foldLeft(List.empty[A])((acc, e) => acc ++ List(e.right.get))
-    (left, right)
-  }
+      val r: (List[E\/A], List[E\/A]) =
+        l.partition(_.isLeft)
+      val left: List[E] = r._1
+        .map(_.toEither)
+        .foldLeft(List.empty[E]) ((acc, e) => acc ++ List(e.left.get))
+      val right: List[A] = r._2
+        .map(_.toEither)
+        .foldLeft(List.empty[A])((acc, e) => acc ++ List(e.right.get))
+      (left, right)
+    }
 }
