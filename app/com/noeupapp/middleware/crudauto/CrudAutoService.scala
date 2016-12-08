@@ -26,10 +26,12 @@ import scalaz.{-\/, \/-}
 //import Scalaz._
 import slick.driver._
 import slick.driver.PostgresDriver.api._
-import slick.lifted.{ForeignKey, TableQuery, Tag}
+import slick.lifted.{PrimaryKey, ForeignKey, TableQuery, Tag}
 import play.api.mvc.Results._
 import slick.profile.SqlStreamingAction
 import slick.jdbc.{GetResult, PositionedResult}
+
+import com.noeupapp.middleware.utils.StringUtils.snakeToCamel
 
 import scala.reflect.runtime.{universe => ru}
 
@@ -55,41 +57,49 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
   def deepFindAll[E <: Entity[Any], F <: Entity[Any], PKE](tableQuery: TableQuery[Table[F] with PKTable],
                                                        id: PKE,
-                                                       joinedTableName: String
-                                                      )(implicit formatF: Format[F]): Future[Expect[Seq[F]]] = {
+                                                       joinedTable: ForeignKey//String
+                                                      )(implicit formatE: Format[E]): Future[Expect[Seq[E]]] = {
 
-
+    val joinedTableName = joinedTable.targetTable.tableName
+    val sourceColumns = joinedTable.sourceColumns  // TODO Warning when multiple columns
+    val targetColumns = joinedTableName + "." + joinedTable.linearizedTargetColumns.head.getDumpInfo.mainInfo // TODO Warning when multiple columns
     val tableName = tableQuery.baseTableRow.tableName
-
     val typeId = findTypeToString(id)
 
     val q: SqlStreamingAction[Vector[Map[String, Any]], Map[String, Any], Effect] =
       if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted")) {
-        sql"""SELECT t.*
-            FROM #$tableName t
-            INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id.toString}::#${typeId}
-            WHERE t.deleted = FALSE"""
+        sql"""SELECT #$tableName.*
+              FROM #$tableName
+              INNER JOIN #$joinedTableName ON #$targetColumns = #$sourceColumns AND #$targetColumns = ${id.toString}::#${typeId}
+              WHERE #$tableName.deleted = FALSE"""
           .as(ResultMap)
       }else{
-        sql"""SELECT t.*
-            FROM #$tableName t
-            INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id.toString}::#${typeId}"""
+        sql"""SELECT #$tableName.*
+            FROM #$tableName
+            INNER JOIN #$joinedTableName ON #$targetColumns = #$sourceColumns AND #$targetColumns = ${id.toString}::#${typeId}"""
           .as(ResultMap)
       }
 
 
 
-
-
-    dao.runTransformer[Vector[Map[String, Any]], List[F], Map[String, Any], Effect](q) { row =>
-      row.foldLeft[JsResult[List[F]]](JsSuccess(List.empty[F])){
+    dao.runTransformer[Vector[Map[String, Any]], List[E], Map[String, Any], Effect](q) { row =>
+      row.foldLeft[JsResult[List[E]]](JsSuccess(List.empty[E])){
         case (JsSuccess(els, _), e) =>
-
           val toSeq = e.map{
-            case (k, v) => (k, Json.toJson(v.toString))
+            case (k, v) => (snakeToCamel(k),
+              v match {
+                case v:Short                  => JsNumber(v.asInstanceOf[Long])
+                case v:java.math.BigDecimal   => JsNumber(v.asInstanceOf[java.math.BigDecimal])
+                case v:Float                  => JsNumber(v.asInstanceOf[Double])
+                case v:Double                 => JsNumber(v.asInstanceOf[Double])
+                case v:Int                    => JsNumber(v.asInstanceOf[Int])
+                case v:Long                   => JsNumber(v.asInstanceOf[Long])
+                case None                     => JsNull
+                case _                        => JsString(v.toString)
+              })
           }.toSeq
 
-          JsObject(toSeq).validate[F] match {
+          JsObject(toSeq).validate[E] match {
             case JsSuccess(el, path) => JsSuccess(el :: els, path)
             case error @ JsError(_)  => error
           }
@@ -101,11 +111,15 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
   def deepFindById[E <: Entity[Any], F <: Entity[Any], PKE, PKF](tableQuery: TableQuery[Table[F] with PKTable],
                                                        id1: PKE,
-                                                       joinedTableName: String,
+                                                       joinedTable: ForeignKey,//String,
                                                        id2: PKE
                                                       )(implicit formatF: Format[F]): Future[Expect[Option[F]]] = {
 
+    val joinedTableName = joinedTable.targetTable.tableName
+    val sourceColumns = joinedTable.sourceColumns  // TODO Warning when multiple columns
+    val targetColumns = joinedTableName + "." + joinedTable.linearizedTargetColumns.head.getDumpInfo.mainInfo // TODO Warning when multiple columns
     val tableName = tableQuery.baseTableRow.tableName
+
     id1.isInstanceOf[UUID]
 
     val typeId1 = findTypeToString(id1)
@@ -113,16 +127,26 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
     val q: SqlStreamingAction[Vector[Map[String, Any]], Map[String, Any], Effect] =
       if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted")) {
-        sql"""SELECT t.*
-            FROM #$tableName t
-            INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id1.toString}::#${typeId1}
-            WHERE t.deleted = FALSE AND t.id = ${id2.toString}::#${typeId2}"""
+        sql"""SELECT #$tableName.*
+              FROM #$tableName
+              INNER JOIN #$joinedTableName ON #$targetColumns = #$sourceColumns AND #$targetColumns = ${id1.toString}::#${typeId1}
+              WHERE #$tableName.deleted = FALSE AND #$tableName.id = ${id2.toString}::#${typeId2}
+          """
+       //     SELECT t.*
+       //     FROM #$tableName t
+       //     INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id1.toString}::#${typeId1}
+       //     WHERE t.deleted = FALSE AND t.id = ${id2.toString}::#${typeId2}"""
           .as(ResultMap)
       }else{
-        sql"""SELECT t.*
-            FROM #$tableName t
-            INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id1.toString}::#${typeId1}
-            WHERE t.id = ${id2.toString}::#${typeId2}"""
+        sql"""SELECT #$tableName.*
+              FROM #$tableName
+              INNER JOIN #$joinedTableName ON #$targetColumns = #$sourceColumns AND #$targetColumns = ${id1.toString}::#${typeId1}
+              WHERE #$tableName.id = ${id2.toString}::#${typeId2}
+            """
+            //SELECT t.*
+            //FROM #$tableName t
+            //INNER JOIN #$joinedTableName tj ON tj.id = t.#$joinedTableName AND tj.id = ${id1.toString}::#${typeId1}
+            //WHERE t.id = ${id2.toString}::#${typeId2}"""
           .as(ResultMap)
       }
 
@@ -133,7 +157,17 @@ class CrudAutoService @Inject()(dao: Dao)() {
         case (JsSuccess(els, _), e) =>
 
           val toSeq = e.map{
-            case (k, v) => (k, Json.toJson(v.toString))
+            case (k, v) => (snakeToCamel(k),
+              v match {
+                case v:Short                  => JsNumber(v.asInstanceOf[Long])
+                case v:java.math.BigDecimal   => JsNumber(v.asInstanceOf[java.math.BigDecimal])
+                case v:Float                  => JsNumber(v.asInstanceOf[Double])
+                case v:Double                 => JsNumber(v.asInstanceOf[Double])
+                case v:Int                    => JsNumber(v.asInstanceOf[Int])
+                case v:Long                   => JsNumber(v.asInstanceOf[Long])
+                case None                     => JsNull
+                case _                        => JsString(v.toString)
+              })
           }.toSeq
 
           JsObject(toSeq).validate[F] match {

@@ -119,7 +119,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         classInfo     <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
 
         found         <- EitherT(
-                          crudAutoService.deepFindAll(tableQuery2, id, fk.targetTable.tableName)
+                          crudAutoService.deepFindAll(tableQuery2, id, fk/*.targetTable.tableName*/)
                           (classInfo.jsonFormat.asInstanceOf[Format[Entity[Any]]]))
         newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
         filteredJson  <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
@@ -158,7 +158,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         classInfo       <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
 
         found           <- EitherT(
-                            crudAutoService.deepFindById(tableQuery2, id1, fk.targetTable.tableName, id2)
+                            crudAutoService.deepFindById(tableQuery2, id1, fk, id2)
                             (classInfo.jsonFormat.asInstanceOf[Format[Entity[Any]]]))
         newJson      <- EitherT(crudAutoService.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
         filteredJson <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))

@@ -1,5 +1,6 @@
 package com.noeupapp.middleware.utils.slick
 
+import play.api.Logger
 import slick.jdbc.{GetResult, PositionedResult}
 
 
@@ -15,6 +16,9 @@ object ResultMap extends GetResult[Map[String,Any]] {
   def apply(pr: PositionedResult): Map[String, AnyRef] = {
     val rs = pr.rs // <- jdbc result set
     val md = rs.getMetaData
-    (1 to pr.numColumns).map{ i=> md.getColumnName(i) -> rs.getObject(i) }.toMap
+    (1 to pr.numColumns).map{ i=>
+      val value = if (rs.getObject(i) == null) None else rs.getObject(i)
+      //Logger.error("Type : " + md.getColumnType(i))
+      md.getColumnName(i) -> value }.toMap
   }
 }
