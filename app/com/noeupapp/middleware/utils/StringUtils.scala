@@ -25,4 +25,13 @@ object StringUtils {
 
     domain
   }
+
+
+  def snakeToCamel(s: String): String = {
+    val split = s.split("_")
+    val tail = split.tail.map { x => x.head.toUpper + x.tail }
+    split.head + tail.mkString
+  }
+
+
 }
