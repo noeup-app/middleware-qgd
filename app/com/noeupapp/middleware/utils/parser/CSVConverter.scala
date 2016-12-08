@@ -16,7 +16,8 @@ import syntax.singleton._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.immutable.{:: => Cons}
 import scala.concurrent.{ExecutionContext, Future}
-import scalaz.{-\/, \/-}
+import scalaz.{-\/, Monoid, \/-}
+import com.noeupapp.middleware.utils.parser.CSVConverter._
 
 // Implementation
 
@@ -26,6 +27,25 @@ case class CSVException(s: String, line: Option[Line]) extends RuntimeException(
 }
 
 case class Line(number: Int, value: String)
+case class CSVParseOutput[T](failures: List[(Line, FailError)], successes: List[(Line, T)])
+
+object CSVParseOutput {
+
+  def empty[T]: CSVParseOutput[T] = CSVParseOutput[T](List.empty, List.empty)
+
+  implicit def cSVParseOutputMonoid[F] = new Monoid[CSVParseOutput[F]] {
+
+    override def zero: CSVParseOutput[F] = CSVParseOutput(List.empty, List.empty)
+
+    override def append(f1: CSVParseOutput[F], f2: => CSVParseOutput[F]): CSVParseOutput[F] =
+      CSVParseOutput(
+        f1.failures ++ f2.failures,
+        f1.successes ++ f2.successes
+      )
+
+  }
+}
+
 
 /** Trait for types that can be serialized to/deserialized from CSV */
 trait CSVConverter[T] {
@@ -74,6 +94,16 @@ object CSVConverter {
     def to(i: Int): String = i.toString
   }
 
+  implicit def longCsvConverter: CSVConverter[Long] = new CSVConverter[Long] {
+    def from(s: String, context: Option[Line] = Option.empty): Try[Long] =
+      Try(s.trim.toLong) match {
+        case Failure(e: Exception) => Failure(new Exception(s"${e.getMessage} ; context : $context"))
+        case e => e
+    }
+
+    def to(i: Long): String = i.toString
+  }
+
   implicit def booleanCsvConverter: CSVConverter[Boolean] = new CSVConverter[Boolean] {
     def from(s: String, context: Option[Line] = Option.empty): Try[Boolean] = Try(s.trim.toBoolean)
 
@@ -92,23 +122,17 @@ object CSVConverter {
   }
 
   def listCsvLinesConverter[A](l: List[Line])(implicit ec: CSVConverter[A])
-  : Try[List[A]] = l match {
-    case Nil => Success(Nil)
-    case Cons(s,ss) =>
-      for {
-        x <- ec.from(s.value, Some(s))
-        xs <- listCsvLinesConverter(ss)(ec)
-      } yield Cons(x, xs)
+  : CSVParseOutput[A] = {
+    l.map(l => (l, ec.from(l.value, Some(l))))
+      .partition(_._2.isFailure) match {
+        case (fas, sus) =>
+          CSVParseOutput[A](
+            fas.map(s => (s._1, FailError(s._2.failed.get))),
+            sus.map(s => (s._1, s._2.get))
+          )
+      }
   }
 
-  implicit def listCsvConverter[A](implicit ec: CSVConverter[A])
-  : CSVConverter[List[A]] = new CSVConverter[List[A]] {
-    def from(s: String, context: Option[Line] = Option.empty): Try[List[A]] = {
-      val lines: List[Line] = stringToListOfLines(s)
-      listCsvLinesConverter(lines)(ec)
-    }
-    def to(l: List[A]): String = l.map(ec.to).mkString("\n")
-  }
 
   def stringToListOfLines(s: String): List[Line] = {
     s
@@ -166,7 +190,7 @@ object CSVConverter {
   }
 
 
-  def readHugeFile[T](file: File, cSVAction: Option[CSVAction] = None)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[List[T]]] = {
+  def readHugeFile[T](file: File, cSVAction: Option[CSVAction] = None)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[CSVParseOutput[T]]] = {
 
 
     val chunkSize = 1024 * 8
@@ -217,61 +241,9 @@ object CSVConverter {
     }
 
 
-//    def test: Enumeratee[List[Line],List[Line]] = new Enumeratee[List[Line],List[Line]]{
-//      override def applyOn[A](inner: Iteratee[List[Line], A]): Iteratee[List[Line], Iteratee[List[Line], A]] = new CheckDone[List[Line], List[Line]] {
-//
-//        def step[B](f: Iteratee[List[Line], List[Line]]): K[List[Line], Iteratee[List[Line], B]] = {
-//
-//          case in @ (Input.El(_) | Input.Empty) =>
-//
-//            Error("test", in)
-//          case Input.EOF => Done(List.empty)
-//
-//        }
-//
-//        def continue[B](k: K[List[Line], A]) = Cont(step(k))
-//      }
-//    }
-
-//
-//    def grouped[From] = new Grouped[From] {
-//
-//      def apply[To](folder: Iteratee[From, To]): Enumeratee[From, To] = new CheckDone[From, To] {
-//
-//        def step[A](f: Iteratee[From, To])(k: K[To, A]): K[From, Iteratee[To, A]] = {
-//
-//          case in @ (Input.El(_) | Input.Empty) =>
-//
-//            Iteratee.flatten(f.feed(in)).pureFlatFold {
-//              case Step.Done(a, left) => new CheckDone[From, To] {
-//                def continue[A](k: K[To, A]) =
-//                  (left match {
-//                    case Input.El(_) => step(folder)(k)(left)
-//                    case _ => Cont(step(folder)(k))
-//                  })
-//              } &> k(Input.El(a))
-//              case Step.Cont(kF) => Cont(step(Cont(kF))(k))
-//              case Step.Error(msg, e) => Error(msg, in)
-//            }(dec)
-//
-//          case Input.EOF => Iteratee.flatten(f.run.map[Iteratee[From, Iteratee[To, A]]]((c: To) => Done(k(Input.El(c)), Input.EOF))(dec))
-//
-//        }
-//
-//        def continue[A](k: K[To, A]) = Cont(step(folder)(k))
-//      }
-//    }
-
-
-//
-//    def groupByChunk[A](chunkSize: Int): Enumeratee[List[A], List[A]] = Enumeratee.grouped(
-//      Enumeratee.splitOnceAt
-//    )
-
-
-    val parseChunk: Iteratee[List[Line], Try[List[T]]] = {
+    val parseChunk: Iteratee[List[Line], CSVParseOutput[T]] = {
       println("parseChunk")
-      Iteratee.fold[List[Line], Try[List[T]]](Try(List.empty)) {
+      Iteratee.fold[List[Line], CSVParseOutput[T]](CSVParseOutput.empty) {
         case (_, chunk) if cSVAction.isDefined =>
           println(("chunk", chunk.size))
           //          chunk.foreach(l => println((l.number, l.value.filter(_ == ',').length, l.value)))
@@ -284,11 +256,10 @@ object CSVConverter {
     }
 
 
-//    val future =
-      (enumerator &> groupByLines ><> turnIntoLines  |>> parseChunk).flatMap(_.run) map {
-        case Success(value) => \/-(value)
-        case Failure(error) => -\/(FailError(error))
-      }
+      (enumerator &> groupByLines ><> turnIntoLines  |>> parseChunk).flatMap(_.run).map(\/-(_))
+        .recover{
+          case e: Exception => -\/(FailError(e))
+        }
   }
 
 }
