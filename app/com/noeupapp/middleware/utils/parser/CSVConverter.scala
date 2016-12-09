@@ -18,6 +18,7 @@ import scala.collection.immutable.{:: => Cons}
 import scala.concurrent.{ExecutionContext, Future}
 import scalaz.{-\/, Monoid, \/-}
 import com.noeupapp.middleware.utils.parser.CSVConverter._
+import play.api.libs.json.Json
 
 // Implementation
 
@@ -27,6 +28,11 @@ case class CSVException(s: String, line: Option[Line]) extends RuntimeException(
 }
 
 case class Line(number: Int, value: String)
+
+object Line {
+  implicit val lineFormat = Json.format[Line]
+}
+
 case class CSVParseOutput[T](failures: List[(Line, FailError)], successes: List[(Line, T)])
 
 object CSVParseOutput {
