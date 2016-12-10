@@ -49,21 +49,23 @@ object MonadTransformers {
     }
   }
 
-  def paralleleListProcessing[T, U](list: List[T], function: T => Future[FailError\/U]): Future[(List[(T, FailError)], List[(T, U)])] = {
-    val a: Future[List[(T, FailError\/U)]] =
+
+  /**
+    * Map functions over a list of element and return errors and successes
+    */
+  def parallelListProcessing[Input, Output](list: List[Input],
+                                            function: Input => Future[FailError\/Output]
+                                            ): Future[(List[(Input, FailError)], List[(Input, Output)])] = {
+
       Future.sequence{
         list
-//          .par
           .map(e => function(e).map((e, _)))
-      }
-
-
-    a.map(_.foldLeft((List.empty[(T, FailError)], List.empty[(T, U)])){
-      case ((fails, successes), (e, res)) if res.isLeft =>
-        ((e, res.toEither.left.get) :: fails, successes)
-      case ((fails, successes), (e, res)) if res.isRight =>
-        (fails, (e, res.toEither.right.get) :: successes)
-    })
+      }.map(_.foldLeft((List.empty[(Input, FailError)], List.empty[(Input, Output)])){
+        case ((fails, successes), (e, res)) if res.isLeft =>
+          ((e, res.toEither.left.get) :: fails, successes)
+        case ((fails, successes), (e, res)) if res.isRight =>
+          (fails, (e, res.toEither.right.get) :: successes)
+      })
 
   }
 
