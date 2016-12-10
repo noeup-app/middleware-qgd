@@ -37,12 +37,13 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     }
   }
 
-  def fetchAll(model: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+  def fetchAll(model: String, omit: Option[String], include: Option[String], search: Option[String]=None, count: Option[Boolean] = Some(false)) = UserAwareAction.async { implicit request =>
 
     val omits    = omit.map(_.split(",").toList).toList.flatten
     val includes = include.map(_.split(",").toList).toList.flatten
+    val countOnly = count.getOrElse(false)
 
-    crudService.findAllFlow(model, omits, includes) map {
+    crudService.findAllFlow(model, omits, includes, search, count.getOrElse(false)) map {
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while fetching "+model))
@@ -50,12 +51,12 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     }
   }
 
-  def deepFetchAll(model1: String, id: String, model2: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+  def deepFetchAll(model1: String, id: String, model2: String, omit: Option[String], include: Option[String], search: Option[String]=None, count: Option[Boolean] = Some(false)) = UserAwareAction.async { implicit request =>
 
     val omits    = omit.map(_.split(",").toList).toList.flatten
     val includes = include.map(_.split(",").toList).toList.flatten
 
-    crudService.deepFetchAllFlow(model1, id, model2, omits, includes) map {
+    crudService.deepFetchAllFlow(model1, id, model2, omits, includes, search, count.getOrElse(false)) map {
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson(s"Error while fetching /$model1/$id/$model2"))

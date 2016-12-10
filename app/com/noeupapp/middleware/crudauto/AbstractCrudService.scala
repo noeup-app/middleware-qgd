@@ -67,7 +67,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
     }.run
 
 
-  def findAllFlow(model:String, omits: List[String], includes: List[String]): Future[Expect[JsValue]] =
+  def findAllFlow(model:String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean): Future[Expect[JsValue]] =
     {
       for {
         configuration <- EitherT(getConfiguration(model))
@@ -75,14 +75,20 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         tableDefClass = configuration.tableDef
 
         singleton     = Class.forName(configuration.entityClass.getName + "$")
+
+        input         = Class.forName(configuration.entityClass.getName + "In")
         out           = Class.forName(configuration.entityClass.getName + "Out")
 
         tableQuery    = provideTableQuery(tableDefClass)
 
-        found         <- EitherT(crudAutoService.findAll(tableQuery))
+        classInfo     <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
+
+        found         <- EitherT(crudAutoService.findAll(tableQuery, search, countOnly)
+                                                        (classInfo.jsonFormat.asInstanceOf[Format[Entity[Any]]]))
+        count         = found.length
         newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
         filteredJson  <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
-      } yield filteredJson
+      } yield if (countOnly) Json.toJson(count) else filteredJson
     }.run
 
 
@@ -92,7 +98,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         .newInstance(tag)
         .asInstanceOf[Table[Entity[Any]] with PKTable])
 
-  def deepFetchAllFlow(model1: String, rawId: String, model2: String, omits: List[String], includes: List[String]): Future[Expect[Option[JsValue]]] =
+  def deepFetchAllFlow(model1: String, rawId: String, model2: String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean): Future[Expect[Option[JsValue]]] =
     {
       for {
 
@@ -119,11 +125,12 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         classInfo     <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
 
         found         <- EitherT(
-                          crudAutoService.deepFindAll(tableQuery2, id, fk/*.targetTable.tableName*/)
+                          crudAutoService.deepFindAll(tableQuery2, id, fk, search)
                           (classInfo.jsonFormat.asInstanceOf[Format[Entity[Any]]]))
+        count         = found.length
         newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
         filteredJson  <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
-      } yield filteredJson
+      } yield if (countOnly) Json.toJson(count) else filteredJson
     }.run map {
       case -\/(error) if error.errorType == NotFound => \/-(None)
       case \/-(res) => \/-(Some(res))
