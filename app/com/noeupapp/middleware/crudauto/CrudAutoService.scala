@@ -479,6 +479,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
               case v:Double                 => JsNumber(v.asInstanceOf[Double])
               case v:Int                    => JsNumber(v.asInstanceOf[Int])
               case v:Long                   => JsNumber(v.asInstanceOf[Long])
+              case v:Boolean                => JsBoolean(v)
               case None                     => JsNull
               case _                        => JsString(v.toString)
             })
