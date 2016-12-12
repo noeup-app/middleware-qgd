@@ -41,13 +41,19 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
   def findAll[E <: Entity[Any]](tableQuery: TableQuery[Table[E] with PKTable],
                                 search: Option[String],
-                                countOnly: Boolean)(implicit formatE: Format[E]): Future[Expect[Seq[E]]] = {
+                                countOnly: Boolean, p: Option[Int], pp: Option[Int])(implicit formatE: Format[E]): Future[Expect[Seq[E]]] = {
+
+    if (p.isDefined ^ pp.isDefined){
+      return Future.successful(-\/(FailError("One of query param `p` or `pp` is missing")))
+    }
 
     val tableName = tableQuery.baseTableRow.tableName
     val cols = tableQuery.baseTableRow.create_*.map(_.name).toSeq
     val select = sql"SELECT * "
     //val select = if (countOnly)  sql"SELECT COUNT(*) " else sql"SELECT * " // TODO tries to implement count in sql but need to chnge Json validate
     val deleted = if (cols.contains("deleted")) sql"""WHERE #$tableName.deleted = FALSE """ else sql"WHERE TRUE"
+
+    val pagination = if (p.isDefined) sql""" LIMIT ${pp.get} OFFSET ${pp.get * p.get}""" else sql""
 
     //def searchAllCols(tabl:TableQuery[Table[E] with PKTable], col: Map[String, Type], cond: String)/*: Iterable[Query[PostgresDriver.api.Table[E] with PKTable, E, Seq]]*/ =
       //cols(tableQuery)//.filter{case (n, t) => t.String}
@@ -64,6 +70,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
     val q: SqlStreamingAction[Vector[Map[String, Any]], Map[String, Any], Effect] = {
       val req = select concat sql"""FROM #$tableName """ concat deleted
                   .concat(filt(tableQuery, search).map(sql" AND " concat _).getOrElse(sql""))
+                  .concat(pagination)
       req.as(ResultMap)
     }
 
@@ -94,7 +101,9 @@ class CrudAutoService @Inject()(dao: Dao)() {
   def deepFindAll[E <: Entity[Any], F <: Entity[Any], PKE](tableQuery: TableQuery[Table[F] with PKTable],
                                                        id: PKE,
                                                        joinedTable: ForeignKey,
-                                                       search: Option[String]
+                                                       search: Option[String],
+                                                       p: Option[Int],
+                                                       pp: Option[Int]
                                                       )(implicit formatE: Format[E]): Future[Expect[Seq[E]]] = {
 
     val joinedTableName = joinedTable.targetTable.tableName
@@ -105,6 +114,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
     val cols = tableQuery.baseTableRow.create_*.map(_.name).toSeq
     val select = sql"SELECT #$tableName.* "
     val deleted = if (cols.contains("deleted")) sql"""WHERE #$tableName.deleted = FALSE """ else sql"WHERE TRUE"
+    val pagination = if (p.isDefined) sql""" LIMIT ${pp.get} OFFSET ${pp.get * p.get}""" else sql""
 
 
     val q: SqlStreamingAction[Vector[Map[String, Any]], Map[String, Any], Effect] = {
@@ -112,7 +122,8 @@ class CrudAutoService @Inject()(dao: Dao)() {
                                     INNER JOIN #$joinedTableName ON #$targetColumns = #$sourceColumns AND #$targetColumns = ${id.toString}::#${typeId}
                                  """ concat deleted
         .concat(filt(tableQuery, search).map(sql" AND " concat _).getOrElse(sql""))
-
+        .concat(pagination)
+      
       req.as(ResultMap)
     }
 
@@ -564,8 +575,8 @@ class CrudAutoFactory[E <: Entity[PK], PK] @Inject()( crudClassName: CrudClassNa
     runtimeMirror.classSymbol(clazz).toType
   }
 
-  def findAll(search: Option[String] = None, count: Option[Boolean]=Some(false))(implicit bct: BaseColumnType[PK], formatE: Format[E]): Future[Expect[Seq[E]]] =
-    crudAutoService.findAll[Entity[Any]](tableQueryAny, search, count.getOrElse(false))(formatE.asInstanceOf[Format[Entity[Any]]]).map(_.map(_.map(_.asInstanceOf[E])))
+  def findAll(search: Option[String] = None, count: Option[Boolean]=Some(false))(implicit bct: BaseColumnType[PK], formatE: Format[E], p: Option[Int] = None, pp: Option[Int] = None): Future[Expect[Seq[E]]] =
+    crudAutoService.findAll[Entity[Any]](tableQueryAny, search, count.getOrElse(false), p, pp)(formatE.asInstanceOf[Format[Entity[Any]]]).map(_.map(_.map(_.asInstanceOf[E])))
 
 //  def deepFindAll[F <: Entity[Any], PKE](id: PKE, joinedTableName: String)(implicit formatF: Format[F]): Future[Expect[Seq[F]]] = ???
 //

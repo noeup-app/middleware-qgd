@@ -67,7 +67,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
     }.run
 
 
-  def findAllFlow(model:String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean): Future[Expect[JsValue]] =
+  def findAllFlow(model:String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean, p: Option[Int], pp: Option[Int]): Future[Expect[JsValue]] =
     {
       for {
         configuration <- EitherT(getConfiguration(model))
@@ -83,7 +83,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
 
         classInfo     <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
 
-        found         <- EitherT(crudAutoService.findAll(tableQuery, search, countOnly)
+        found         <- EitherT(crudAutoService.findAll(tableQuery, search, countOnly, p, pp)
                                                         (classInfo.jsonFormat.asInstanceOf[Format[Entity[Any]]]))
         count         = found.length
         newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
@@ -98,7 +98,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         .newInstance(tag)
         .asInstanceOf[Table[Entity[Any]] with PKTable])
 
-  def deepFetchAllFlow(model1: String, rawId: String, model2: String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean): Future[Expect[Option[JsValue]]] =
+  def deepFetchAllFlow(model1: String, rawId: String, model2: String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean, p: Option[Int], pp: Option[Int]): Future[Expect[Option[JsValue]]] =
     {
       for {
 
@@ -125,7 +125,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         classInfo     <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
 
         found         <- EitherT(
-                          crudAutoService.deepFindAll(tableQuery2, id, fk, search)
+                          crudAutoService.deepFindAll(tableQuery2, id, fk, search, p, pp)
                           (classInfo.jsonFormat.asInstanceOf[Format[Entity[Any]]]))
         count         = found.length
         newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))

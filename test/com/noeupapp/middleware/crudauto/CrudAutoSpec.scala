@@ -17,6 +17,7 @@ import com.noeupapp.middleware.crudauto.model.Test._
 import com.noeupapp.middleware.crudauto.model.Thing._
 import com.noeupapp.middleware.crudauto.model.RelTestThing._
 
+
 class CrudAutoSpec extends PlaySpecification with Mockito {
 
   override implicit def defaultAwaitTimeout: Timeout = 20.seconds
@@ -78,6 +79,117 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
             (false must beTrue).setMessage(s"Unexpected json : $json")
         }
 
+      }
+    }
+    "count returns 0 if table is empty" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate)
+
+        val tests = await(allTests)
+
+        val Some(result) =
+          route(FakeRequest(GET, "/tests?count=true"))
+
+        status(result) must be equalTo OK
+
+        contentAsJson(result) must be equalTo Json.toJson(tests.length)
+      }
+    }
+    "count returns n if table is not empty" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        val Some(result) =
+          route(FakeRequest(GET, "/tests?count=true"))
+
+        status(result) must be equalTo OK
+
+        contentAsJson(result) must be equalTo Json.toJson(0)
+      }
+    }
+    "pagination returns 0 element if table is empty" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        val Some(result) =
+          route(FakeRequest(GET, "/tests?p=0&pp=5"))
+
+        status(result) must be equalTo OK
+
+        contentAsJson(result) must be equalTo Json.toJson(0)
+      }
+    }
+    "pagination returns n p=0 pp=5 element if table is not empty" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate({tests =>
+          {
+            for {
+              i <- 1 to 10
+            } yield tests.map(_.copy(id = UUID.randomUUID()))
+          }.flatten
+        }))
+
+        val tests = await(allTests)
+
+        val Some(result) =
+          route(FakeRequest(GET, "/tests?p=0&pp=5"))
+
+        status(result) must be equalTo OK
+
+        contentAsJson(result) match {
+          case JsArray(elems) =>
+
+            elems must haveSize(5)
+//
+//            sameElementsAs(
+//              tests.slice(0, 5).map(Json.toJson(_)),
+//              elems
+//            ) must beTrue
+          case json =>
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
+      }
+    }
+    "pagination returns n p=1 pp=5 element if table is not empty" in new CrudAutoContext {
+      new WithApplication(application) {
+
+        await(createTables)
+
+        await(populate({tests =>
+          {
+            for {
+              i <- 1 to 10
+            } yield tests.map(_.copy(id = UUID.randomUUID()))
+          }.flatten
+        }))
+
+        val tests = await(allTests)
+
+        val Some(result) =
+          route(FakeRequest(GET, "/tests?p=1&pp=5"))
+
+        status(result) must be equalTo OK
+
+        contentAsJson(result) match {
+          case JsArray(elems) =>
+
+            elems must haveSize(5)
+
+//            sameElementsAs(
+//              tests.slice(5, 10).map(Json.toJson(_)),
+//              elems
+//            ) must beTrue
+          case json =>
+            (false must beTrue).setMessage(s"Unexpected json : $json")
+        }
       }
     }
     "with not empty table and omit 1 field" in new CrudAutoContext {

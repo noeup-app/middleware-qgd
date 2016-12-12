@@ -101,6 +101,8 @@ object Test extends GlobalReadsWrites {
     db.run(
       tq.result
     )
+
+
 }
 
 
@@ -108,7 +110,7 @@ object Test extends GlobalReadsWrites {
 class TestTableDef(tag: Tag) extends Table[Test](tag, "test") with PKTable {
   def id             = column[UUID]("id")
   def name           = column[String]("name")
-  def typeL          = column[String]("type")
+  def typeL          = column[String]("type_l")
   def priority       = column[Int]("priority")
   def deleted        = column[Boolean]("deleted")
   override def *     = (id, name, typeL, priority, deleted) <> ((Test.apply _).tupled, Test.unapply)
