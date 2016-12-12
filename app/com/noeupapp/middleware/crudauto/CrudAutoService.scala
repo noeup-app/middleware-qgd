@@ -123,7 +123,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
                                  """ concat deleted
         .concat(filt(tableQuery, search).map(sql" AND " concat _).getOrElse(sql""))
         .concat(pagination)
-      
+
       req.as(ResultMap)
     }
 
@@ -259,89 +259,6 @@ class CrudAutoService @Inject()(dao: Dao)() {
       case t => Future.successful(\/-(JsObject(json.fields.filter(f=> t.contains(f._1)))))
     }
   }
-
-  def buildAddRequest[T, A](entity: T, singleton: Class[A], tableName : String): (String, String) = {
-    val const = singleton.getDeclaredConstructors()(0)
-    const.setAccessible(true)
-    val obj = const.newInstance()
-    val getTableColumnNames = singleton.getDeclaredMethod("getTableColumns", classOf[String])
-    getTableColumnNames.setAccessible(true)
-    val fields = entity.getClass.getDeclaredFields
-    val params = fields.flatMap{field => getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]]}
-    val values = fields.map{field => field.setAccessible(true)
-      (field.get(entity), field.getGenericType.getTypeName)}
-    Logger.debug(values.toSeq.toString)
-    val value = concatValue(values.toList)
-    Logger.debug(value)
-    val param = concatParam(params.toList)
-    (param, value)
-  }
-
-  def buildUpdateRequest[T, A](model: Class[T], json: JsObject, singleton: Class[A], tableName : String, format: Format[T]): String = {
-    val const = singleton.getDeclaredConstructors()(0)
-    const.setAccessible(true)
-    val obj = const.newInstance()
-    val getTableColumnNames = singleton.getDeclaredMethod("getTableColumns", classOf[String])
-    getTableColumnNames.setAccessible(true)
-    val fields = model.getDeclaredFields
-    implicit val form = format
-    val entity:T = json.as[T]
-    val params = fields.map{field => field.setAccessible(true)
-      (getTableColumnNames.invoke(obj, field.getName).asInstanceOf[Option[String]],
-        field.get(entity).toString,
-        field.getGenericType.getTypeName)}
-    Logger.debug(concatParamAndValue(params.toList))
-    concatParamAndValue(params.toList)
-  }
-
-  def concatParam(params: List[String], param: String = ""): String = {
-    params match {
-      case x::xs => concatParam(xs, param + x + ", ")
-      case Nil => param.splitAt(param.length -2)._1
-    }
-  }
-
-  def concatValue(values: List[(AnyRef, String)], value: String = ""): String = {
-    values match {
-      case x::xs => concatValue(xs, value + valueToAdd(x._1.toString, x._2))
-      case Nil => value.splitAt(value.length-2)._1
-    }
-  }
-
-  def concatParamAndValue(list: List[(Option[String], String, String)], value: String = ""): String = {
-    list match {
-      case x::xs => x match {
-        case (Some(name),v,t) if !(name == "id") =>
-          concatParamAndValue(xs, value + name + " = " + valueToAdd(v, t))
-        case _  => concatParamAndValue(xs, value)
-      }
-      case Nil => value.splitAt(value.length-2)._1
-    }
-  }
-
-  def valueToAdd(value: String, typeName: String): String = {
-    (value, typeName) match {
-      case (y, z) if z.contains("UUID") =>
-        "'" + innerValue(y, z) + "'::UUID, "
-      case (y,z) if z.contains("scala.Option") && !y.contains("Some") =>
-        "null, "
-      case (y,z) => "'" + innerValue(y, z) + "', "
-    }
-  }
-
-  def innerValue(value: String, typeName: String): String = {
-    //val r = """(?!^'|'$)(\')"""
-    val r = """(\')"""
-    val escapeSimpleQuote = r.r replaceAllIn (value, "''")
-    (escapeSimpleQuote, typeName) match {
-      case (y, z) if z.contains("scala.Option") && y.contains("Some") =>
-        y.splitAt(5)._2.splitAt(y.length-6)._1
-      case (y, z) if z.contains("List") =>
-        "{" + y.splitAt(5)._2.splitAt(y.length-6)._1 + "}"
-      case _ => escapeSimpleQuote
-    }
-  }
-
 
   case class ClassInfo[T, B](jsonFormat: Format[T], jsonInFormat: Format[B])
 
@@ -517,7 +434,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
   def cols[E](tabl:TableQuery[Table[E] with PKTable]): Map[String, Type] =
     tabl.baseTableRow.create_*.map(c=> (c.name, c.tpe)).toMap
 
-  def filt[E](tabl:TableQuery[Table[E] with PKTable], search: Option[String]) = {
+  def filt[E](tabl:TableQuery[Table[E] with PKTable], search: Option[String]): Option[SQLActionBuilder] = {
     search.filter(_.nonEmpty).map(s => {
       val sPercent = s"%$s%"
       val c = cols(tabl).map( x => {
@@ -532,10 +449,10 @@ class CrudAutoService @Inject()(dao: Dao)() {
     })}
 
   private def findTypeToString(id: Any) = id match {
-    case t:UUID => "UUID"
-    case t:Long => "bigint"
-    case t:Int => "int"
-    case _ => "TEXT"
+    case _:UUID => "UUID"
+    case _:Long => "bigint"
+    case _:Int  => "int"
+    case _      => "TEXT"
   }
 
 
