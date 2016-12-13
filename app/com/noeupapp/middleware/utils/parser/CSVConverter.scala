@@ -1,13 +1,14 @@
 package com.noeupapp.middleware.utils.parser
 
 import java.io.File
+import java.nio.charset.Charset
 
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import org.joda.time.DateTime
 import play.api.libs.iteratee.Enumeratee.{CheckDone, Grouped}
 import play.api.libs.iteratee.Execution.Implicits._
-import play.api.libs.iteratee.{Done, Input, _}
+import play.api.libs.iteratee.{Done, Enumeratee, Input, _}
 
 import scala.util.{Failure, Success, Try}
 import shapeless._
@@ -18,39 +19,16 @@ import scala.collection.immutable.{:: => Cons}
 import scala.concurrent.{ExecutionContext, Future}
 import scalaz.{-\/, Monoid, \/-}
 import com.noeupapp.middleware.utils.parser.CSVConverter._
+import com.noeupapp.middleware.utils.parser.CSVParseOutput._
 import play.api.libs.json.Json
+import com.noeupapp.middleware.utils.streams.EnumerateeAdditionalOperators._
+import com.noeupapp.middleware.utils.streams.EnumeratorAdditionalOperators._
+import com.noeupapp.middleware.utils.streams.IterateeAdditionalOperators._
+import com.noeupapp.middleware.utils.StringUtils._
+import play.api.Logger
 
-// Implementation
+import scala.concurrent.ExecutionContext.Implicits.global
 
-/** Exception to throw if something goes wrong during CSV parsing */
-case class CSVException(s: String, line: Option[Line]) extends RuntimeException(s) {
-  override def toString: String = s"CSVException(cause = $s, line = $line)"
-}
-
-case class Line(number: Int, value: String)
-
-object Line {
-  implicit val lineFormat = Json.format[Line]
-}
-
-case class CSVParseOutput[T](failures: List[(Line, FailError)], successes: List[(Line, T)])
-
-object CSVParseOutput {
-
-  def empty[T]: CSVParseOutput[T] = CSVParseOutput[T](List.empty, List.empty)
-
-  implicit def cSVParseOutputMonoid[F] = new Monoid[CSVParseOutput[F]] {
-
-    override def zero: CSVParseOutput[F] = CSVParseOutput(List.empty, List.empty)
-
-    override def append(f1: CSVParseOutput[F], f2: => CSVParseOutput[F]): CSVParseOutput[F] =
-      CSVParseOutput(
-        f1.failures ++ f2.failures,
-        f1.successes ++ f2.successes
-      )
-
-  }
-}
 
 
 /** Trait for types that can be serialized to/deserialized from CSV */
@@ -127,17 +105,9 @@ object CSVConverter {
     def to(i: DateTime): String = i.toString
   }
 
-  def listCsvLinesConverter[A](l: List[Line])(implicit ec: CSVConverter[A])
-  : CSVParseOutput[A] = {
-    l.map(l => (l, ec.from(l.value, Some(l))))
-      .partition(_._2.isFailure) match {
-        case (fas, sus) =>
-          CSVParseOutput[A](
-            fas.map(s => (s._1, FailError(s._2.failed.get))),
-            sus.map(s => (s._1, s._2.get))
-          )
-      }
-  }
+
+  def csvLineConverter[A](line: Line)(implicit ec: CSVConverter[A]): Try[A] =
+    ec.from(line.value, Some(line))
 
 
   def stringToListOfLines(s: String): List[Line] = {
@@ -196,76 +166,42 @@ object CSVConverter {
   }
 
 
-  def readHugeFile[T](file: File, cSVAction: Option[CSVAction] = None)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[CSVParseOutput[T]]] = {
+  def readHugeFile[T](file: File, colOrder: List[Int] = List.empty)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[CSVParseOutput[T]]] = {
 
+    val convertToLine: Enumeratee[String, Line] =
+      Enumeratee.zipWithIndex ><> Enumeratee.map{
+        case (e, idx) => Line(idx, e)
+      }
 
-    val chunkSize = 1024 * 8
-
-    val enumerator: Enumerator[Array[Byte]] = Enumerator.fromFile(file, chunkSize)
-
-    def isLastChunk(chunk: Array[Byte]): Boolean = {
-      chunk.length < chunkSize
-    }
-
-
-    val groupByLines: Enumeratee[Array[Byte], List[String]] = Enumeratee.grouped {
-      println("groupByLines")
-      Iteratee.fold[Array[Byte], (String, List[String])]("", List.empty) {
-        case ((accLast, accLines), chunk) =>
-          println("groupByLines chunk size " + chunk.length)
-          new String(chunk)
-            .trim
-            .split("\n")
-            .toList match {
-            case lines  @ Cons(h, tail) =>
-              val lineBetween2Chunks: String = accLast + h
-
-              val goodLines =
-                isLastChunk(chunk) match {
-                  case true  => Cons(lineBetween2Chunks, tail)
-                  case false => Cons(lineBetween2Chunks, tail).init
-                }
-
-              (lines.last, accLines ++ goodLines)
-            case Nil => ("", accLines)
-          }
-      }.map(_._2)
-    }
-
-
-    val turnIntoLines: Enumeratee[List[String], List[Line]] = Enumeratee.grouped {
-      println("turnIntoLines")
-      Iteratee.fold[List[String], (Int, List[Line])](0, List.empty) {
-        case ((index, accLines), chunk) =>
-          println("turnIntoLines chunk size " + chunk.length)
-          val lines =
-            ((Stream from index) zip chunk).map {
-              case (lineNumber, content) => Line(lineNumber, content)
-            }.toList
-          (index + chunk.length, lines ++ accLines)
-      }.map(_._2)
-    }
-
-
-    val parseChunk: Iteratee[List[Line], CSVParseOutput[T]] = {
-      println("parseChunk")
-      Iteratee.fold[List[Line], CSVParseOutput[T]](CSVParseOutput.empty) {
-        case (_, chunk) if cSVAction.isDefined =>
-          println(("chunk", chunk.size))
-          //          chunk.foreach(l => println((l.number, l.value.filter(_ == ',').length, l.value)))
-          listCsvLinesConverter[T](CSVSpitter.splitCSV(chunk, cSVAction.get))(st.value)
-        case (_, chunk) if cSVAction.isEmpty =>
-          println(("chunk", chunk.size))
-//          chunk.foreach(l => println((l.number, l.value.filter(_ == ',').length, l.value)))
-          listCsvLinesConverter[T](chunk)(st.value)
+    val reOrder: Enumeratee[String, String] = Enumeratee.map{ line =>
+      if(colOrder.isEmpty){
+        line
+      } else {
+        val splitLine = splitAndKeepEmpty(line, ',')
+        colOrder.map(splitLine.lift).map(_.getOrElse("")).mkString(",")
       }
     }
 
+    val parse: Enumeratee[Line, CSVParseOutput[T]] =
+      Enumeratee.map{ line =>
+        val res = csvLineConverter(line)(st.value)
+        fromTry(line, res)
+      }
 
-      (enumerator &> groupByLines ><> turnIntoLines  |>> parseChunk).flatMap(_.run).map(\/-(_))
-        .recover{
-          case e: Exception => -\/(FailError(e))
-        }
+    val getResult: Iteratee[CSVParseOutput[T], CSVParseOutput[T]] =
+      Iteratee.monadicFold[CSVParseOutput[T]]
+
+    (Enumerator.fromUTF8File(file) &>
+      Enumeratee.splitToLines ><>
+      reOrder ><>
+      convertToLine ><>
+      parse |>>
+      getResult).flatMap(_.run.map(\/-(_)))
+      .recover {
+        case t: Exception =>
+          Logger.error(t.getMessage)
+          -\/(FailError(t))
+      }
   }
 
 }

@@ -34,4 +34,10 @@ object StringUtils {
   }
 
 
+  def splitAndKeepEmpty(str: String, delimiter: Char): List[String] =
+    str.span(_ != delimiter) match {
+      case (before, "") => List(before)
+      case (before, after) => before :: splitAndKeepEmpty(after.drop(1), delimiter)
+    }
+
 }
