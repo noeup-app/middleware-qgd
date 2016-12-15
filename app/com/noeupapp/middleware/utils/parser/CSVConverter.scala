@@ -29,6 +29,8 @@ import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.reflect._
+import scalaz._
+import Scalaz._
 
 
 
@@ -167,7 +169,7 @@ object CSVConverter {
   }
 
 
-  def readHugeFile[T: ClassTag](file: File, colOrder: List[Int] = List.empty)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[CSVParseOutput[T]]] = {
+  def readHugeFile[T: ClassTag](file: File, dropFirst: Boolean = false, colOrder: List[Int] = List.empty)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[CSVParseOutput[T]]] = {
 
     Logger.info("Parsing CSV file... " + classTag[T])
 
@@ -196,6 +198,7 @@ object CSVConverter {
 
     (Enumerator.fromUTF8File(file) &>
       Enumeratee.splitToLines ><>
+      Enumeratee.drop(dropFirst.option(1).getOrElse(0)) ><> // Drop first line
       reOrder ><>
       convertToLine ><>
       parse |>>
