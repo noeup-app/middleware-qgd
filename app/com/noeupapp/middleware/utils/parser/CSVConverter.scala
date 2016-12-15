@@ -28,6 +28,7 @@ import com.noeupapp.middleware.utils.StringUtils._
 import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.reflect._
 
 
 
@@ -166,7 +167,9 @@ object CSVConverter {
   }
 
 
-  def readHugeFile[T](file: File, colOrder: List[Int] = List.empty)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[CSVParseOutput[T]]] = {
+  def readHugeFile[T: ClassTag](file: File, colOrder: List[Int] = List.empty)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[CSVParseOutput[T]]] = {
+
+    Logger.info("Parsing CSV file... " + classTag[T])
 
     val convertToLine: Enumeratee[String, Line] =
       Enumeratee.zipWithIndex ><> Enumeratee.map{
@@ -196,7 +199,11 @@ object CSVConverter {
       reOrder ><>
       convertToLine ><>
       parse |>>
-      getResult).flatMap(_.run.map(\/-(_)))
+      getResult).flatMap(_.run.map{ r =>
+        Logger.info("Parsed CSV file " + classTag[T])
+
+      \/-(r)
+      })
       .recover {
         case t: Exception =>
           Logger.error(t.getMessage)
