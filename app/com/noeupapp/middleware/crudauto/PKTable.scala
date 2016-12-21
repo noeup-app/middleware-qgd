@@ -2,7 +2,7 @@ package com.noeupapp.middleware.crudauto
 
 
 import slick.driver._
-import slick.driver.PostgresDriver.api._
+import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
 import slick.lifted.PrimaryKey
 
 

@@ -5,7 +5,7 @@ import java.util.UUID
 import com.noeupapp.middleware.crudauto.{Entity, PKTable}
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 import play.api.libs.json.Json
-import slick.driver.PostgresDriver.api._
+import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
 import slick.jdbc.JdbcBackend
 import slick.lifted.{Index, PrimaryKey}
 

@@ -23,7 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 import play.api.Play.current
 import slick.driver._
-import slick.driver.PostgresDriver.api._
+import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
 
 /**
   * The context.

@@ -13,7 +13,7 @@ import slick.driver
 import slick.driver.JdbcProfile
 import slick.jdbc.{JdbcBackend, PositionedParameters, SetParameter}
 import slick.driver._
-import slick.driver.PostgresDriver.api._
+import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
 import slick.profile.{BasicAction, FixedSqlAction, SqlStreamingAction}
 
 import scala.concurrent.Future
@@ -21,7 +21,7 @@ import scala.language.higherKinds
 import scalaz.{-\/, \/, \/-}
 import scala.concurrent.ExecutionContext.Implicits.global
 import slick.driver._
-import slick.driver.PostgresDriver.api._
+import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
 import slick.lifted.TableQuery
 
 import scala.language.implicitConversions

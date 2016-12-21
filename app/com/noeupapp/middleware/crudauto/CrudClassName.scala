@@ -1,10 +1,12 @@
 package com.noeupapp.middleware.crudauto
 
-import slick.ast.NumericTypedType
-import slick.driver._
-import slick.driver.PostgresDriver.api._
-import slick.driver.PostgresDriver.api.longColumnType
-import slick.lifted.{Isomorphism, TableQuery, Tag}
+//import slick.ast.NumericTypedType
+//import slick.driver._
+import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
+//import slick.driver.PostgresDriver.api._
+
+//import slick.driver.PostgresDriver.api.longColumnType
+//import slick.lifted.{Isomorphism, TableQuery, Tag}
 
 import scala.language.existentials
 import scala.reflect.ClassTag
