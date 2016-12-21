@@ -14,7 +14,7 @@ import com.noeupapp.middleware.utils.TypeCustom._
 import org.joda.time.DateTime
 import play.api.libs.json._
 import com.noeupapp.middleware.utils.FutureFunctor._
-import com.noeupapp.middleware.utils.slick.ResultMap
+import com.noeupapp.middleware.utils.slick.{MyPostgresDriver, ResultMap}
 import org.joda.time.format.DateTimeFormat
 import play.api.Logger
 import slick.ast.Type
@@ -27,7 +27,7 @@ import scalaz.{-\/, \/-}
 //import scalaz._
 //import Scalaz._
 import slick.driver._
-import slick.driver.PostgresDriver.api._
+import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
 import slick.lifted.{PrimaryKey, ForeignKey, TableQuery, Tag}
 import play.api.mvc.Results._
 import slick.profile.SqlStreamingAction
@@ -174,7 +174,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
   def add[E <: Entity[Any], PK, V <: Table[E]]( tableQuery: TableQuery[V],
                                                 entity: E)(implicit bct: BaseColumnType[PK]): Future[Expect[E]] = {
     // TODO column("id") should be a generik pk
-    val insertQuery: PostgresDriver.IntoInsertActionComposer[E, E] = tableQuery returning tableQuery.map(_.column[PK]("id")) into { (e, id) =>
+    val insertQuery: MyPostgresDriver.IntoInsertActionComposer[E, E] = tableQuery returning tableQuery.map(_.column[PK]("id")) into { (e, id) =>
       e.withNewId(id = id).asInstanceOf[E] // TODO find a way to do that with out ugly cast
     }
     dao.run(insertQuery += entity)

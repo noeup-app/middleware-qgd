@@ -6,7 +6,7 @@ import com.noeupapp.middleware.crudauto.{Entity, PKTable}
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 import play.api.libs.json.Json
 import slick.dbio.Effect.Write
-import slick.driver.PostgresDriver.api._
+import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
 import slick.jdbc.JdbcBackend
 import slick.profile.FixedSqlAction
 
