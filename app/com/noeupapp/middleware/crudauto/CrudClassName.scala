@@ -26,7 +26,7 @@ trait CrudClassName {
 
 
   // TODO : why cast is necessary here ?
-  protected def configuration[E, PK, V <: Table[E]]()(implicit eClass: ClassTag[E], pkClass: ClassTag[PK], vClass: ClassTag[V], baseColumnType: BaseColumnType[PK]) =
+  protected def configuration[E, PK, V <: Table[E]](implicit eClass: ClassTag[E], pkClass: ClassTag[PK], vClass: ClassTag[V], baseColumnType: BaseColumnType[PK]) =
       CrudConfiguration[E, PK, V](eClass.runtimeClass.asInstanceOf[Class[E]],
                                   pkClass.runtimeClass.asInstanceOf[Class[PK]],
                                   vClass.runtimeClass.asInstanceOf[Class[V]])

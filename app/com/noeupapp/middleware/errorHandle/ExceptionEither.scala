@@ -23,7 +23,7 @@ object ExceptionEither {
       })
     } match {
       case Failure(e) =>
-        Future.successful(-\/(FailError("Error while TryDBCall", e)))
+        Future.successful(-\/(FailError(s"Error while TryDBCall : ${e.getMessage}", e)))
       case Success(res) => Future.successful(res)
     }
   }

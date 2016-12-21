@@ -169,14 +169,16 @@ object CSVConverter {
   }
 
 
+  private val convertToLine: Enumeratee[String, Line] =
+    Enumeratee.zipWithIndex ><> Enumeratee.map{
+      case (e, idx) => Line(idx, e)
+    }
+
   def readHugeFile[T: ClassTag](file: File, dropFirst: Boolean = false, colOrder: List[Int] = List.empty)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[CSVParseOutput[T]]] = {
 
     Logger.info("Parsing CSV file... " + classTag[T])
 
-    val convertToLine: Enumeratee[String, Line] =
-      Enumeratee.zipWithIndex ><> Enumeratee.map{
-        case (e, idx) => Line(idx, e)
-      }
+
 
     val reOrder: Enumeratee[String, String] = Enumeratee.map{ line =>
       if(colOrder.isEmpty){
@@ -198,20 +200,84 @@ object CSVConverter {
 
     (Enumerator.fromUTF8File(file) &>
       Enumeratee.splitToLines ><>
-      Enumeratee.drop(dropFirst.option(1).getOrElse(0)) ><> // Drop first line
-      reOrder ><>
-      convertToLine ><>
-      parse |>>
+        Enumeratee.drop(dropFirst.option(1).getOrElse(0)) ><> // Drop first line
+        reOrder ><>
+        convertToLine ><>
+        parse |>>
       getResult).flatMap(_.run.map{ r =>
-        Logger.info("Parsed CSV file " + classTag[T])
+      Logger.info("Parsed CSV file " + classTag[T])
 
       \/-(r)
-      })
+    })
       .recover {
         case t: Exception =>
           Logger.error(t.getMessage)
           -\/(FailError(t))
       }
+  }
+
+  def readHugeFileWithoutTypeCheck(file: File, from: Int, to: Option[Int] = None): Future[Expect[List[CustomTypedLine[Map[String, String]]]]] = {
+
+
+    val alignFileContent: Enumeratee[String, String] = Enumeratee.map{ line =>
+      if(from == 0 && to.isEmpty){
+        line
+      } else {
+        val splitLine = splitAndKeepEmpty(line, ',')
+        to match {
+          case Some(i) => splitLine.splitAt(from)._2.splitAt(i)._1.mkString(",") // not clever to split, join and then to split again in the flow
+          case None => splitLine.splitAt(from)._2.mkString(",") // not clever to split, join and then to split again in the flow
+        }
+      }
+    }
+
+    val splitLines: Enumeratee[String, List[String]] = Enumeratee.map(splitAndKeepEmpty(_, ','))
+
+    val convertToLine: Enumeratee[List[String], CustomTypedLine[List[String]]] =
+      Enumeratee.zipWithIndex ><> Enumeratee.map{
+        case (e, idx) => CustomTypedLine(idx, e)
+      }
+
+
+    val firstLineFuture: Future[Option[List[String]]] =
+      (Enumerator.fromUTF8File(file) &>
+       Enumeratee.splitToLines ><>
+       alignFileContent ><>
+       splitLines |>>
+       Iteratee.head).flatMap(_.run)
+
+
+    val fileReadFuture: Future[List[CustomTypedLine[List[String]]]] =
+      (Enumerator.fromUTF8File(file) &>
+        Enumeratee.splitToLines ><>
+        Enumeratee.drop(1) ><> // Drop first line
+        alignFileContent ><>
+        splitLines ><>
+        convertToLine |>>
+        Iteratee.getChunks).flatMap(_.run)
+
+
+    {
+      for {
+        firstLineOpt <- firstLineFuture
+        fileRead     <- fileReadFuture
+      } yield {
+        firstLineOpt match {
+          case None => -\/(FailError("File is empty"))
+          case Some(firstLine) =>
+            \/-{
+              fileRead.map { line =>
+                CustomTypedLine(line.number, firstLine.zip(line.value).toMap)
+              }
+            }
+        }
+      }
+    }.recover {
+      case t: Exception =>
+        Logger.error(t.getMessage)
+        -\/(FailError(t))
+    }
+
   }
 
 }
