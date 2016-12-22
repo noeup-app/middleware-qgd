@@ -1,21 +1,16 @@
 package com.noeupapp.middleware.authorizationServer.oauth2
 
-import java.util.{Date, NoSuchElementException, UUID}
+import java.util.{Date, NoSuchElementException}
 
 import com.google.inject.Inject
-import com.mohiva.play.silhouette.api
-import com.noeupapp.middleware.authorizationClient.login.{LoginInfo, PasswordInfoDAO}
-import com.noeupapp.middleware.authorizationServer.authCode.{AuthCode, AuthCodeService}
-import com.noeupapp.middleware.authorizationServer.client.{Client, ClientService}
-import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessToken, OAuthAccessTokenDAO, OAuthAccessTokenService}
+import com.noeupapp.middleware.authorizationClient.login.PasswordInfoDAO
+import com.noeupapp.middleware.authorizationServer.authCode.AuthCodeService
+import com.noeupapp.middleware.authorizationServer.client.ClientService
+import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessToken, OAuthAccessTokenService}
 import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.entities.user.UserService
-import com.noeupapp.middleware.errorHandle.FailError
-import com.noeupapp.middleware.errorHandle.FailError._
-import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config, NamedLogger, TypeConversion}
+import com.noeupapp.middleware.utils.{BearerTokenGenerator, Config, NamedLogger}
 import play.api.Logger
-import redis.clients.util.Pool
-import com.noeupapp.middleware.errorHandle.ExceptionEither._
 
 import scala.concurrent.Future
 import scala.language.implicitConversions
@@ -23,7 +18,6 @@ import scalaoauth2.provider._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
-import org.joda.time.DateTime
 
 class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
                                       accessTokenService: OAuthAccessTokenService,

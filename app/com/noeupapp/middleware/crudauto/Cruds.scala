@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.crudauto
 
-import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
@@ -10,7 +9,6 @@ import com.noeupapp.middleware.entities.account.Account
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.mvc.{Action, AnyContent}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -51,7 +49,6 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     } else {
       val omits = omit.map(_.split(",").toList).toList.flatten
       val includes = include.map(_.split(",").toList).toList.flatten
-      val countOnly = count.getOrElse(false)
 
       crudService.findAllFlow(model, omits, includes, search, count.getOrElse(false), p, pp, request.identity.map(_.user)) map {
         case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>

@@ -1,11 +1,8 @@
 package com.noeupapp.middleware.utils.streams
 
-import java.io.File
-import java.nio.charset.Charset
 
-import play.api.libs.iteratee.{Enumerator, Input, Iteratee}
+import play.api.libs.iteratee.Iteratee
 
-import scala.concurrent.ExecutionContext
 import scala.language.implicitConversions
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz.Monoid

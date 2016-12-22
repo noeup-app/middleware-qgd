@@ -86,6 +86,9 @@ scalacOptions ++= Seq(
   "-Ywarn-dead-code", // Warn when dead code is identified.
   "-Ywarn-inaccessible", // Warn about inaccessible types in method signatures.
   "-Ywarn-nullary-override", // Warn when non-nullary overrides nullary, e.g. def foo() over def foo.
+  "-Xlint:missing-interpolator", // Given `"azdazd $myVar"` detects when `s` is forgotten at the begining
+//  "-Ywarn-unused-import",
+//  "-Ywarn-unused",
   "-Ywarn-numeric-widen" // Warn when numerics are widened.
 )
 

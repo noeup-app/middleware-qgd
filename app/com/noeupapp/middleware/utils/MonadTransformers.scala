@@ -4,10 +4,8 @@ import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.Logger
 
 import scala.annotation.tailrec
-import scala.collection.parallel.immutable.ParSeq
 import scala.concurrent.Future
 import scalaz.{-\/, \/, \/-}
 

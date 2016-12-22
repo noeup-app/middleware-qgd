@@ -8,10 +8,9 @@ import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.{CredentialsProvider, SocialProviderRegistry}
 import com.noeupapp.middleware.authorizationClient.login.Login
-import com.noeupapp.middleware.authorizationServer.authCode.{AuthCode, AuthCodeService}
-import com.noeupapp.middleware.authorizationServer.client.{Client, ClientService}
+import com.noeupapp.middleware.authorizationServer.authCode.AuthCodeService
+import com.noeupapp.middleware.authorizationServer.client.ClientService
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
-import play.api.db.DB
 import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.Action
 import play.api.{Configuration, Logger}
@@ -19,13 +18,6 @@ import play.api.{Configuration, Logger}
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
 
-//import models.oauth2.Client
-//import play.api.db.slick.DBAction
-//import play.api.data._
-//import play.api.data.Forms._
-import play.api.Play.current
-//import oauth2.OAuthDataHandler
-//import com.noeupapp.middleware.authorizationServer.models
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -160,7 +152,6 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
             Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.authorize(data.client_id.toString, data.redirect_uri, data.state, data.scope))
           userService.retrieve(loginInfo).flatMap {
             case Some(user) =>
-              val c = configuration.underlying
               env.authenticatorService.create(loginInfo).map {
                 case authenticator if authenticate.rememberMe =>
 //                  authenticator.copy(

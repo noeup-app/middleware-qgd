@@ -4,7 +4,7 @@ import java.sql.Timestamp
 import java.util.{Date, UUID}
 
 import com.google.inject.Inject
-import com.noeupapp.middleware.authorizationServer.client.{Client, ClientDAO}
+import com.noeupapp.middleware.authorizationServer.client.ClientDAO
 import com.noeupapp.middleware.utils.AuthCodeGenerator
 import play.api.db.DB
 import com.noeupapp.middleware.errorHandle.ExceptionEither._

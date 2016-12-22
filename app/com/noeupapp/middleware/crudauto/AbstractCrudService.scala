@@ -3,28 +3,21 @@ package com.noeupapp.middleware.crudauto
 import java.util.UUID
 import javax.inject.Inject
 
-import com.google.inject.TypeLiteral
 import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.TypeCustom._
-import play.api.Logger
 import play.api.libs.json._
-import slick.ast.BaseTypedType
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz._
-import slick.driver._
 import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
-import slick.jdbc.JdbcType
 import slick.lifted.TableQuery
 import play.api.mvc.Results._
 
-import scala.language.existentials
-import scala.reflect.ClassTag
 
 class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
                                      crudClassName: CrudClassName,

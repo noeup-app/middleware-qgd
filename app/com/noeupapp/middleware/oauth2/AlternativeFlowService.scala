@@ -3,8 +3,7 @@ package com.noeupapp.middleware.oauth2
 import com.google.inject.Inject
 import com.noeupapp.middleware.authorizationServer.client.ClientService
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenService
-import com.noeupapp.middleware.entities.user.{User, UserService}
-import com.noeupapp.middleware.errorHandle.FailError
+import com.noeupapp.middleware.entities.user.UserService
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import play.api.Logger
 import play.api.libs.json.{JsValue, Json}

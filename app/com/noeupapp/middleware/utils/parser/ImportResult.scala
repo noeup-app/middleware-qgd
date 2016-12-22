@@ -3,7 +3,6 @@ package com.noeupapp.middleware.utils.parser
 import com.noeupapp.middleware.errorHandle.FailError
 import play.api.libs.json._
 import com.noeupapp.middleware.utils.parser.Line._
-import play.api.libs.functional.syntax._
 
 
 /**

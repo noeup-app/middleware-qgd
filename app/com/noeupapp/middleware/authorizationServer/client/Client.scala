@@ -1,14 +1,10 @@
 package com.noeupapp.middleware.authorizationServer.client
 
-import java.util.UUID
 
 import anorm.SqlParser._
 import anorm._
-import play.api.Play.current
-import play.api.db.DB
 import play.api.libs.json.Json
 
-import scala.language.postfixOps
 
 
 /**

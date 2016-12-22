@@ -1,23 +1,19 @@
 package com.noeupapp.middleware.oauth2
 
-import java.util.UUID
 
 import com.google.inject.Inject
-import com.noeupapp.middleware.authorizationServer.client.{Client, ClientService}
+import com.noeupapp.middleware.authorizationServer.client.Client
 import com.noeupapp.middleware.entities.user.UserOut
 import com.noeupapp.middleware.entities.user.User.UserOutFormat
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.BearerTokenGenerator
 import org.sedis.Pool
-import play.api.libs.json.{JsError, JsResult, JsSuccess, Json}
-import play.api.mvc.RequestHeader
-import play.api.mvc.Results._
+import play.api.libs.json.{JsError, JsSuccess, Json}
 
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
-import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

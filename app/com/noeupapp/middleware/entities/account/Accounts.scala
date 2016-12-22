@@ -1,10 +1,8 @@
 package com.noeupapp.middleware.entities.account
 
 import com.google.inject.Inject
-import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
-import com.noeupapp.middleware.authorizationClient.login.LoginInfo
 import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsObject, Json}
 import com.noeupapp.middleware.entities.account.Account._

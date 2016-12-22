@@ -13,7 +13,6 @@ import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json.Json
 
-import scala.language.implicitConversions
 import scalaz.{-\/, \/-}
 import scala.concurrent.ExecutionContext.Implicits.global
 

@@ -4,13 +4,12 @@ import com.amazonaws.{ClientConfiguration, Protocol}
 import com.amazonaws.auth.BasicAWSCredentials
 import com.amazonaws.services.s3.AmazonS3Client
 import com.google.inject.{AbstractModule, Provides}
-import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.services._
 import com.mohiva.play.silhouette.api.util._
 import com.mohiva.play.silhouette.api.{Environment, EventBus}
 import com.mohiva.play.silhouette.impl.authenticators._
-import com.mohiva.play.silhouette.impl.daos.{AuthenticatorDAO, CacheAuthenticatorDAO, DelegableAuthInfoDAO}
+import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
 import com.mohiva.play.silhouette.impl.providers._
 import com.mohiva.play.silhouette.impl.providers.oauth1.secrets.{CookieSecretProvider, CookieSecretSettings}
 import com.mohiva.play.silhouette.impl.providers.oauth2._
@@ -24,20 +23,18 @@ import com.noeupapp.middleware.entities.user.UserService
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.codingwell.scalaguice.ScalaModule
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 import com.noeupapp.middleware.authorizationClient.provider.QGDProvider
 import com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswordConfig
 import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthenticatorDAO
-import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
+import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenService
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.oauth2.TierAccessTokenConfig
 import com.noeupapp.middleware.utils.{Html2PdfConfig, SendinBlueConfig}
 import com.noeupapp.middleware.utils.s3.{AmazonS3CoweboClient, S3Config, S3CoweboConfig}
-import org.joda.time.DateTime
 
-import scala.concurrent.Future
 
 /**
  * The Guice module which wires all Silhouette dependencies.

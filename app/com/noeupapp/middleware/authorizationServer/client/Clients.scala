@@ -7,15 +7,10 @@ import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.noeupapp.middleware.authorizationClient.RoleAuthorization.WithRole
 import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScope
-import com.noeupapp.middleware.authorizationClient.{RoleAuthorization, ScopeAndRoleAuthorization, ScopeAuthorization}
-import com.noeupapp.middleware.authorizationServer.client
+import com.noeupapp.middleware.authorizationClient.ScopeAndRoleAuthorization
 import com.noeupapp.middleware.entities.account.Account
-import com.noeupapp.middleware.entities.user.User
 import play.api.i18n.MessagesApi
-import play.api.mvc.Action
-import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import play.api.Logger
-import play.api.data.Form
 
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
