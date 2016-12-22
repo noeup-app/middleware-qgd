@@ -121,7 +121,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         status(result) must be equalTo OK
 
-        contentAsJson(result) must be equalTo Json.toJson(0)
+        contentAsJson(result) must be equalTo Json.arr()
       }
     }
     "pagination returns n p=0 pp=5 element if table is not empty" in new CrudAutoContext {
