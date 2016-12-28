@@ -54,7 +54,7 @@ GET         /oauth2/tier/access_token             com.noeupapp.middleware.oauth2
 GET         /entity/accounts/me                 com.noeupapp.middleware.entities.account.Accounts.me
 
 GET         /entity/users/:userId               com.noeupapp.middleware.entities.user.Users.fetchById(userId: java.util.UUID)
-GET         /entity/users                       com.noeupapp.middleware.entities.user.Users.fetchAll
+GET         /entity/users                       com.noeupapp.middleware.entities.user.Users.fetchAll(email: Option[String])
 POST        /entity/users                       com.noeupapp.middleware.entities.user.Users.add(orGet: Option[String])
 
 GET         /evolution/:n                       com.noeupapp.middleware.evolution.Evolution.apply(n: Int)

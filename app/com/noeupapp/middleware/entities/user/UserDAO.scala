@@ -20,12 +20,18 @@ class UserDAO extends GlobalReadsWrites {
     *
     * @return
     */
-  def findAll(implicit connection: Connection): List[User] = {
+  def findAll(email:Option[String])(implicit connection: Connection): List[User] = {
+    val condition = email match {
+      case Some(emailVal) => "WHERE email = '"+emailVal+"'"
+      case None => ""
+    }
     SQL(
-      """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted
+      s"""SELECT id, first_name, last_name, email, avatar_url, created, active, deleted
          FROM entity_users
+         $condition
       """)
       .as(User.parse *)
+
   }
 
   /**

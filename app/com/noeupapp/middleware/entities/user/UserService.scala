@@ -39,9 +39,9 @@ class UserService @Inject()(userDAO: UserDAO,
     *
     * @return List of users
     */
-  def findAll: Future[Expect[List[User]]] = {
+  def findAll(email:Option[String]): Future[Expect[List[User]]] = {
     TryBDCall[List[User]]{ implicit c =>
-      \/-(userDAO.findAll)
+      \/-(userDAO.findAll(email))
     }
   }
 
