@@ -1,12 +1,8 @@
 package com.noeupapp.middleware.authorizationServer.client
 
-import java.sql.Connection
-import java.util.UUID
 
-import anorm._
 import com.google.inject.Inject
 import com.noeupapp.middleware.errorHandle.FailError._
-import play.api.db.DB
 
 import scala.concurrent.Future
 import com.noeupapp.middleware.errorHandle.ExceptionEither._

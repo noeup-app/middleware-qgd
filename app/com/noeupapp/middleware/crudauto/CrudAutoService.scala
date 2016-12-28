@@ -1,34 +1,22 @@
 package com.noeupapp.middleware.crudauto
 
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.Method
 import java.util.UUID
 import javax.inject.Inject
 
-import anorm.RowParser
 import com.google.inject.TypeLiteral
-import com.noeupapp.middleware.errorHandle.ExceptionEither._
-import com.noeupapp.middleware.utils.MonadTransformers._
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
-import com.noeupapp.middleware.utils.TypeCustom._
-import org.joda.time.DateTime
 import play.api.libs.json._
-import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.slick.{MyPostgresDriver, ResultMap}
-import org.joda.time.format.DateTimeFormat
 import play.api.Logger
 import slick.ast.Type
 
-import scala.collection.immutable.Iterable
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.language.higherKinds
 import scalaz.{-\/, \/-}
-//import scalaz._
-//import Scalaz._
-import slick.driver._
 import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
-import slick.lifted.{PrimaryKey, ForeignKey, TableQuery, Tag}
+import slick.lifted.{ForeignKey, TableQuery}
 import play.api.mvc.Results._
 import slick.profile.SqlStreamingAction
 import slick.jdbc._
@@ -213,9 +201,6 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
 
   def completeAdd[T, A, B](model: Class[T], in: Class[B], singleton: Class[A], modelIn: B, format: Format[T], formatIn: Format[B]): Future[Expect[T]] = {
-    implicit val form = format
-    implicit val formIn  = formatIn
-//    val input:B = json.as[B]
     val consts = model.getDeclaredConstructors
     val const = consts.find(r=> r.getParameterTypes.contains(in))
     Logger.debug(const.mkString)

@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.utils.slick
 
-import play.api.Logger
 import slick.jdbc.{GetResult, PositionedResult}
 
 

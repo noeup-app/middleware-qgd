@@ -2,21 +2,16 @@ package com.noeupapp.middleware.authorizationServer.oauthAccessToken
 
 import java.util.{Date, UUID}
 
-import anorm.SqlParser._
-import anorm._
 import com.google.inject.Inject
 import com.noeupapp.middleware.entities.user.UserService
 import com.noeupapp.middleware.errorHandle.{ExceptionEither, FailError}
 import com.noeupapp.middleware.errorHandle.FailError._
 import play.api.Logger
-import play.api.db.DB
 
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
 
-import scala.language.implicitConversions
 
 
 class OAuthAccessTokenService @Inject() (oAuthAccessTokenDAO: OAuthAccessTokenDAO,

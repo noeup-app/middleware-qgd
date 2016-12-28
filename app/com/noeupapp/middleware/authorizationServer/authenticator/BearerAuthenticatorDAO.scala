@@ -1,13 +1,10 @@
 package com.noeupapp.middleware.authorizationServer.authenticator
 
-import com.google.inject.Inject
 import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.daos.AuthenticatorDAO
-import com.noeupapp.middleware.authorizationClient.login.LoginInfo
-import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessTokenDAO, OAuthAccessTokenService}
-import com.noeupapp.middleware.entities.user.{UserDAO, UserService}
-import com.noeupapp.middleware.errorHandle.FailError.Expect
+import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenService
+import com.noeupapp.middleware.entities.user.UserService
 import org.joda.time.DateTime
 import play.api.Logger
 

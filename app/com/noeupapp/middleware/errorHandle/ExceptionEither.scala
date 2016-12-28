@@ -5,12 +5,11 @@ import java.sql.Connection
 import play.api.mvc.Results._
 import play.api.mvc._
 import com.noeupapp.middleware.errorHandle.FailError.Expect
-import play.api.Logger
 import play.api.db.DB
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 import scalaz._
 import play.api.Play.current
 

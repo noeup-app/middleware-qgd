@@ -2,20 +2,14 @@ package com.noeupapp.middleware.utils
 
 import play.api.Play.current
 
-import scala.concurrent.duration._
-import play.api.libs.concurrent.Execution.Implicits._
-import play.api.Logger
-import java.io.File
 
 import scala.util.{Failure, Success, Try}
 import play.api.Play.current
 import play.api.i18n.Messages.Implicits._
-import views.html._
 import play.api.libs.mailer._
 import com.google.inject.Inject
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError._
-import org.apache.commons.mail.EmailAttachment
 import com.noeupapp.middleware.views.html.emailTemplate
 
 import scala.concurrent.Future

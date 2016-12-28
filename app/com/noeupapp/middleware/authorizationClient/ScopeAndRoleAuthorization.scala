@@ -10,7 +10,6 @@ import com.noeupapp.middleware.entities.user.User
 import play.api.i18n.Messages
 import play.api.mvc.Request
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 trait ScopeAndRoleAuthorization {

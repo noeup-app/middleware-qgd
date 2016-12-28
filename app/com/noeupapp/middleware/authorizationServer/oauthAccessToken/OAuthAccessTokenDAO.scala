@@ -1,18 +1,12 @@
 package com.noeupapp.middleware.authorizationServer.oauthAccessToken
 
 import java.sql.Connection
-import java.util.{Date, UUID}
+import java.util.UUID
 
-import anorm.SqlParser._
 import anorm._
-import com.noeupapp.middleware.errorHandle.FailError
-import com.noeupapp.middleware.errorHandle.FailError._
 import play.api.Logger
-import play.api.db.DB
 
 import scala.language.postfixOps
-import scalaz.{-\/, \/-}
-import play.api.Play.current
 
 class OAuthAccessTokenDAO {
 

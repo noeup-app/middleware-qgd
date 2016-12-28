@@ -1,17 +1,13 @@
 package com.noeupapp.middleware.oauth2
 
 import com.google.inject.Inject
-import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.noeupapp.middleware.authorizationClient.login.PasswordInfoDAO
 import com.noeupapp.middleware.authorizationServer.client.Client
 import com.noeupapp.middleware.authorizationServer.oauth2.AuthorizationHandler
-import com.noeupapp.middleware.entities.user.{User, UserOut}
-import com.noeupapp.middleware.entities.user.User._
-import com.noeupapp.middleware.errorHandle.ExceptionEither._
+import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
-import play.api.Logger
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global

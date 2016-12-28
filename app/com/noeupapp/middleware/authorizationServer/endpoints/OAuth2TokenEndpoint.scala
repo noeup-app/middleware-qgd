@@ -1,10 +1,7 @@
 package com.noeupapp.middleware.authorizationServer.endpoints
 
-import java.util.UUID
 
-import com.noeupapp.middleware.entities.user.User
 
-import scala.concurrent.{ExecutionContext, Future}
 import scalaoauth2.provider._
 
 class OAuth2TokenEndpoint extends TokenEndpoint {

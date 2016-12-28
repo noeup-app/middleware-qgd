@@ -1,12 +1,8 @@
 package com.noeupapp.middleware.authorizationServer.authCode
 
-import java.sql.{Connection, Timestamp}
-import java.util.{Date, UUID}
+import java.sql.Connection
 
 import anorm._
-import com.noeupapp.middleware.authorizationServer.client.Client
-import com.noeupapp.middleware.utils.AuthCodeGenerator
-import play.api.db.DB
 
 class AuthCodeDAO {
 

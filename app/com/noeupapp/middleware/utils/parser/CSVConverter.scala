@@ -1,26 +1,19 @@
 package com.noeupapp.middleware.utils.parser
 
 import java.io.File
-import java.nio.charset.Charset
 
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import org.joda.time.DateTime
-import play.api.libs.iteratee.Enumeratee.{CheckDone, Grouped}
-import play.api.libs.iteratee.Execution.Implicits._
-import play.api.libs.iteratee.{Done, Enumeratee, Input, _}
+import play.api.libs.iteratee.{Enumeratee, _}
 
 import scala.util.{Failure, Success, Try}
 import shapeless._
-import syntax.singleton._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.collection.immutable.{:: => Cons}
-import scala.concurrent.{ExecutionContext, Future}
-import scalaz.{-\/, Monoid, \/-}
-import com.noeupapp.middleware.utils.parser.CSVConverter._
+import scala.concurrent.Future
+import scalaz.{-\/, \/-}
 import com.noeupapp.middleware.utils.parser.CSVParseOutput._
-import play.api.libs.json.Json
 import com.noeupapp.middleware.utils.streams.EnumerateeAdditionalOperators._
 import com.noeupapp.middleware.utils.streams.EnumeratorAdditionalOperators._
 import com.noeupapp.middleware.utils.streams.IterateeAdditionalOperators._

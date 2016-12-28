@@ -2,19 +2,15 @@ package com.noeupapp.middleware.application
 
 import javax.inject.Inject
 
-import com.mohiva.play.silhouette.api.{Environment, LogoutEvent, Silhouette}
+import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.providers.SocialProviderRegistry
 import com.noeupapp.middleware.authorizationClient.{RoleAuthorization, ScopeAndRoleAuthorization, ScopeAuthorization}
 import play.api.i18n.MessagesApi
-import play.api.mvc.{Action, AnyContent, Result}
 import RoleAuthorization.WithRole
 import ScopeAuthorization.WithScope
 import com.noeupapp.middleware.entities.account.Account
-import com.noeupapp.middleware.entities.user.User
-import com.noeupapp.middleware.utils.RequestHelper
 
-import scala.concurrent.Future
 
 /**
  * The basic application controller.

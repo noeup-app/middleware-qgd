@@ -4,17 +4,10 @@ import java.util.{Date, UUID}
 
 import anorm.SqlParser._
 import anorm._
-import play.api.Logger
-import play.api.Play.current
-import play.api.db.DB
 import play.api.libs.json.Json
-import com.noeupapp.middleware.errorHandle.FailError
-import com.noeupapp.middleware.errorHandle.FailError.Expect
 
 import scalaoauth2.provider.AccessToken
 //import scalaoauth2.provider.AccessToken
-import scala.language.postfixOps
-import scalaz._
 
 
 /**

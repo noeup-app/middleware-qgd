@@ -2,7 +2,7 @@ package com.noeupapp.middleware.utils
 
 import java.util.Locale
 
-import play.api.mvc.{Request, RequestHeader}
+import play.api.mvc.RequestHeader
 
 object RequestHelper {
 

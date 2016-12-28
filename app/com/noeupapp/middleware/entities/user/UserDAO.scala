@@ -4,7 +4,6 @@ import java.sql.Connection
 import java.util.UUID
 
 import anorm._
-import com.mohiva.play.silhouette.api.LoginInfo
 import play.api.Logger
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 

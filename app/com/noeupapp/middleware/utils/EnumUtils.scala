@@ -1,7 +1,6 @@
 package com.noeupapp.middleware.utils
 
-import anorm.{TypeDoesNotMatch, MetaDataItem, Column, ToStatement}
-import org.postgresql.util.PGobject
+import anorm.ToStatement
 //import org.postgresql.jdbc4.Jdbc4Array
 import play.api.libs.json._
 import scala.language.implicitConversions

@@ -3,29 +3,25 @@ package com.noeupapp.middleware.crudauto
 import java.util.UUID
 import javax.inject.Inject
 
-import com.google.inject.TypeLiteral
+import com.noeupapp.middleware.entities.role.RoleService
+import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.TypeCustom._
-import play.api.Logger
 import play.api.libs.json._
-import slick.ast.BaseTypedType
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz._
-import slick.driver._
 import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
-import slick.jdbc.JdbcType
 import slick.lifted.TableQuery
 import play.api.mvc.Results._
 
-import scala.language.existentials
-import scala.reflect.ClassTag
 
 class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
-                                     crudClassName: CrudClassName){
+                                     crudClassName: CrudClassName,
+                                     roleService: RoleService){
 
 
   def parseStringToType[T](strClass: Class[T], str: String): Future[Expect[T]] = Future {
@@ -42,10 +38,28 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
     }
   }
 
-  def findByIdFlow(model:String, rawId: String, omits: List[String], includes: List[String]): Future[Expect[Option[JsValue]]] =
+  def checkIfAuthorized(method: Authorization, userOpt: Option[User]): Future[Expect[Unit]] = (method, userOpt) match {
+    case (_: UserRequired, None) =>
+      Future.successful(-\/(FailError("Not authorized", errorType = Unauthorized)))
+    case (sawr: SecuredAccessWithRole, Some(user)) =>
+      {
+        for (userRoles <- EitherT(roleService.getRoleByUser(user.id)))
+          yield userRoles.intersect(sawr.roles).isEmpty
+      }.run.map{
+        case \/-(true) => -\/(FailError("Not authorized", errorType = Unauthorized))
+        case \/-(false) => \/-(())
+        case error @ -\/(_) => error
+      }
+    case _                     => Future.successful(\/-(()))
+  }
+
+  def findByIdFlow(model:String, rawId: String, omits: List[String], includes: List[String], userOpt: Option[User]): Future[Expect[Option[JsValue]]] =
     {
       for {
         configuration <- EitherT(getConfiguration(model))
+
+        _             <- EitherT(checkIfAuthorized(configuration.authorisation.findById, userOpt))
+
         entityClass   = configuration.entityClass
         tableDefClass = configuration.tableDef
         id            <- EitherT(parseStringToType(configuration.pK, rawId))
@@ -67,10 +81,13 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
     }.run
 
 
-  def findAllFlow(model:String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean, p: Option[Int], pp: Option[Int]): Future[Expect[JsValue]] =
+  def findAllFlow(model:String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean, p: Option[Int], pp: Option[Int], userOpt: Option[User]): Future[Expect[JsValue]] =
     {
       for {
         configuration <- EitherT(getConfiguration(model))
+
+        _             <- EitherT(checkIfAuthorized(configuration.authorisation.findAll, userOpt))
+
         entityClass   = configuration.entityClass
         tableDefClass = configuration.tableDef
 
@@ -98,14 +115,17 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         .newInstance(tag)
         .asInstanceOf[Table[Entity[Any]] with PKTable])
 
-  def deepFetchAllFlow(model1: String, rawId: String, model2: String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean, p: Option[Int], pp: Option[Int]): Future[Expect[Option[JsValue]]] =
+  def deepFetchAllFlow(model1: String, rawId: String, model2: String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean, p: Option[Int], pp: Option[Int], userOpt: Option[User]): Future[Expect[Option[JsValue]]] =
     {
       for {
 
-        entity1Found  <- EitherT(this.findByIdFlow(model1, rawId, Nil, Nil))
+        entity1Found  <- EitherT(this.findByIdFlow(model1, rawId, Nil, Nil, userOpt))
         _             <- EitherT(entity1Found |> (s"`/$model1/$rawId` is not found", NotFound))
 
         configuration <- EitherT(getConfiguration(model2))
+
+        _             <- EitherT(checkIfAuthorized(configuration.authorisation.deepFindAll, userOpt))
+
         id            <- EitherT(parseStringToType(configuration.pK, rawId))
 
         entityClass   = configuration.entityClass
@@ -133,16 +153,20 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
       } yield if (countOnly) Json.toJson(count) else filteredJson
     }.run map {
       case -\/(error) if error.errorType == NotFound => \/-(None)
+      case error @ -\/(_) => error
       case \/-(res) => \/-(Some(res))
     }
 
-  def deepFetchByIdFlow(model1: String, rawId1: String, model2: String, rawId2: String, omits: List[String], includes: List[String]): Future[Expect[Option[JsValue]]] =
+  def deepFetchByIdFlow(model1: String, rawId1: String, model2: String, rawId2: String, omits: List[String], includes: List[String], userOpt: Option[User]): Future[Expect[Option[JsValue]]] =
     {
       for {
-        entity1Found    <- EitherT(this.findByIdFlow(model1, rawId1, Nil, Nil))
+        entity1Found    <- EitherT(this.findByIdFlow(model1, rawId1, Nil, Nil, userOpt))
         _               <- EitherT(entity1Found |> (s"`/$model1/$rawId1` is not found", NotFound))
 
         configuration   <- EitherT(getConfiguration(model2))
+
+        _               <- EitherT(checkIfAuthorized(configuration.authorisation.deepFindById, userOpt))
+
         id1             <- EitherT(parseStringToType(configuration.pK, rawId1))
         id2             <- EitherT(parseStringToType(configuration.pK, rawId2))
 
@@ -172,12 +196,16 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
       } yield filteredJson
     }.run map {
       case -\/(error) if error.errorType == NotFound => \/-(None)
+      case error @ -\/(_) => error
       case \/-(res) => \/-(res)
     }
 
-    def addFlow(model: String, json: JsObject): Future[Expect[JsValue]] = {
+    def addFlow(model: String, json: JsObject, userOpt: Option[User]): Future[Expect[JsValue]] = {
       for {
         configuration   <- EitherT(getConfiguration(model))
+
+        _               <- EitherT(checkIfAuthorized(configuration.authorisation.add, userOpt))
+
         entityClass     = configuration.entityClass
         tableDefClass   = configuration.tableDef
         singleton       = Class.forName(configuration.entityClass.getName + "$")
@@ -201,12 +229,15 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
       } yield newJson
     }.run
 
-    def updateFlow(model: String, json: JsObject, rawId: String): Future[Expect[Option[JsValue]]] = {
+    def updateFlow(model: String, json: JsObject, rawId: String, userOpt: Option[User]): Future[Expect[Option[JsValue]]] = {
       for {
 
         //entity1Found    <- EitherT(this.findByIdFlow(model, id, Nil, Nil))
         //_               <- EitherT(entity1Found |> (s"`/$model/$id` is not found", NotFound))
         configuration   <- EitherT(getConfiguration(model))
+
+        _               <- EitherT(checkIfAuthorized(configuration.authorisation.update, userOpt))
+
         id              <- EitherT(parseStringToType(configuration.pK, rawId))
 
         entityClass     = configuration.entityClass
@@ -241,11 +272,14 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
       case \/-(res) => \/-(Some(res))
     }
 
-    def deleteFlow(model:String, rawId: String, purge:Option[Boolean], force_delete: Boolean): Future[Expect[Option[String]]] = {
+    def deleteFlow(model:String, rawId: String, purge:Option[Boolean], force_delete: Boolean, userOpt: Option[User]): Future[Expect[Option[String]]] = {
       for {
         configuration   <- EitherT(getConfiguration(model))
+
+        _               <- EitherT(checkIfAuthorized(configuration.authorisation.delete, userOpt))
+
         tableDefClass   = configuration.tableDef
-        id             <- EitherT(parseStringToType(configuration.pK, rawId.toString))
+        id              <- EitherT(parseStringToType(configuration.pK, rawId.toString))
 
         tableQuery      = TableQuery(tag =>
                             tableDefClass.asInstanceOf[Class[_]].getConstructor(classOf[Tag])
@@ -273,7 +307,8 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
           entityClass    = className.entityClass,
           pK             = className.pK,
           tableDef       = className.tableDef,
-          baseColumnType = className.baseColumnType
+          baseColumnType = className.baseColumnType,
+          authorisation  = className.authorisation
         )
       })
       case None => Future.successful(-\/(FailError("this model is not supported")))

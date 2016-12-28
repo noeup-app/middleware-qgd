@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.authorizationClient.signUp
 
-import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api._
@@ -15,12 +14,11 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import SignUpForm.signUpFormDataFormat
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
-import com.noeupapp.middleware.entities.user.{User, UserIn, UserService}
+import com.noeupapp.middleware.entities.user.{UserIn, UserService}
 import com.noeupapp.middleware.utils.BodyParserHelper._
-import com.noeupapp.middleware.utils.{BodyParserHelper, RequestHelper}
+import com.noeupapp.middleware.utils.RequestHelper
 
 import scala.concurrent.Future
-import scalaz.{-\/, EitherT, \/-}
 
 /**
  * The sign up controller.
