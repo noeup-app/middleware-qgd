@@ -83,10 +83,10 @@ class Users @Inject()(
     *
     * @return
     */
-  def fetchAll = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
+  def fetchAll(email: Option[String]) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
     .async { implicit request =>
       // TODO limit search to users I can admin
-      userService.findAll map {
+      userService.findAll(email) map {
         case -\/(_) => InternalServerError(Json.toJson("Error while fetching users"))
         case \/-(usersList) => Ok(Json.toJson(usersList.map(u => toUserOut(u))))
       }
