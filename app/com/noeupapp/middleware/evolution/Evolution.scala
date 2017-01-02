@@ -56,10 +56,6 @@ class Evolution extends Controller {
         |  deleted           BOOLEAN         DEFAULT FALSE
         |);
         |
-        |ALTER TABLE entity_users
-        |  ADD CONSTRAINT entity_users_auth_clients_client_id_fk
-        |  FOREIGN KEY (owned_by_client) REFERENCES auth_clients (client_id);
-        |
         |ALTER TABLE entity_users ADD created TIMESTAMP DEFAULT now() NOT NULL;
         |
         |
@@ -103,9 +99,6 @@ class Evolution extends Controller {
         |  expires_in        BIGINT          DEFAULT 360000,
         |  created_at        TIMESTAMP       DEFAULT now() NOT NULL
         |);
-        |ALTER TABLE auth_access_tokens
-        |  ADD CONSTRAINT auth_access_tokens_auth_clients_client_id_fk
-        |  FOREIGN KEY (client_id) REFERENCES auth_clients (client_id);
         |
         |ALTER TABLE auth_access_tokens
         |  ADD CONSTRAINT auth_access_tokens_entity_users_id_fk
@@ -139,6 +132,15 @@ class Evolution extends Controller {
         |  redirect_uri      TEXT            NOT NULL,
         |  scope             TEXT            NOT NULL
         |);
+        |
+        |
+        |ALTER TABLE entity_users
+        |  ADD CONSTRAINT entity_users_auth_clients_client_id_fk
+        |  FOREIGN KEY (owned_by_client) REFERENCES auth_clients (client_id);
+        |
+        |ALTER TABLE auth_access_tokens
+        |  ADD CONSTRAINT auth_access_tokens_auth_clients_client_id_fk
+        |  FOREIGN KEY (client_id) REFERENCES auth_clients (client_id);
         |
         |CREATE TABLE entity_organisations
         |(
@@ -190,31 +192,31 @@ class Evolution extends Controller {
         |-- make sure that foreign key entities does correspond to the right type (ie an organization does not refers to user!)
         |CREATE FUNCTION check_correct_type() RETURNS trigger AS $$
         |DECLARE
-        |entity_type text;;
+        |entity_type text;
         |
         |BEGIN
         |
         |  SELECT type
         |  INTO entity_type
         |  FROM entity_entities
-        |  WHERE id = NEW.id;;
+        |  WHERE id = NEW.id;
         |--AND type <> TG_ARGV [0]
         |
         |-- check whether 'type' refers to the right table type
         |IF (entity_type <> TG_ARGV [0])
         |THEN
-        |  RAISE EXCEPTION 'Entity already exists with another type';;
-        |END IF;;
+        |  RAISE EXCEPTION 'Entity already exists with another type';
+        |END IF;
         |
         |-- insert new record in entities if none found
         |IF (entity_type IS NULL)
         |THEN
-        |  INSERT INTO entity_entities (id, type) VALUES (NEW.id, TG_ARGV [0]);;
-        |END IF;;
+        |  INSERT INTO entity_entities (id, type) VALUES (NEW.id, TG_ARGV [0]);
+        |END IF;
         |
         |-- return new record
-        |RETURN NEW;;
-        |END;;
+        |RETURN NEW;
+        |END;
         |$$ LANGUAGE plpgsql;
         |
         |
