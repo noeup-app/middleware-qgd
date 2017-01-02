@@ -4,7 +4,6 @@ import java.sql.Connection
 import java.util.UUID
 
 import anorm._
-import com.mohiva.play.silhouette.api.LoginInfo
 import play.api.Logger
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 
@@ -21,12 +20,18 @@ class UserDAO extends GlobalReadsWrites {
     *
     * @return
     */
-  def findAll(implicit connection: Connection): List[User] = {
+  def findAll(email:Option[String])(implicit connection: Connection): List[User] = {
+    val condition = email match {
+      case Some(emailVal) => "WHERE email = '"+emailVal+"'"
+      case None => ""
+    }
     SQL(
-      """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted
+      s"""SELECT id, first_name, last_name, email, avatar_url, created, active, deleted
          FROM entity_users
+         $condition
       """)
       .as(User.parse *)
+
   }
 
   /**

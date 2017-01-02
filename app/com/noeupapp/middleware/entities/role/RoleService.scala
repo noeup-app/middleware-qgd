@@ -6,10 +6,7 @@ import javax.inject.Inject
 import com.noeupapp.middleware.entities.account.Account
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.entities.relationUserRole.RelationUserRoleDAO
-import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.errorHandle.FailError.Expect
-import play.api.Play.current
-import play.api.db.DB
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

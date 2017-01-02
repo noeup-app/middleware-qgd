@@ -4,7 +4,6 @@ import java.sql.Connection
 import java.util.UUID
 
 import anorm._
-import com.noeupapp.middleware.entities.entity.Entity._
 
 import scala.language.postfixOps
 

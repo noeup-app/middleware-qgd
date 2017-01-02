@@ -2,7 +2,6 @@ package com.noeupapp.middleware.authorizationClient.provider
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
-import com.mohiva.play.silhouette.impl.providers.oauth2.BaseGoogleProvider
 import com.mohiva.play.silhouette.impl.providers._
 import play.api.Logger
 import scala.concurrent.ExecutionContext.Implicits.global

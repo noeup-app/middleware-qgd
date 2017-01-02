@@ -3,14 +3,17 @@ package com.noeupapp.middleware.crudauto
 import java.util.UUID
 
 import anorm.SQL
-import com.google.inject.AbstractModule
+import com.google.inject.{AbstractModule, Inject}
 import com.mohiva.play.silhouette.api.{Environment, LoginInfo}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.test.FakeEnvironment
 import com.noeupapp.middleware.authorizationClient.{FakeScopeAndRoleAuthorization, ScopeAndRoleAuthorization}
 import com.noeupapp.middleware.crudauto.model._
 import com.noeupapp.middleware.entities.account.Account
+import com.noeupapp.middleware.entities.relationUserRole.RelationUserRoleDAO
+import com.noeupapp.middleware.entities.role.{RoleDAO, RoleService}
 import com.noeupapp.middleware.entities.user.User
+import com.noeupapp.middleware.errorHandle.FailError.Expect
 import net.codingwell.scalaguice.ScalaModule
 import org.joda.time.DateTime
 import org.specs2.matcher.Scope
@@ -25,21 +28,41 @@ import play.api.Play.current
 import slick.driver._
 import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
 
+import scala.concurrent.Future
+import scalaz.\/-
+
 /**
   * The context.
   */
-trait CrudAutoContext extends Scope {
+
+object CrudAutoContext {
+  type RoleList = List[String]
+}
+
+import CrudAutoContext._
+
+
+trait CustomizableCrudAutoContext extends Scope {
+
+
+  def provideCrudClassName: CrudClassName
+  def provideRoleList: RoleList = List.empty
+
 
   /**
     * A fake Guice module.
     */
-  class FakeModule extends AbstractModule with ScalaModule {
+  class GlobalBindingsModule(provideRoleList: () => RoleList) extends AbstractModule with ScalaModule {
     def configure() = {
       bind[Environment[Account, BearerTokenAuthenticator]].toInstance(env)
       bind[ScopeAndRoleAuthorization].to[FakeScopeAndRoleAuthorization]
-      bind[CrudClassName].toInstance(new Crud)
+      bind[CrudClassName].toInstance(provideCrudClassName)
+      bind[RoleList].toInstance(provideRoleList())
+      bind[RoleService].to[MockRoleService]
     }
   }
+
+
 
 
 
@@ -99,15 +122,10 @@ trait CrudAutoContext extends Scope {
       , "slick.dbs.default.db.password" -> ""
     ))
     .in(Mode.Test)
-    .overrides(new FakeModule)
+    .overrides(new GlobalBindingsModule(() => provideRoleList))
     .build()
 
   val injector = application.injector
-
-
-  implicit val context = this
-
-
 
 
   val dao = injector.instanceOf[Dao]
@@ -120,6 +138,7 @@ trait CrudAutoContext extends Scope {
       _ <- Thing.createTable(dao.db)
       _ <- Test.createTable(dao.db)
       _ <- RelTestThing.createTable(dao.db)
+      _ <- AuthTest.createTable(dao.db)
     } yield ()
   }
   def populate = Test.populate(dao.db, pk, identity[Seq[Test]], identity[Seq[Thing]])
@@ -146,6 +165,19 @@ trait CrudAutoContext extends Scope {
     res
   }
 
+  implicit val context: Scope = this
+}
+
+class MockRoleService @Inject()(roleList: RoleList,
+                                relationUserRole: RelationUserRoleDAO,
+                                roleDAO: RoleDAO) extends RoleService(relationUserRole, roleDAO) {
+  override def getRoleByUser(userId: UUID): Future[Expect[List[String]]] =
+    Future.successful(\/-(roleList))
+}
+
+trait CrudAutoContext extends CustomizableCrudAutoContext {
+
+  override def provideCrudClassName: CrudClassName = new Crud
 
 }
 
@@ -155,9 +187,14 @@ trait CrudAutoContext extends Scope {
 class Crud extends CrudClassName {
 
   override def configure: Map[String, CrudConfiguration[_, _, _]] = Map(
-    "tests"  -> configuration[Test, UUID, TestTableDef],
-    "things" -> configuration[Thing, UUID, ThingTableDef],
+    "tests"  -> configuration[Test, UUID, TestTableDef]
+        .withOpenAccess,
+    "things" -> configuration[Thing, UUID, ThingTableDef]
+      .withOpenAccess,
     "rel"    -> configuration[RelTestThing, Long, RelTestThingTableDef]
+      .withOpenAccess,
+    "authtests"    -> configuration[AuthTest, Long, AuthTestTableDef]
+      .withOpenAccess
   )
 
 }

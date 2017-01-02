@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.crudauto
 
-import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
@@ -10,7 +9,6 @@ import com.noeupapp.middleware.entities.account.Account
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.json._
-import play.api.mvc.{Action, AnyContent}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -27,7 +25,10 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     val omits    = omit.map(_.split(",").toList).toList.flatten
     val includes = include.map(_.split(",").toList).toList.flatten
 
-    crudService.findByIdFlow(model, id, omits, includes) map {
+    crudService.findByIdFlow(model, id, omits, includes, request.identity.map(_.user)) map {
+      case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
+        Logger.warn(s"Unauthorized GET /$model/$id")
+        Unauthorized(Json.toJson("Unauthorized"))
       case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
         Logger.warn(error.toString)
         BadRequest(Json.toJson(s"id type given is not correct (id given is `$id`)"))
@@ -48,9 +49,11 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     } else {
       val omits = omit.map(_.split(",").toList).toList.flatten
       val includes = include.map(_.split(",").toList).toList.flatten
-      val countOnly = count.getOrElse(false)
 
-      crudService.findAllFlow(model, omits, includes, search, count.getOrElse(false), p, pp) map {
+      crudService.findAllFlow(model, omits, includes, search, count.getOrElse(false), p, pp, request.identity.map(_.user)) map {
+        case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
+          Logger.warn(s"Unauthorized GET /$model")
+          Unauthorized(Json.toJson("Unauthorized"))
         case -\/(error) =>
           Logger.error(error.toString)
           InternalServerError(Json.toJson("Error while fetching " + model))
@@ -69,7 +72,10 @@ class Cruds @Inject()(crudService: AbstractCrudService,
       val omits = omit.map(_.split(",").toList).toList.flatten
       val includes = include.map(_.split(",").toList).toList.flatten
 
-      crudService.deepFetchAllFlow(model1, id, model2, omits, includes, search, count.getOrElse(false), p, pp) map {
+      crudService.deepFetchAllFlow(model1, id, model2, omits, includes, search, count.getOrElse(false), p, pp, request.identity.map(_.user)) map {
+        case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
+          Logger.warn(s"Unauthorized GET /$model1/$id/$model2")
+          Unauthorized(Json.toJson("Unauthorized"))
         case -\/(error) =>
           Logger.error(error.toString)
           InternalServerError(Json.toJson(s"Error while fetching /$model1/$id/$model2"))
@@ -85,7 +91,10 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     val omits    = omit.map(_.split(",").toList).toList.flatten
     val includes = include.map(_.split(",").toList).toList.flatten
 
-    crudService.deepFetchByIdFlow(model1, id1, model2, id2, omits, includes) map {
+    crudService.deepFetchByIdFlow(model1, id1, model2, id2, omits, includes, request.identity.map(_.user)) map {
+      case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
+        Logger.warn(s"Unauthorized GET /$model1/$id1/$model2/$id2")
+        Unauthorized(Json.toJson("Unauthorized"))
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson(s"Error while fetching /$model1/$id1/$model2/$id2"))
@@ -97,7 +106,10 @@ class Cruds @Inject()(crudService: AbstractCrudService,
   def add(model: String) = UserAwareAction.async(parse.json) { implicit request =>
 
     val json = request.body.as[JsObject]
-    crudService.addFlow(model, json) map {
+    crudService.addFlow(model, json, request.identity.map(_.user)) map {
+      case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
+        Logger.warn(s"Unauthorized POST /$model")
+        Unauthorized(Json.toJson("Unauthorized"))
       case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
         Logger.error(error.toString)
         BadRequest(Json.toJson("Json given is not correct"))
@@ -111,7 +123,10 @@ class Cruds @Inject()(crudService: AbstractCrudService,
   def update(model: String, id: String) = UserAwareAction.async(parse.json) { implicit request =>
 
     val json = request.body.as[JsObject]
-    crudService.updateFlow(model, json, id) map {
+    crudService.updateFlow(model, json, id, request.identity.map(_.user)) map {
+      case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
+        Logger.warn(s"Unauthorized PUT /$model")
+        Unauthorized(Json.toJson("Unauthorized"))
       case -\/(error) if error.errorType.header.status == BadRequest.header.status =>
         BadRequest(Json.toJson("Json given is not correct"))
       case -\/(error) =>
@@ -122,9 +137,12 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     }
   }
 
-  def delete(model: String, id: String, purge:Option[Boolean], force_delete: Option[Boolean] = None) = UserAwareAction.async {
+  def delete(model: String, id: String, purge:Option[Boolean], force_delete: Option[Boolean] = None) = UserAwareAction.async { implicit request =>
 
-    crudService.deleteFlow(model, id, purge, force_delete.getOrElse(false)) map {
+    crudService.deleteFlow(model, id, purge, force_delete.getOrElse(false), request.identity.map(_.user)) map {
+      case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
+        Logger.warn(s"Unauthorized DELETE /$model")
+        Unauthorized(Json.toJson("Unauthorized"))
       case -\/(error) =>
         Logger.error(error.toString)
         InternalServerError(Json.toJson("Error while deleting "+model))

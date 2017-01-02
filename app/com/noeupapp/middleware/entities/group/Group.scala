@@ -8,7 +8,6 @@ import anorm._
 import com.noeupapp.middleware.entities.entity.EntityOut
 import com.noeupapp.middleware.entities.entity.Entity._
 
-import scala.language.{implicitConversions, postfixOps}
 
 
 /**

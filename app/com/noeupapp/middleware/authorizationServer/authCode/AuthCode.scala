@@ -1,17 +1,11 @@
 package com.noeupapp.middleware.authorizationServer.authCode
 
-import java.sql.Timestamp
 import java.util.{Date, UUID}
 
 import anorm.SqlParser._
 import anorm._
-import com.noeupapp.middleware.authorizationServer.client.Client
-import com.noeupapp.middleware.utils.AuthCodeGenerator
-import play.api.Play.current
-import play.api.db.DB
 import play.api.libs.json.Json
 
-import scala.language.postfixOps
 
 
 case class AuthCode(

@@ -1,19 +1,13 @@
 package com.noeupapp.middleware.entities.user
 
-import java.sql.Connection
 import java.util.UUID
 import javax.inject.Inject
 
-import com.noeupapp.middleware.entities.user._
-import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.LoginInfo
-import com.mohiva.play.silhouette.api.services.IdentityService
-import com.mohiva.play.silhouette.api.util.{PasswordHasher, PasswordInfo}
-import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
+import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.noeupapp.middleware.authorizationClient.login.PasswordInfoDAO
 import com.noeupapp.middleware.entities.entity.EntityService
 import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
-import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
@@ -25,8 +19,7 @@ import com.noeupapp.middleware.utils.TypeCustom._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Try
-import scalaz.{-\/, EitherT, OptionT, \/-}
+import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.utils.TypeConversion
@@ -46,9 +39,9 @@ class UserService @Inject()(userDAO: UserDAO,
     *
     * @return List of users
     */
-  def findAll: Future[Expect[List[User]]] = {
+  def findAll(email:Option[String]): Future[Expect[List[User]]] = {
     TryBDCall[List[User]]{ implicit c =>
-      \/-(userDAO.findAll)
+      \/-(userDAO.findAll(email))
     }
   }
 

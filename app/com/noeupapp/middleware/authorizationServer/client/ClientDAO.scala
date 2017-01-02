@@ -1,10 +1,8 @@
 package com.noeupapp.middleware.authorizationServer.client
 
 import java.sql.Connection
-import java.util.UUID
 
 import anorm._
-import play.api.db.DB
 
 import scala.language.postfixOps
 

@@ -3,11 +3,9 @@ package com.noeupapp.middleware.entities.group
 import java.util.UUID
 import javax.inject.Inject
 
-import com.noeupapp.middleware.entities.group.Group._
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.FutureFunctor._
-import com.noeupapp.middleware.utils.TypeConversion
 import com.noeupapp.middleware.utils.TypeCustom._
 import com.noeupapp.middleware.entities.entity.{EntityOut, EntityService}
 import com.noeupapp.middleware.entities.organisation.Organisation
@@ -16,7 +14,6 @@ import com.noeupapp.middleware.errorHandle.FailError
 import scalaz._
 import play.api.Logger
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class GroupService @Inject()(groupDAO: GroupDAO,

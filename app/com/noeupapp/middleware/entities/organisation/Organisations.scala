@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.entities.organisation
 
-import java.util.UUID
 import javax.inject.Inject
 
 import com.noeupapp.middleware.entities.organisation.Organisation._

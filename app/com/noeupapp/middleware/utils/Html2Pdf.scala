@@ -13,7 +13,6 @@ import play.api.libs.iteratee._
 import scala.concurrent.Future
 import scalaz._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.language.implicitConversions
 
 case class Html2PdfConfig(url: String, timeout: Long)
 

@@ -2,7 +2,7 @@ package com.noeupapp.middleware.utils.slick
 
 import play.api.Logger
 import slick.jdbc._
-
+import slick.jdbc.{GetResult, PositionedResult}
 
 /**
   * Is able to convert each row get from a plain sql request into a Map(colName -> colValue)

@@ -5,15 +5,13 @@ import java.util.UUID
 import com.google.inject.Inject
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.utils.FutureFunctor._
-import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.entities.group.{Group, GroupService}
 import com.noeupapp.middleware.entities.entity.EntityService
 import org.joda.time.DateTime
 
 import scala.concurrent.Future
-import scalaz.{-\/, EitherT, \/-}
-import scala.concurrent.ExecutionContext.Implicits.global
+import scalaz.{EitherT, \/-}
 
 
 class OrganisationService @Inject() (organisationDAO: OrganisationDAO,

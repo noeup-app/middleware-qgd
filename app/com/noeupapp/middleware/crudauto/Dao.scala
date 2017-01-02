@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.crudauto
 
-import java.util.UUID
 import javax.inject.Inject
 
 import com.noeupapp.middleware.errorHandle.FailError
@@ -9,22 +8,19 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.{JsError, JsResult, JsSuccess}
 import slick.backend.DatabaseConfig
 import slick.dbio.{Effect, NoStream}
-import slick.driver
 import slick.driver.JdbcProfile
-import slick.jdbc.{JdbcBackend, PositionedParameters, SetParameter}
+import slick.jdbc.JdbcBackend
 import slick.driver._
 import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
-import slick.profile.{BasicAction, FixedSqlAction, SqlStreamingAction}
+import slick.profile.{BasicAction, SqlStreamingAction}
 
 import scala.concurrent.Future
 import scala.language.higherKinds
-import scalaz.{-\/, \/, \/-}
+import scalaz.{-\/, \/-}
 import scala.concurrent.ExecutionContext.Implicits.global
 import slick.driver._
 import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
-import slick.lifted.TableQuery
 
-import scala.language.implicitConversions
 
 /**
   * Created by damien on 15/11/2016.

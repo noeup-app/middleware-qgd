@@ -6,8 +6,12 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import anorm._
+import com.google.inject.AbstractModule
+import com.mohiva.play.silhouette.api.Environment
+import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
+import com.noeupapp.middleware.authorizationClient.{FakeScopeAndRoleAuthorization, ScopeAndRoleAuthorization}
 import com.noeupapp.middleware.crudauto.model._
-import com.noeupapp.testhelpers.Context
+import com.noeupapp.testhelpers.{Context, FakeRequestBuilderOK}
 import org.specs2.mock.Mockito
 import play.api.Play.current
 import play.api.db.DB
@@ -16,6 +20,9 @@ import play.api.test.{FakeRequest, PlaySpecification, WithApplication}
 import com.noeupapp.middleware.crudauto.model.Test._
 import com.noeupapp.middleware.crudauto.model.Thing._
 import com.noeupapp.middleware.crudauto.model.RelTestThing._
+import com.noeupapp.middleware.entities.account.Account
+import net.codingwell.scalaguice.ScalaModule
+import com.mohiva.play.silhouette.test._
 
 
 class CrudAutoSpec extends PlaySpecification with Mockito {
@@ -121,7 +128,7 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
 
         status(result) must be equalTo OK
 
-        contentAsJson(result) must be equalTo Json.toJson(0)
+        contentAsJson(result) must be equalTo Json.arr()
       }
     }
     "pagination returns n p=0 pp=5 element if table is not empty" in new CrudAutoContext {
@@ -1197,27 +1204,328 @@ class CrudAutoSpec extends PlaySpecification with Mockito {
       }
     }
 
-//    "fail if entity is deleted" in new CrudAutoContext {
-//      new WithApplication(application) {
-//
-//        await(createTables)
-//
-//        await(populate({
-//          case h :: tail => h.copy(deleted = true) :: tail
-//        }))
-//
-//        val testsBefore: Seq[Test] = await(allTests)
-//
-//        val test = testsBefore.find(_.deleted == true).get
-//
-//        val Some(result) =
-//          route(FakeRequest(PUT, "/rel/" + test.id)
-//            .withBody(Json.obj()))
-//
-//        status(result) must be equalTo NOT_FOUND
-//
-//      }
-//    }
+    //    "fail if entity is deleted" in new CrudAutoContext {
+    //      new WithApplication(application) {
+    //
+    //        await(createTables)
+    //
+    //        await(populate({
+    //          case h :: tail => h.copy(deleted = true) :: tail
+    //        }))
+    //
+    //        val testsBefore: Seq[Test] = await(allTests)
+    //
+    //        val test = testsBefore.find(_.deleted == true).get
+    //
+    //        val Some(result) =
+    //          route(FakeRequest(PUT, "/rel/" + test.id)
+    //            .withBody(Json.obj()))
+    //
+    //        status(result) must be equalTo NOT_FOUND
+    //
+    //      }
+    //    }
+  }
+
+  "crud auto authorization" should {
+    "return unauthorized by default if user is not connected" in new CustomizableCrudAutoContext {
+
+      override def provideCrudClassName: CrudClassName = new CrudClassName {
+        override def configure: Map[String, CrudConfiguration[_, _, _]] = Map(
+          "authtests"    -> configuration[AuthTest, Long, AuthTestTableDef]
+        )
+      }
+
+      new WithApplication(application) {
+        val Some(resultFindAll) =
+          route(FakeRequest(GET, "/authtests"))
+
+        status(resultFindAll) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultFindById) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd"))
+
+        status(resultFindById) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultdeepFindAll) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd/azdazd"))
+
+        status(resultdeepFindAll) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultdeepFindById) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd/azdazd/azdazd"))
+
+        status(resultdeepFindById) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultAdd) =
+          route(FakeRequest(POST, "/authtests")
+                  .withBody(Json.obj()))
+
+        status(resultAdd) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultUpdate) =
+          route(FakeRequest(PUT, "/authtests/azdazd")
+            .withBody(Json.obj()))
+
+        status(resultUpdate) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultDelete) =
+          route(FakeRequest(DELETE, "/authtests/azdazd")
+            .withBody(Json.obj()))
+
+        status(resultDelete) must be equalTo UNAUTHORIZED
+      }
+
+    }
+    "return 200 by default if user is connected" in new CustomizableCrudAutoContext {
+
+      override def provideCrudClassName: CrudClassName = new CrudClassName {
+        override def configure: Map[String, CrudConfiguration[_, _, _]] = Map(
+          "authtests"    -> configuration[AuthTest, Long, AuthTestTableDef]
+            .withCustomAuth(newFindAll = OpenAccess)
+        )
+      }
+
+      new WithApplication(application) {
+
+        val Some(resultFindAll) =
+          route(FakeRequest(GET, "/authtests")
+            .withAuthenticator[BearerTokenAuthenticator](loginInfo))
+
+        status(resultFindAll) must be equalTo OK
+
+
+        val Some(resultFindById) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd"))
+
+        status(resultFindById) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultdeepFindAll) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd/azdazd"))
+
+        status(resultdeepFindAll) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultdeepFindById) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd/azdazd/azdazd"))
+
+        status(resultdeepFindById) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultAdd) =
+          route(FakeRequest(POST, "/authtests")
+                  .withBody(Json.obj()))
+
+        status(resultAdd) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultUpdate) =
+          route(FakeRequest(PUT, "/authtests/azdazd")
+            .withBody(Json.obj()))
+
+        status(resultUpdate) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultDelete) =
+          route(FakeRequest(DELETE, "/authtests/azdazd")
+            .withBody(Json.obj()))
+
+        status(resultDelete) must be equalTo UNAUTHORIZED
+      }
+
+    }
+    "return 200 if the configuration is set to withOpenAccess" in new CustomizableCrudAutoContext {
+
+      override def provideCrudClassName: CrudClassName = new CrudClassName {
+        override def configure: Map[String, CrudConfiguration[_, _, _]] = Map(
+          "authtests"    -> configuration[AuthTest, Long, AuthTestTableDef]
+              .withCustomAuth(newFindAll = OpenAccess)
+        )
+      }
+
+      new WithApplication(application) {
+
+        await(createTables)
+
+        val Some(resultFindAll) =
+          route(FakeRequest(GET, "/authtests"))
+
+        status(resultFindAll) must be equalTo OK
+
+
+        val Some(resultFindById) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd"))
+
+        status(resultFindById) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultdeepFindAll) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd/azdazd"))
+
+        status(resultdeepFindAll) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultdeepFindById) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd/azdazd/azdazd"))
+
+        status(resultdeepFindById) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultAdd) =
+          route(FakeRequest(POST, "/authtests")
+            .withBody(Json.obj()))
+
+        status(resultAdd) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultUpdate) =
+          route(FakeRequest(PUT, "/authtests/azdazd")
+            .withBody(Json.obj()))
+
+        status(resultUpdate) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultDelete) =
+          route(FakeRequest(DELETE, "/authtests/azdazd")
+            .withBody(Json.obj()))
+
+        status(resultDelete) must be equalTo UNAUTHORIZED
+      }
+
+    }
+    "return 200 if the configuration is set to withOpenAccess and role is OK" in new CustomizableCrudAutoContext {
+
+      override def provideCrudClassName: CrudClassName = new CrudClassName {
+        override def configure: Map[String, CrudConfiguration[_, _, _]] = Map(
+          "authtests"    -> configuration[AuthTest, Long, AuthTestTableDef]
+            .withCustomAuth(newFindAll = SecuredAccessWithRole("admin"))
+        )
+      }
+
+      override def provideRoleList: List[String] = List("admin")
+
+
+      new WithApplication(application) {
+
+        await(createTables)
+
+        val Some(resultFindAll) =
+          route(FakeRequest(GET, "/authtests")
+            .withAuthenticator(id.loginInfo))
+
+        status(resultFindAll) must be equalTo OK
+
+
+        val Some(resultFindById) =
+          route(FakeRequest(GET, "/authtests/azadazd"))
+
+        status(resultFindById) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultdeepFindAll) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd/azdazd"))
+
+        status(resultdeepFindAll) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultdeepFindById) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd/azdazd/azdazd"))
+
+        status(resultdeepFindById) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultAdd) =
+          route(FakeRequest(POST, "/authtests")
+            .withBody(Json.obj()))
+
+        status(resultAdd) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultUpdate) =
+          route(FakeRequest(PUT, "/authtests/azdazd")
+            .withBody(Json.obj()))
+
+        status(resultUpdate) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultDelete) =
+          route(FakeRequest(DELETE, "/authtests/azdazd")
+            .withBody(Json.obj()))
+
+        status(resultDelete) must be equalTo UNAUTHORIZED
+      }
+
+    }
+
+    "return unauthorized if the configuration is set to withOpenAccess and the role is KO" in new CustomizableCrudAutoContext {
+
+      override def provideCrudClassName: CrudClassName = new CrudClassName {
+        override def configure: Map[String, CrudConfiguration[_, _, _]] = Map(
+          "authtests"    -> configuration[AuthTest, Long, AuthTestTableDef]
+            .withCustomAuth(newFindAll = SecuredAccessWithRole("admin"))
+        )
+      }
+
+      override def provideRoleList: List[String] = List()
+
+
+      new WithApplication(application) {
+
+        await(createTables)
+
+        val Some(resultFindAll) =
+          route(FakeRequest(GET, "/authtests"))
+
+        status(resultFindAll) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultFindById) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd"))
+
+        status(resultFindById) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultdeepFindAll) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd/azdazd"))
+
+        status(resultdeepFindAll) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultdeepFindById) =
+          route(FakeRequest(GET, "/authtests/azdklmjklmazd/azdazd/azdazd"))
+
+        status(resultdeepFindById) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultAdd) =
+          route(FakeRequest(POST, "/authtests")
+            .withBody(Json.obj()))
+
+        status(resultAdd) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultUpdate) =
+          route(FakeRequest(PUT, "/authtests/azdazd")
+            .withBody(Json.obj()))
+
+        status(resultUpdate) must be equalTo UNAUTHORIZED
+
+
+        val Some(resultDelete) =
+          route(FakeRequest(DELETE, "/authtests/azdazd")
+            .withBody(Json.obj()))
+
+        status(resultDelete) must be equalTo UNAUTHORIZED
+      }
+
+    }
   }
 
 

@@ -3,9 +3,8 @@ package com.noeupapp.middleware.utils.streams
 import java.io.File
 import java.nio.charset.Charset
 
-import play.api.libs.iteratee.{Enumerator, Input}
+import play.api.libs.iteratee.Enumerator
 
-import scala.concurrent.ExecutionContext
 import scala.language.implicitConversions
 
 import scala.concurrent.ExecutionContext.Implicits.global

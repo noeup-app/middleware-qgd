@@ -7,10 +7,9 @@ import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
+import com.noeupapp.middleware.entities.organisation.OrganisationService
 import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.entities.user.{User, UserService}
-import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import org.joda.time.DateTime
 import play.api.Logger
@@ -19,9 +18,8 @@ import play.api.db.DB
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scalaz.{-\/, EitherT, OptionT, \/-}
+import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
-import com.noeupapp.middleware.utils.TypeCustom._
 
 
 /**
