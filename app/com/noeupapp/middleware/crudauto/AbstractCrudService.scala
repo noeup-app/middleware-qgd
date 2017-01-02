@@ -66,7 +66,6 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
       } yield filteredJson
     }.run
 
-
   def findAllFlow(model:String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean, p: Option[Int], pp: Option[Int]): Future[Expect[JsValue]] =
     {
       for {

@@ -209,7 +209,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
     case e: Exception => -\/(FailError(e))
   }
 
-  
+
 
 
   def completeAdd[T, A, B](model: Class[T], in: Class[B], singleton: Class[A], modelIn: B, format: Format[T], formatIn: Format[B]): Future[Expect[T]] = {
@@ -444,7 +444,7 @@ class CrudAutoService @Inject()(dao: Dao)() {
       ).reduceLeft[SQLActionBuilder]{
         case (acc, e) => acc concat sql" OR " concat e
       }
-      Logger.debug("filt x : " + c)
+      //Logger.debug("filt x : " + c)
       c
     })}
 
@@ -492,8 +492,12 @@ class CrudAutoFactory[E <: Entity[PK], PK] @Inject()( crudClassName: CrudClassNa
     runtimeMirror.classSymbol(clazz).toType
   }
 
-  def findAll(search: Option[String] = None, count: Option[Boolean]=Some(false))(implicit bct: BaseColumnType[PK], formatE: Format[E], p: Option[Int] = None, pp: Option[Int] = None): Future[Expect[Seq[E]]] =
+  def findAll(search: Option[String] = None, count: Option[Boolean] = Some(false))(implicit bct: BaseColumnType[PK], formatE: Format[E], p: Option[Int] = None, pp: Option[Int] = None): Future[Expect[Seq[E]]] =
     crudAutoService.findAll[Entity[Any]](tableQueryAny, search, count.getOrElse(false), p, pp)(formatE.asInstanceOf[Format[Entity[Any]]]).map(_.map(_.map(_.asInstanceOf[E])))
+//=======
+//  def findAll(search: Option[String] = None, count: Option[Boolean] = Some(false))(implicit bct: BaseColumnType[PK], formatE: Format[E]): Future[Expect[Seq[E]]] =
+//    crudAutoService.findAll[Entity[Any]](tableQueryAny, search, count.getOrElse(false))(formatE.asInstanceOf[Format[Entity[Any]]]).map(_.map(_.map(_.asInstanceOf[E])))
+//>>>>>>> Stashed changes
 
 //  def deepFindAll[F <: Entity[Any], PKE](id: PKE, joinedTableName: String)(implicit formatF: Format[F]): Future[Expect[Seq[F]]] = ???
 //

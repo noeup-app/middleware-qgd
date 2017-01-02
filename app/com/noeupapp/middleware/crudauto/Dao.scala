@@ -63,6 +63,14 @@ class Dao @Inject()(dbConfigProvider: DatabaseConfigProvider) {
       }
   }
 
+  def runCount[U <: Entity[_], V <: Table[U], C[_]](query: Query[V, U, C]): Future[Expect[Int]] = {
+    db.run(query.length.result)
+      .map(\/-(_))
+      .recover{
+        case e: Exception => -\/(FailError(e))
+      }
+  }
+
   def runForHeadOption[U <: Entity[_], V <: Table[U], C[_]](query: Query[V, U, C]): Future[Expect[Option[U]]] = {
     db.run(query.result.headOption)
       .map(\/-(_))
