@@ -8,6 +8,8 @@ import slick.profile.Capability
 
 trait MyPostgresDriver extends ExPostgresDriver
   with PgArraySupport
+  with PgDateSupport
+  with PgDateSupportJoda
   with PgRangeSupport
   with PgHStoreSupport
   with PgPlayJsonSupport
@@ -23,6 +25,9 @@ trait MyPostgresDriver extends ExPostgresDriver
   override val api = MyAPI
 
   object MyAPI extends API with ArrayImplicits
+    with DateTimeImplicits
+    with JodaDateTimePlainImplicits
+    with JodaDateTimeImplicits
     with JsonImplicits
     with NetImplicits
     with LTreeImplicits

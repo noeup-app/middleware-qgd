@@ -7,6 +7,7 @@ import javax.inject.Inject
 import com.google.inject.TypeLiteral
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
+import org.joda.time.DateTime
 import play.api.libs.json._
 import com.noeupapp.middleware.utils.slick.{MyPostgresDriver, ResultMap}
 import play.api.Logger
@@ -27,43 +28,75 @@ import scala.reflect.runtime.{universe => ru}
 
 class CrudAutoService @Inject()(dao: Dao)() {
 
+
+
   def findAll[E <: Entity[Any]](tableQuery: TableQuery[Table[E] with PKTable],
                                 search: Option[String],
-                                countOnly: Boolean, p: Option[Int], pp: Option[Int])(implicit formatE: Format[E]): Future[Expect[Seq[E]]] = {
+                                countOnly: Boolean, p: Option[Int], pp: Option[Int])
+                               (implicit formatE: Format[E]): Future[Expect[Seq[E]]] = {
 
-    if (p.isDefined ^ pp.isDefined){
-      return Future.successful(-\/(FailError("One of query param `p` or `pp` is missing")))
-    }
+    if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted"))
+      dao.runForAll(tableQuery.filter(row =>
+        row.column[Boolean]("deleted") === false)) // TODO column("id") should be a generik pk
+    else
+      dao.runForAll(tableQuery) // TODO column("id") should be a generik pk
 
-    val tableName = tableQuery.baseTableRow.tableName
-    val cols = tableQuery.baseTableRow.create_*.map(_.name).toSeq
-    val select = sql"SELECT * "
-    //val select = if (countOnly)  sql"SELECT COUNT(*) " else sql"SELECT * " // TODO tries to implement count in sql but need to chnge Json validate
-    val deleted = if (cols.contains("deleted")) sql"""WHERE #$tableName.deleted = FALSE """ else sql"WHERE TRUE"
 
-    val pagination = if (p.isDefined) sql""" LIMIT ${pp.get} OFFSET ${pp.get * p.get}""" else sql""
-
-    //def searchAllCols(tabl:TableQuery[Table[E] with PKTable], col: Map[String, Type], cond: String)/*: Iterable[Query[PostgresDriver.api.Table[E] with PKTable, E, Seq]]*/ =
-      //cols(tableQuery)//.filter{case (n, t) => t.String}
-      //                .map{case (n, t) => tableQuery//.filter(t.isInstanceOf[String])
-      //                                              .filter[String](_.column(n) like cond)}
-
-      // if (cols(tableQuery).contains("deleted"))
-      //   dao.runForAll(tableQuery.filter(_.column[Boolean]("deleted") === false)
-      //                //           .map(s=> searchAllCols(s, cols, "molt clé"))
-      //                )
-      // else
-      //   dao.runForAll(tableQuery)
-
-    val q: SqlStreamingAction[Vector[Map[String, Any]], Map[String, Any], Effect] = {
-      val req = select concat sql"""FROM #$tableName """ concat deleted
-                  .concat(filt(tableQuery, search).map(sql" AND " concat _).getOrElse(sql""))
-                  .concat(pagination)
-      req.as(ResultMap)
-    }
-
-    dao.runTransformer(q) { row => rowTransformer(row) }
   }
+
+  /* depracated */
+  //def findAllPlainSql[E <: Entity[Any]](tableQuery: TableQuery[Table[E] with PKTable],
+  //                              search: Option[String],
+  //                              countOnly: Boolean, p: Option[Int], pp: Option[Int])
+  //                             (implicit formatE: Format[E], eClass: ClassTag[E]): Future[Expect[Seq[E]]] = {
+  //
+  //  if (p.isDefined ^ pp.isDefined){
+  //    return Future.successful(-\/(FailError("One of query param `p` or `pp` is missing")))
+  //  }
+  //
+  //  val tableName = tableQuery.baseTableRow.tableName
+  //  val cols = tableQuery.baseTableRow.create_*.map(_.name).toSeq
+  //  val select = sql"SELECT * "
+  //  //val select = if (countOnly)  sql"SELECT COUNT(*) " else sql"SELECT * " // TODO tries to implement count in sql but need to chnge Json validate
+  //  val deleted = if (cols.contains("deleted")) sql"""WHERE #$tableName.deleted = FALSE """ else sql"WHERE TRUE"
+  //
+  //  val pagination = if (p.isDefined) sql""" LIMIT ${pp.get} OFFSET ${pp.get * p.get}""" else sql""
+  //
+  //  //def searchAllCols(tabl:TableQuery[Table[E] with PKTable], col: Map[String, Type], cond: String)/*: Iterable[Query[PostgresDriver.api.Table[E] with PKTable, E, Seq]]*/ =
+  //    //cols(tableQuery)//.filter{case (n, t) => t.String}
+  //    //                .map{case (n, t) => tableQuery//.filter(t.isInstanceOf[String])
+  //    //                                              .filter[String](_.column(n) like cond)}
+  //
+  //    // if (cols(tableQuery).contains("deleted"))
+  //    //   dao.runForAll(tableQuery.filter(_.column[Boolean]("deleted") === false)
+  //    //                //           .map(s=> searchAllCols(s, cols, "molt clé"))
+  //    //                )
+  //    // else
+  //    //   dao.runForAll(tableQuery)
+  //
+  //  //val q: SqlStreamingAction[Vector[Map[String, Any]], Map[String, Any], Effect] = {
+  //  //  val req = select concat sql"""FROM #$tableName """ concat deleted
+  //  //              .concat(filt(tableQuery, search).map(sql" AND " concat _).getOrElse(sql""))
+  //  //              .concat(pagination)
+  //  //  req.as(ResultMap)
+  //  //}
+  //  //
+  //  //dao.runTransformer(q) { row => rowTransformer(row) }
+  //
+  //  //def mkGetResult[T](next: (PositionedResult => T)) =
+  //  //  new GetResult[T] {
+  //  //    def apply(rs: PositionedResult) = next(rs)
+  //  //  }
+  //
+  //  //implicit val getTableResult = mkGetResult[E]()
+  //  //implicit val getTableResult = GetResult[E](r => eClass.runtimeClass.asInstanceOf[Class[E]](r.<<, r.<<))
+  //
+  //  val req = select concat sql"""FROM #$tableName """ concat deleted
+  //              .concat(filt(tableQuery, search).map(sql" AND " concat _).getOrElse(sql""))
+  //              .concat(pagination)
+  //  dao.runSqlStreamingAction(req.as[Seq[E]])
+  //  //dao.run(req)
+  //}
 
 /*
   def deepFindAll[E <: Entity[Any], F <: Entity[Any], PKE](tableQuery: TableQuery[Table[F] with PKTable],
@@ -381,27 +414,31 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
   def rowTransformer[A](row: Vector[Map[String, Any]])(implicit formatE: Format[A]) =
     row.foldLeft[JsResult[List[A]]](JsSuccess(List.empty[A])){
-      case (JsSuccess(els, _), e) =>
+      case (JsSuccess(els, _), e) => {
 
-        val toSeq = e.map{
+        val toSeq = e.map {
           case (k, v) => (snakeToCamel(k),
             v match {
-              case v:Short                  => JsNumber(v.asInstanceOf[Long])
-              case v:java.math.BigDecimal   => JsNumber(v.asInstanceOf[java.math.BigDecimal])
-              case v:Float                  => JsNumber(v.asInstanceOf[Double])
-              case v:Double                 => JsNumber(v.asInstanceOf[Double])
-              case v:Int                    => JsNumber(v.asInstanceOf[Int])
-              case v:Long                   => JsNumber(v.asInstanceOf[Long])
-              case v:Boolean                => JsBoolean(v)
-              case None                     => JsNull
-              case _                        => JsString(v.toString)
+              case v: Short => JsNumber(v.asInstanceOf[Long])
+              case v: java.math.BigDecimal => JsNumber(v.asInstanceOf[java.math.BigDecimal])
+              case v: Float => JsNumber(v.asInstanceOf[Double])
+              case v: Double => JsNumber(v.asInstanceOf[Double])
+              case v: Int => JsNumber(v.asInstanceOf[Int])
+              case v: Long => JsNumber(v.asInstanceOf[Long])
+              case v: DateTime => JsString(v.toString)
+              case v: Boolean => JsBoolean(v)
+              case None => JsNull
+              case _ => JsString(v.toString)
             })
         }.toSeq
 
+        Logger.debug("VALIDATE : " + els + "e : " + e)
+
         JsObject(toSeq).validate[A] match {
           case JsSuccess(el, path) => JsSuccess(el :: els, path)
-          case error @ JsError(_)  => error
+          case error@JsError(_) => error
         }
+      }
       case (error @ JsError(_), _) => error
     }
 
@@ -478,6 +515,8 @@ class CrudAutoFactory[E <: Entity[PK], PK] @Inject()( crudClassName: CrudClassNa
   }
 
   def findAll(search: Option[String] = None, count: Option[Boolean] = Some(false))(implicit bct: BaseColumnType[PK], formatE: Format[E], p: Option[Int] = None, pp: Option[Int] = None): Future[Expect[Seq[E]]] =
+    // for deprecated findAllPlainSql
+    // crudAutoService.findAll[Entity[Any]](tableQueryAny, search, count.getOrElse(false), p, pp)(formatE.asInstanceOf[Format[Entity[Any]]]).map(_.map(_.map(_.asInstanceOf[E])))
     crudAutoService.findAll[Entity[Any]](tableQueryAny, search, count.getOrElse(false), p, pp)(formatE.asInstanceOf[Format[Entity[Any]]]).map(_.map(_.map(_.asInstanceOf[E])))
 //=======
 //  def findAll(search: Option[String] = None, count: Option[Boolean] = Some(false))(implicit bct: BaseColumnType[PK], formatE: Format[E]): Future[Expect[Seq[E]]] =
