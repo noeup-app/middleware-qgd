@@ -137,3 +137,7 @@ dev := {
 local := {
   setEnvVar("dev.default")
 }
+
+sources in (Compile,doc) := Seq.empty
+
+publishArtifact in (Compile, packageDoc) := false
