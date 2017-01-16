@@ -136,7 +136,7 @@ object CSVConverter {
     new CSVConverter[V :: T] {
 
       def from(s: String, context: Option[Line] = Option.empty): Try[V :: T] =
-        s.trim.span(_ != ',') match {
+        s.trim.span(_ != ';') match {
           case (before,after) =>
             for {
               front <- scv.value.from(before, context)
@@ -147,7 +147,7 @@ object CSVConverter {
         }
 
       def to(ft: V :: T): String = {
-        scv.value.to(ft.head) ++ "," ++ sct.value.to(ft.tail)
+        scv.value.to(ft.head) ++ ";" ++ sct.value.to(ft.tail)
       }
     }
 
@@ -177,8 +177,8 @@ object CSVConverter {
       if(colOrder.isEmpty){
         line
       } else {
-        val splitLine = splitAndKeepEmpty(line, ',')
-        colOrder.map(splitLine.lift).map(_.getOrElse("")).mkString(",")
+        val splitLine = splitAndKeepEmpty(line, ';')
+        colOrder.map(splitLine.lift).map(_.getOrElse("")).mkString(";")
       }
     }
 
@@ -216,15 +216,15 @@ object CSVConverter {
       if(from == 0 && to.isEmpty){
         line
       } else {
-        val splitLine = splitAndKeepEmpty(line, ',')
+        val splitLine = splitAndKeepEmpty(line, ';')
         to match {
-          case Some(i) => splitLine.splitAt(from)._2.splitAt(i)._1.mkString(",") // not clever to split, join and then to split again in the flow
-          case None => splitLine.splitAt(from)._2.mkString(",") // not clever to split, join and then to split again in the flow
+          case Some(i) => splitLine.splitAt(from)._2.splitAt(i)._1.mkString(";") // not clever to split, join and then to split again in the flow
+          case None => splitLine.splitAt(from)._2.mkString(";") // not clever to split, join and then to split again in the flow
         }
       }
     }
 
-    val splitLines: Enumeratee[String, List[String]] = Enumeratee.map(splitAndKeepEmpty(_, ','))
+    val splitLines: Enumeratee[String, List[String]] = Enumeratee.map(splitAndKeepEmpty(_, ';'))
 
     val convertToLine: Enumeratee[List[String], CustomTypedLine[List[String]]] =
       Enumeratee.zipWithIndex ><> Enumeratee.map{
