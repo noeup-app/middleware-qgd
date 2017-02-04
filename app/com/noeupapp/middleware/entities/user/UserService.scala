@@ -77,6 +77,23 @@ class UserService @Inject()(userDAO: UserDAO,
   }
 
   /**
+    * Get email from user Option
+    * @param user Option[User]
+    * @return
+    */
+  def getEmailFromUser(user: Option[User]): Future[Expect[String]] = {
+    Logger.debug("Find user " + user)
+    user match {
+      case Some(user) =>
+        user.email match {
+          case Some(_) => Future(\/-(user.email.toString))
+          case None => Future(-\/(FailError("User email not set")))
+        }
+      case None => Future(-\/(FailError("User doesn't exist")))
+    }
+  }
+
+  /**
     * Add new user
     *
     * @param userInput
