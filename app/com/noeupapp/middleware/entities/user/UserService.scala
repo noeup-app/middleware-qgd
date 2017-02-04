@@ -86,7 +86,7 @@ class UserService @Inject()(userDAO: UserDAO,
     user match {
       case Some(user) =>
         user.email match {
-          case Some(_) => Future(\/-(user.email.toString))
+          case Some(email) =>  Future.successful(\/-(email))
           case None => Future(-\/(FailError("User email not set")))
         }
       case None => Future(-\/(FailError("User doesn't exist")))
