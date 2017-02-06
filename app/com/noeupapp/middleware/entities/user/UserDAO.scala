@@ -121,4 +121,22 @@ class UserDAO extends GlobalReadsWrites {
     Logger.trace("UserDao.add OK")
     a
   }
+
+  /**
+    * Change user delete value to true
+    * @param userId user to archive
+    * @param connection the implicit connection of the transaction
+    * @return
+    */
+  def delete(userId: UUID)(implicit connection: Connection): Boolean = {
+    SQL(
+      """
+          UPDATE entity_users
+          SET deleted = 'true'
+          WHERE id = {id}
+        """
+    ).on(
+      'id -> userId
+    ).execute()
+  }
 }

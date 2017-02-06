@@ -82,7 +82,6 @@ class UserService @Inject()(userDAO: UserDAO,
     * @return
     */
   def getEmailFromUser(user: Option[User]): Future[Expect[String]] = {
-    Logger.debug("Find user " + user)
     user match {
       case Some(user) =>
         user.email match {
@@ -197,6 +196,29 @@ class UserService @Inject()(userDAO: UserDAO,
       _    <- EitherT(user |> "User is not defined")
       _    <- EitherT(this.changePasswordWithoutUserCheck(email, password))
     } yield ()
+  }.run
+
+  /**
+    * Update contact's deleted field to true
+    * @param userId
+    * @return
+    */
+  def delete(userId: UUID): Future[Expect[Boolean]] = {
+    TryBDCall { implicit c =>
+      \/-(userDAO.delete(userId))
+    }
+  }
+
+  /**
+    * Process to delete user
+    * @param userId id of user
+    * @return
+    */
+  def deleteFlow(userId: UUID): Future[Expect[Option[User]]] = {
+    for{
+      _       <- EitherT(this.delete(userId))
+      updated <- EitherT(this.findById(userId))
+    } yield updated
   }.run
 
 }

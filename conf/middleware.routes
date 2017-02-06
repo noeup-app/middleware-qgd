@@ -56,6 +56,7 @@ GET         /entity/accounts/me                 com.noeupapp.middleware.entities
 GET         /entity/users/:userId               com.noeupapp.middleware.entities.user.Users.fetchById(userId: java.util.UUID)
 GET         /entity/users                       com.noeupapp.middleware.entities.user.Users.fetchAll(email: Option[String])
 POST        /entity/users                       com.noeupapp.middleware.entities.user.Users.add(orGet: Option[String])
+PUT         /entity/delete/user/:id             com.noeupapp.middleware.entities.user.Users.delete(id: java.util.UUID)
 
 GET         /evolution/:n                       com.noeupapp.middleware.evolution.Evolution.apply(n: Int)
 
