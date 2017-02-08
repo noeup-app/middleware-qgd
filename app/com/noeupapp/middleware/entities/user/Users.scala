@@ -81,12 +81,12 @@ class Users @Inject()(
     }
 
 
-  def delete(id: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
+  def delete(email: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
     .async { implicit request =>
-      userService.deleteFlow(id) map {
-        case -\/(_) => InternalServerError(Json.toJson("Error while deleting user"))
-        case \/-(Some(user)) => Ok(Json.toJson(user))
-        case \/-(None) => NoContent
+      userService.delete(email) map {
+        case \/-(true) => Ok("User deleted")
+        case \/-(false) => InternalServerError("User not deleted")
+        case -\/(e) => InternalServerError(Json.toJson("Error while deleting user"))
       }
     }
 }

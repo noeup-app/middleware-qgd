@@ -11,6 +11,7 @@ import com.noeupapp.middleware.entities.organisation.OrganisationService
 import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.entities.user.{User, UserService}
 import com.noeupapp.middleware.errorHandle.FailError.Expect
+import com.noeupapp.middleware.oauth2.TierAccessTokenConfig
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.Play.current
@@ -27,7 +28,8 @@ import com.noeupapp.middleware.utils.FutureFunctor._
   */
 class AccountService @Inject()(userService: UserService,
                                roleService: RoleService,
-                               organisationService: OrganisationService)
+                               organisationService: OrganisationService,
+                               tierAccessTokenConfig: TierAccessTokenConfig)
   extends IdentityService[Account] {
 
   /**
@@ -127,7 +129,8 @@ class AccountService @Inject()(userService: UserService,
             avatarUrl = profile.avatarURL,
             created = DateTime.now(),
             active = false,
-            deleted = false
+            deleted = false,
+            ownedByClient = Some(tierAccessTokenConfig.tierClientId)
           ),
           None
         )

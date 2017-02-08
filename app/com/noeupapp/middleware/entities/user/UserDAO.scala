@@ -26,7 +26,7 @@ class UserDAO extends GlobalReadsWrites {
       case None => ""
     }
     SQL(
-      s"""SELECT id, first_name, last_name, email, avatar_url, created, active, deleted
+      s"""SELECT id, first_name, last_name, email, avatar_url, created, active, owned_by_client
          FROM entity_users
          $condition
       """)
@@ -42,7 +42,7 @@ class UserDAO extends GlobalReadsWrites {
     */
   def find(email: String)(implicit connection: Connection): Option[User] = {
     SQL(
-      """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted
+      """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted, owned_by_client
          FROM entity_users
          WHERE email = {email};""")
       .on(
@@ -77,7 +77,7 @@ class UserDAO extends GlobalReadsWrites {
   def find(userID: UUID)(implicit connection:
   Connection): Option[User] = {
       SQL(
-        """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted
+        """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted,owned_by_client
            FROM entity_users
            WHERE id = {id};""")
       .on(
@@ -92,7 +92,7 @@ class UserDAO extends GlobalReadsWrites {
     * @param connection the implicit connection of the transaction
     */
   def add(user: User)(implicit connection: Connection): Boolean = {
-    Logger.trace("UserDao.add...")
+    Logger.trace(s"UserDao.add... $user")
     val a = SQL(
       """INSERT INTO entity_users (
                       id,
@@ -101,14 +101,16 @@ class UserDAO extends GlobalReadsWrites {
                       last_name,
                       avatar_url,
                       active,
-                      deleted)
+                      deleted,
+                      owned_by_client)
         VALUES ({id},
                 {email},
                 {first_name},
                 {last_name},
                 {avatar_url},
                 {active},
-                {deleted});""")
+                {deleted},
+                {owned_by_client});""")
       .on(
         'id -> user.id,
         'email -> user.email,
@@ -116,7 +118,8 @@ class UserDAO extends GlobalReadsWrites {
         'last_name -> user.lastName,
         'avatar_url -> user.avatarUrl,
         'active -> user.active,
-        'deleted -> user.deleted
+        'deleted -> user.deleted,
+        'owned_by_client -> user.ownedByClient
       ).execute()
     Logger.trace("UserDao.add OK")
     a
