@@ -18,7 +18,7 @@ trait SignUpsResult extends AuthorizationResult {
   def badRequest(form: Form[SignUpForm.Data])(implicit request: Request[Any]): Result
   def userAlreadyExists(): Result
   def userSuccessfullyCreated(): Result
-  def manageError(e: Exception): Result
+  def manageError(): Result
   def userIsConnected(): Result
   def userIsNotRegistered(implicit request: UserAwareRequest[AnyContent]): Result
 }
@@ -41,12 +41,12 @@ class HtmlSignUpsResult @Inject() (
   override def userSuccessfullyCreated(): Result =
     Redirect(com.noeupapp.middleware.application.routes.Applications.index())
 
-  override def manageError(e: Exception): Result =
-    Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.signUpAction())
+  override def manageError(): Result =
+    Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.subscribe())
       .flashing("error" -> Messages("internal.server.error"))
 
   override def userAlreadyExists(): Result =
-    Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.signUpAction())
+    Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.subscribe())
       .flashing("error" -> Messages("user.exists"))
 
   override def userIsConnected(): Result =
@@ -74,7 +74,7 @@ class AjaxSignUpsResult @Inject() (
   override def userSuccessfullyCreated(): Result =
     Ok("User successfully created") // TODO Should return User Json
 
-  override def manageError(e: Exception): Result =
+  override def manageError(): Result =
     InternalServerError(Messages("internal.server.error"))
 
   override def userAlreadyExists(): Result =

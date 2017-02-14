@@ -12,7 +12,7 @@ GET         /                                    com.noeupapp.middleware.applica
 GET         /login                               com.noeupapp.middleware.authorizationClient.login.Logins.loginAction
 
 GET         /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.signUpActionGet
-POST        /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.signUpAction
+POST        /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.subscribe
 
 GET         /logout                              com.noeupapp.middleware.authorizationClient.login.Logins.logOut
 GET         /forgotPassword                      com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswords.forgotPasswordGet
