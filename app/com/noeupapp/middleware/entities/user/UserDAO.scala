@@ -44,7 +44,7 @@ class UserDAO extends GlobalReadsWrites {
     SQL(
       """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted, owned_by_client
          FROM entity_users
-         WHERE email = {email};""")
+         WHERE email = {email} AND deleted = 'false';""")
       .on(
       'email  -> email
       ).as(User.parse *).headOption // One email corresponds to at most one user
