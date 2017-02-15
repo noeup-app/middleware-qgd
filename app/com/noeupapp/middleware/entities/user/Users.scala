@@ -80,4 +80,13 @@ class Users @Inject()(
       }
     }
 
+
+  def delete(email: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
+    .async { implicit request =>
+      userService.delete(email) map {
+        case \/-(true) => Ok("User deleted")
+        case \/-(false) => InternalServerError("User not deleted")
+        case -\/(e) => InternalServerError(Json.toJson("Error while deleting user"))
+      }
+    }
 }

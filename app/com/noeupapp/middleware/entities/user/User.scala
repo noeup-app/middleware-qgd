@@ -16,7 +16,8 @@ case class User(
                  avatarUrl: Option[String],
                  created: DateTime,
                  active: Boolean,
-                 deleted: Boolean
+                 deleted: Boolean,
+                 ownedByClient: Option[String]
                )
 
 case class UserIn(
@@ -33,7 +34,8 @@ case class UserOut(
                     email: Option[String],
                     avatarUrl: Option[String],
                     created: DateTime,
-                    active: Boolean
+                    active: Boolean,
+                    ownedByClient: Option[String]
                   )
 
 
@@ -51,24 +53,25 @@ object User {
       get[Option[String]]("avatar_url") ~
       get[DateTime]("created") ~
       get[Boolean]("active") ~
-      get[Boolean]("deleted") map {
-      case id ~ firstName ~ lastName ~ email ~ avatarUrl ~ created ~ active ~ deleted => {
-        User(id, firstName, lastName, email, avatarUrl, created, active, deleted)
+      get[Boolean]("deleted") ~
+      get[Option[String]]("owned_by_client") map {
+      case id ~ firstName ~ lastName ~ email ~ avatarUrl ~ created ~ active ~ deleted ~ ownedByClient=> {
+        User(id, firstName, lastName, email, avatarUrl, created, active, deleted, ownedByClient)
       }
     }
     // TODO Need to parse roles and scopes
   }
 
-  implicit def toUserOut(u:User):UserOut = UserOut(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created, u.active)
+  implicit def toUserOut(u:User):UserOut = UserOut(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created, u.active, u.ownedByClient)
 
-  implicit def toUser(u:UserOut):User = User(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created, u.active, deleted = false)
+  implicit def toUser(u:UserOut):User = User(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created, u.active, deleted = false, u.ownedByClient)
 
 
 
   // Bypass because of nulab/scala-oauth2-provider lib (
   // when using client credential flow, nulab lib need to link client with user which is not the RFC requirement
   // An issue is pending on github and Damien is requesting a MR
-  private val defaultUser: User = User(new UUID(0, 0), Some("FAKE"), Some("FAKE"), Some("FAKE"), Some("FAKE"), DateTime.now(),active = true, deleted = false)
+  private val defaultUser: User = User(new UUID(0, 0), Some("FAKE"), Some("FAKE"), Some("FAKE"), Some("FAKE"), DateTime.now(),active = true, deleted = false, ownedByClient = Some("FAKE"))
 
   def getDefault = defaultUser
   def isDefault(u: User) = defaultUser.equals(u)

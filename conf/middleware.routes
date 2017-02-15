@@ -12,7 +12,7 @@ GET         /                                    com.noeupapp.middleware.applica
 GET         /login                               com.noeupapp.middleware.authorizationClient.login.Logins.loginAction
 
 GET         /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.signUpActionGet
-POST        /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.signUpAction
+POST        /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.subscribe
 
 GET         /logout                              com.noeupapp.middleware.authorizationClient.login.Logins.logOut
 GET         /forgotPassword                      com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswords.forgotPasswordGet
@@ -56,6 +56,7 @@ GET         /entity/accounts/me                 com.noeupapp.middleware.entities
 GET         /entity/users/:userId               com.noeupapp.middleware.entities.user.Users.fetchById(userId: java.util.UUID)
 GET         /entity/users                       com.noeupapp.middleware.entities.user.Users.fetchAll(email: Option[String])
 POST        /entity/users                       com.noeupapp.middleware.entities.user.Users.add(orGet: Option[String])
+DELETE      /entity/users/:email                com.noeupapp.middleware.entities.user.Users.delete(email: String)
 
 GET         /evolution/:n                       com.noeupapp.middleware.evolution.Evolution.apply(n: Int)
 

@@ -22,6 +22,7 @@ import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
+import com.noeupapp.middleware.oauth2.TierAccessTokenConfig
 import com.noeupapp.middleware.utils.TypeConversion
 
 
@@ -29,7 +30,8 @@ class UserService @Inject()(userDAO: UserDAO,
                             passwordInfoDAO: PasswordInfoDAO,
                             passwordHasher: PasswordHasher,
                             entityService: EntityService,
-                            organisationService: OrganisationService) {
+                            organisationService: OrganisationService,
+                            tierAccessTokenConfig: TierAccessTokenConfig) {
 
 
   type ValidationFuture[A] = EitherT[Future, FailError, A]
@@ -52,8 +54,10 @@ class UserService @Inject()(userDAO: UserDAO,
           \/- (userDAO.find(email, client))
         }
       case None =>
-        TryBDCall{ implicit c =>
-          \/- (userDAO.find(email))
+        TryBDCall{ implicit c => {
+            val res = userDAO.find(email)
+            \/- (res)
+          }
         }
     }
   }
@@ -75,6 +79,36 @@ class UserService @Inject()(userDAO: UserDAO,
       \/- (userDAO.find(id))
     }
   }
+
+  /**
+    * Get email from user Option
+    * @param user Option[User]
+    * @return
+    */
+  def getEmailFromUser(user: Option[User]): Future[Expect[String]] = {
+    user match {
+      case Some(user) =>
+        user.email match {
+          case Some(email) =>  Future.successful(\/-(email))
+          case None => Future(-\/(FailError("User email not set")))
+        }
+      case None => Future(-\/(FailError("User doesn't exist")))
+    }
+  }
+
+
+  /**
+    * Get User from Option[User]
+    * @param user Option[User] to check
+    * @return
+    */
+  def getUserFromOpt(user: Option[User]): Future[Expect[User]] = {
+    user match {
+      case Some(user) => Future.successful(\/-(user))
+      case None => Future(-\/(FailError("User doesn't exist")))
+    }
+  }
+
 
   /**
     * Add new user
@@ -109,7 +143,8 @@ class UserService @Inject()(userDAO: UserDAO,
         avatarUrl = userInput.avatarUrl,
         created = DateTime.now,
         active = true,
-        deleted = false
+        deleted = false,
+        ownedByClient = Some(tierAccessTokenConfig.tierClientId)
       )
       userDAO.add(user)
       \/-(user)
@@ -130,8 +165,9 @@ class UserService @Inject()(userDAO: UserDAO,
                         userInput.avatarUrl,
                         DateTime.now,
                         true,
-                        false
-                      )
+                        false,
+                        Some(tierAccessTokenConfig.tierClientId)
+      )
       userDAO.add(user)
       user
     })
@@ -145,7 +181,7 @@ class UserService @Inject()(userDAO: UserDAO,
     * @param password non hashed pwd
     */
   def validateUser(email: String, password: String): Future[Expect[Option[User]]] = {
-
+    Logger.debug(s"--- Into validateUser --- Email: $email --- PWD: $password")
     val result: ValidationFuture[Option[User]] =
     for{
       user         <- EitherT(findByEmail(email))
@@ -180,6 +216,27 @@ class UserService @Inject()(userDAO: UserDAO,
       _    <- EitherT(user |> "User is not defined")
       _    <- EitherT(this.changePasswordWithoutUserCheck(email, password))
     } yield ()
+  }.run
+
+
+  def deleteUserById(userId: UUID): Future[Expect[Boolean]] = {
+    TryBDCall{ implicit c =>
+      \/-(userDAO.delete(userId))
+    }
+  }
+
+  /**
+    * Update contact's deleted field to true
+    * @param email
+    * @return
+    */
+  def delete(email: String): Future[Expect[Boolean]] = {
+    for{
+      user    <- EitherT(this.findByEmail(email))
+      _       <- EitherT(user |> "User is not defined")
+      getUser <- EitherT(this.getUserFromOpt(user))
+      res     <- EitherT(this.deleteUserById(getUser.id))
+    } yield res
   }.run
 
 }
