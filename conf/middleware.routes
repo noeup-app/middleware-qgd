@@ -13,6 +13,7 @@ GET         /login                               com.noeupapp.middleware.authori
 
 GET         /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.signUpActionGet
 POST        /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.subscribe
+POST        /signUp/confirmation/:token          com.noeupapp.middleware.authorizationClient.signUp.SignUps.emailConfirmation(token: String)
 
 GET         /logout                              com.noeupapp.middleware.authorizationClient.login.Logins.logOut
 GET         /forgotPassword                      com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswords.forgotPasswordGet
