@@ -44,7 +44,6 @@ class ConfirmEmailService @Inject() (pool: Pool,
       } match {
         case res @ \/-(_) => res
         case error @ -\/(e) =>
-          Logger.debug("ConfirmEmailService.checkTokenValidity " + error +  "  "+ e.toString)
           Logger.error("ConfirmEmailService.checkTokenValidity" + e.toString)
           error
       }

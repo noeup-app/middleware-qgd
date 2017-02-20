@@ -71,7 +71,6 @@ class SignUpService @Inject()(userService: UserService,
           _         <- authInfoRepository.add(loginInfo, authInfo)
 
           confirm   <- confirmEmailService.sendEmailConfirmation(data.email)
-          logger = Logger.debug(s" - - - - - - - Confirmation email $confirm  - - - - - - - -")
         } yield {
           \/-(account)
         }
@@ -83,7 +82,7 @@ class SignUpService @Inject()(userService: UserService,
   def signUpConfirmation(token: String): Future[Expect[User]] = {
     for{
       userOpt <- EitherT(confirmEmailService.checkTokenValidity(token))
-      user    <- EitherT(userOpt |> (s"User is not defined: $userOpt", BadRequest))
+      user    <- EitherT(userOpt |> (s"Wrong token or expired: $userOpt", BadRequest))
       _       <- EitherT(userService.changeActiveStatus(user.id, true))
     } yield user
   }.run
