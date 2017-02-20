@@ -167,10 +167,9 @@ object CSVConverter {
       case (e, idx) => Line(idx, e)
     }
 
-  def readHugeFile[T: ClassTag](file: File, dropFirst: Boolean = false, colOrder: List[Int] = List.empty)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[CSVParseOutput[T]]] = {
+  def readHugeFile[T: ClassTag](file: File, dropFirst: Boolean = false, colOrder: List[Option[Int]] = List.empty)(implicit st: Lazy[CSVConverter[T]]): Future[Expect[CSVParseOutput[T]]] = {
 
     Logger.info("Parsing CSV file... " + classTag[T])
-
 
 
     val reOrder: Enumeratee[String, String] = Enumeratee.map{ line =>
@@ -178,7 +177,10 @@ object CSVConverter {
         line
       } else {
         val splitLine = splitAndKeepEmpty(line, ';')
-        colOrder.map(splitLine.lift).map(_.getOrElse("")).mkString(";")
+        colOrder.map {
+          case Some(idx) => splitLine.lift(idx).getOrElse("")
+          case None => ""
+        }.mkString(";")
       }
     }
 
