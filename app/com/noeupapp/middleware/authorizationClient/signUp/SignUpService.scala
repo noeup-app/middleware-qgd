@@ -5,16 +5,20 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.mohiva.play.silhouette.api._
+import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailService
 import com.noeupapp.middleware.authorizationClient.forgotPassword.{ForgotPasswordConfig, ForgotPasswordService}
 import com.noeupapp.middleware.authorizationClient.signUp.SignUpForm.Data
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
-import com.noeupapp.middleware.entities.user.{UserIn, UserService}
+import com.noeupapp.middleware.entities.user.{User, UserIn, UserService}
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.MessageEmail
 import com.noeupapp.middleware.utils.TypeCustom._
 import com.noeupapp.middleware.utils.FutureFunctor._
 import play.api.Logger
+import play.api.libs.json.Json
+import play.api.mvc.Results._
+
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,6 +34,7 @@ import scalaz.{-\/, EitherT, \/-}
 class SignUpService @Inject()(userService: UserService,
                               accountService: AccountService,
                               forgotPasswordService: ForgotPasswordService,
+                              confirmEmailService: ConfirmEmailService,
                               forgotPasswordConfig: ForgotPasswordConfig,
                               authInfoRepository: AuthInfoRepository,
                               passwordHasher: PasswordHasher,
@@ -65,7 +70,7 @@ class SignUpService @Inject()(userService: UserService,
           account   <- accountService.save(Account(loginInfo, user, None))
           _         <- authInfoRepository.add(loginInfo, authInfo)
 
-          confirm   <- sendEmailConfirmation(data.email)
+          confirm   <- confirmEmailService.sendEmailConfirmation(data.email)
           logger = Logger.debug(s" - - - - - - - Confirmation email $confirm  - - - - - - - -")
         } yield {
           \/-(account)
@@ -75,44 +80,12 @@ class SignUpService @Inject()(userService: UserService,
     case e: Exception => -\/(FailError(e))
   }
 
-
-  /**
-    * Send an email to allow the user to activate his account
-    * @param email user email
-    * @return
-    */
-  def sendEmailConfirmation(email: String): Future[Expect[String]] = {
-    val domain = forgotPasswordConfig.url
-    for {
-      userOpt <- EitherT(userService.findByEmail(email))
-      user    <- EitherT(userOpt |> "This is not user with this email")
-      token   <- EitherT(forgotPasswordService.generateAndSaveToken(user))
-      send    <- EitherT{
-        val correctDomain = if (domain.endsWith("/")) domain else domain + "/"
-        val link = correctDomain + "signUp/confirmation/" + token
-        val content =
-          s"""
-             |<p>Hello,<p>
-             |
-             |<p>Please click the link below to activate your account. <a href="$link">$link</a>.</p>
-             |
-             |<p>This link could be used only during few minutes and once.</p>
-          """.stripMargin
-
-        messageEmail.sendEmail(
-          senderName = Some("noeup'App"),
-          senderEmail = "no-reply@noeupapp.com",
-          receiverName = email,
-          receiverEmail = email,
-          subject = "Account confirmation",
-          text = content,
-          appName = "noeup'App"
-        )
-      }
-    } yield {
-      Logger.info("Account confirmation email sent")
-      send
-    }
+  def signUpConfirmation(token: String): Future[Expect[User]] = {
+    for{
+      userOpt <- EitherT(confirmEmailService.checkTokenValidity(token))
+      user    <- EitherT(userOpt |> (s"User is not defined: $userOpt", BadRequest))
+      _       <- EitherT(userService.changeActiveStatus(user.id, true))
+    } yield user
   }.run
 
 }

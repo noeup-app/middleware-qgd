@@ -63,10 +63,9 @@ class UserService @Inject()(userDAO: UserDAO,
   }
 
   def findInactive(email: String): Future[Expect[Option[User]]] = {
-      case Some(client) =>
-        TryBDCall{ implicit c =>
-          \/- (userDAO.findInactive(email))
-        }
+    TryBDCall{ implicit c =>
+      \/- (userDAO.findInactive(email))
+    }
   }
 
   def findOrganisationByUserId(userId: UUID): Future[Expect[Option[Organisation]]] = {
