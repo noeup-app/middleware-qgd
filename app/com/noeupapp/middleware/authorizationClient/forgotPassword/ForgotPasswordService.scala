@@ -16,13 +16,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPassword._
-import com.noeupapp.middleware.entities.user.User._
 
 
 class ForgotPasswordService @Inject() (messageEmail: MessageEmail,
                                        userService: UserService,
                                        pool: Pool,
-                                       forgotPasswordConfig: ForgotPasswordConfig) extends CaseClassUtils{
+                                       forgotPasswordConfig: ForgotPasswordConfig) extends CaseClassUtils {
 
 
 

@@ -53,6 +53,8 @@ class UserDAO extends GlobalReadsWrites {
   /**
     * Finds a user by its login info.
     *
+    * 'active' field have to be true in order to connect the user
+    *
     * @param email user email
     * @return The found user or None if no user for the given login info could be found.
     */
@@ -60,12 +62,30 @@ class UserDAO extends GlobalReadsWrites {
     SQL(
       """SELECT *
          FROM entity_users
-         WHERE email = {email} AND owned_by_client = {client_id};""")
+         WHERE email = {email} AND owned_by_client = {client_id} AND active = 'true';""")
       .on(
         'email  -> email,
         'client_id -> clientId
       ).as(User.parse *).headOption // One email corresponds to at most one user
   }
+
+  /**
+    * Find inactive user for sending an email confirmation
+    *
+    * @param email
+    * @param connection
+    * @return
+    */
+  def findInactive(email: String)(implicit connection: Connection): Option[User] = {
+    SQL(
+      """SELECT *
+         FROM entity_users
+         WHERE email = {email} AND owned_by_client = {client_id} AND active = 'false';""")
+      .on(
+        'email  -> email
+      ).as(User.parse *).headOption // One email corresponds to at most one user
+  }
+
 
 
   /**
@@ -83,6 +103,26 @@ class UserDAO extends GlobalReadsWrites {
       .on(
         'id -> userID
       ).as(User.parse *).headOption
+  }
+
+  /**
+    *
+    * @param userId User UUID
+    * @param status active status (true/false)
+    * @param connection the implicit connection of the transaction
+    * @return
+    */
+  def updateActive(userId: UUID, status: Boolean)(implicit connection: Connection): Boolean = {
+    SQL(
+      """
+          UPDATE entity_users
+          SET active = {status}
+          WHERE id = {userId}
+      """
+    ).on(
+      'userId -> userId,
+      'status -> status
+    ).execute()
   }
 
   /**

@@ -65,6 +65,10 @@ object FailError {
   }
 
   // Alternative constructor to simplify error creation
+
+
+  def apply(message: String, cause: Throwable, errorType: Status): FailError = FailError(message, Some(-\/(cause)), errorType)
+
   def apply(message: String, cause: Throwable): FailError = FailError(message, Some(-\/(cause)))
 
   def apply(exception: Throwable): FailError = FailError(exception.getMessage, exception)

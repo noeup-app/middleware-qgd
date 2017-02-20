@@ -9,11 +9,17 @@ import com.mohiva.play.silhouette.impl.providers._
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
-import play.api.mvc.{Action, AnyContent, Request, Result}
+import play.api.mvc._
+import play.api.mvc.Results.Status
 import SignUpForm.signUpFormDataFormat
+import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailService
+import com.noeupapp.middleware.authorizationClient.forgotPassword.{ForgotPasswordAskNewPasswordForm, ForgotPasswordService}
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
+import com.noeupapp.middleware.entities.user.UserService
+import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.RequestHelper
+import play.api.libs.json.Json
 
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
@@ -27,8 +33,11 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
                          val env: Environment[Account, BearerTokenAuthenticator],
                          htmlSignUpsResult: HtmlSignUpsResult,
                          ajaxSignUpsResult: AjaxSignUpsResult,
+                         userService: UserService,
                          avatarService: AvatarService,
                          accountService: AccountService,
+                         confirmEmailService: ConfirmEmailService,
+                         forgotPasswordService: ForgotPasswordService,
                          signUpService: SignUpService) extends Silhouette[Account, BearerTokenAuthenticator] {
 
 
@@ -122,6 +131,22 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
       case e: Exception =>
         Logger.error(s"An exception occurred $e")
         authorizationResult.manageError()
+    }
+  }
+
+
+
+  def emailConfirmation(token: String) = Action.async(jsonOrAnyContent[String]) { implicit request =>
+    signUpService.signUpConfirmation(token).map {
+      case \/-(u) =>
+        Logger.trace("user activated : " + u)
+        Ok(Json.toJson(u))
+
+      case -\/(error) =>
+        error.errorType.header.status match {
+          case INTERNAL_SERVER_ERROR => InternalServerError(Json.toJson(error.message.toString))
+          case BAD_REQUEST => BadRequest(Json.toJson(error.message.toString))
+        }
     }
   }
 

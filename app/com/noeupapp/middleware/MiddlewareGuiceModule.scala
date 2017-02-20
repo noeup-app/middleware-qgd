@@ -17,6 +17,7 @@ import com.mohiva.play.silhouette.impl.providers.oauth2.state.{CookieStateProvid
 import com.mohiva.play.silhouette.impl.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.services._
 import com.mohiva.play.silhouette.impl.util._
+import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailConfig
 import com.noeupapp.middleware.authorizationClient.login._
 import com.noeupapp.middleware.authorizationClient.{ScopeAndRoleAuthorization, ScopeAndRoleAuthorizationImpl}
 import com.noeupapp.middleware.entities.user.UserService
@@ -344,6 +345,12 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
   def provideForgotPasswordConfig(configuration: Configuration): ForgotPasswordConfig = {
     configuration.underlying.as[ForgotPasswordConfig]("forgotPasswordConfig")
   }
+
+  @Provides
+  def provideConfirmEmailConfig(configuration: Configuration): ConfirmEmailConfig = {
+    configuration.underlying.as[ConfirmEmailConfig]("confirmEmailConfig")
+  }
+
 
   @Provides
   def provideS3Config(configuration: Configuration): S3Config = {

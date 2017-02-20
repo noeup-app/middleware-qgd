@@ -62,6 +62,12 @@ class UserService @Inject()(userDAO: UserDAO,
     }
   }
 
+  def findInactive(email: String): Future[Expect[Option[User]]] = {
+    TryBDCall{ implicit c =>
+      \/- (userDAO.findInactive(email))
+    }
+  }
+
   def findOrganisationByUserId(userId: UUID): Future[Expect[Option[Organisation]]] = {
     {
       for{
@@ -175,6 +181,29 @@ class UserService @Inject()(userDAO: UserDAO,
 
 
   /**
+    * Add user with active status to false
+    * @param userInput User to add
+    * @return
+    */
+  def addInactive(userInput: UserIn): Future[User] = Future {
+    DB.withTransaction({ implicit c =>
+      val userId = UUID.randomUUID()
+      val user = User(  userId,
+                        userInput.firstName,
+                        userInput.lastName,
+                        userInput.email,
+                        userInput.avatarUrl,
+                        DateTime.now,
+                        false,
+                        false,
+                        Some(tierAccessTokenConfig.tierClientId)
+      )
+      userDAO.add(user)
+      user
+    })
+  }
+
+  /**
     * Validate a user thanks to it email and password
     *
     * @param email user email
@@ -218,7 +247,23 @@ class UserService @Inject()(userDAO: UserDAO,
     } yield ()
   }.run
 
+  /**
+    * Update user active status
+    * @param userId userId
+    * @param status true or false
+    * @return
+    */
+  def changeActiveStatus(userId: UUID, status :Boolean): Future[Expect[Boolean]] = {
+    TryBDCall{ implicit c =>
+      \/-(userDAO.updateActive(userId, status))
+    }
+  }
 
+  /**
+    * Set deleted field to true
+    * @param userId user to delete
+    * @return
+    */
   def deleteUserById(userId: UUID): Future[Expect[Boolean]] = {
     TryBDCall{ implicit c =>
       \/-(userDAO.delete(userId))
