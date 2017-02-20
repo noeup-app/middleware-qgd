@@ -248,23 +248,12 @@ class Evolution extends Controller {
         |  'myapp'
         |);
         |
-        |INSERT INTO entity_groups (id, name, owner)
+        |INSERT INTO entity_groups (id, name)
         |VALUES (
         |  '20000000-0000-0000-0000-000000000000',
-        |  'Administrators',
-        |  '10000000-0000-0000-0000-000000000000'
+        |  'Administrators'
         |);
         |
-        |INSERT INTO entity_users (id, first_name, last_name, email, avatar_url, active, deleted)
-        |VALUES (
-        |  '10000000-0000-0000-0000-000000000000',
-        |  'admin',
-        |  '',
-        |  'admin@myapp.np',
-        |  'avatar',
-        |  true,
-        |  false
-        |);
         |
         |
         |INSERT INTO middle_versions (id, applied_version)
