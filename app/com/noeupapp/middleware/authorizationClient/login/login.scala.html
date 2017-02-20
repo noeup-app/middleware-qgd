@@ -7,33 +7,57 @@
 @com.noeupapp.middleware.views.html.main(Messages("sign.in.title")) {
 
     <div class="container">
-        <form>
+        @helper.form(action = com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.authenticate()) {
             <div class="row">
-                <div class="col s12 center-align">
-                    <h3>Admin access</h3>
-                    <h5>by noeup'App</h5>
-                </div>
                 <div class="col s12 l3"></div>
                 <div class="col s12 l6">
                     <div class="row card-panel logCard">
+                        <div class="col s12 center-align">
+                            <h4>Admin access</h4>
+                            <h5>by noeup'App</h5>
+                        </div>
+                        <div class="col s12 divider mtb10"></div>
                         <div class="input-field col s12">
-                            <input id="email" type="text" class="validate">
+                            <input id="email" name="email" type="text" class="validate">
                             <label for="email">Email</label>
                         </div>
                         <div class="input-field col s12">
-                            <input id="password" type="password" class="validate">
+                            <input id="password" name="password" type="password" class="validate">
                             <label for="password">Password</label>
                         </div>
+                        <div class="col s12">
+                            <input type="checkbox" name="rememberMe" class="filled-in" id="rememberMe" />
+                            <label for="rememberMe">Remember me</label>
+                        </div>
                         <div class="col s12 center-align">
-                            <button type="button" class="waves-effect waves-light btn">
-                                Login
-                            </button>
+                            <div class="row">
+                                <div class="col s12">
+                                    <input type="submit" class="mtb10 waves-effect waves-light btn" value="Login">
+                                </div>
+                                <div class="form-group col s12 right-align">
+                                    <a href="@com.noeupapp.middleware.authorizationClient.forgotPassword.routes.ForgotPasswords.forgotPasswordAction()" class="text-muted text-small">Forgot your password?</a>
+                                </div>
+                                <div class="col s12">
+                                    <div class="divider mtb10"></div>
+                                </div>
+                                <a href="@com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.subscribe()" class="mtb10 waves-effect waves-light btn">Register</a>
+                                <div class="col s12">
+                                    <a type="button" class="mtb10 disabled waves-effect waves-light btn">
+                                        Login with Facebook
+                                    </a>
+                                </div>
+                                <div class="col s12">
+                                    <a type="button" class="mtb10 disabled waves-effect waves-light btn">
+                                        Login with Google
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col s12 l3"></div>
             </div>
-        </form>
+        }
     </div>
 
 
