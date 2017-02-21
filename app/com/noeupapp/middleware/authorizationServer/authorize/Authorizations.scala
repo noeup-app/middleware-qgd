@@ -172,11 +172,15 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
         }.recover {
           case e: ProviderException =>
             Logger.warn("Logins.authenticate failed : " + authenticate + " -> " + e.getMessage)
-            Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
+            /*Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
+              .flashing("error" -> Messages("invalid.credentials"))*/
+            Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
               .flashing("error" -> Messages("invalid.credentials"))
           case e: Exception => {
             Logger.error("An exception ocurred", e)
-            Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
+            /*Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
+              .flashing("error" -> Messages("internal.server.error"))*/
+            Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
               .flashing("error" -> Messages("internal.server.error"))
           }
         }

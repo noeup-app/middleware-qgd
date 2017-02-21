@@ -5,121 +5,70 @@
 
 @com.noeupapp.middleware.views.html.main(Messages("sign.up.title")) {
 
-    <body id="app" class="app body-auth body-wide">
-
-        <div class="main-container">
-            <div id="content" class="content-container">
-                    <!-- uiView:  --><section data-ui-view="" class="view-container animate-fade-up" style=""><div class="page-signin ng-scope" ng-controller="authCtrl">
-
-                <div class="signin-header">
-                    <section class="logo text-center">
-                        <h1><a href="/" class="ng-binding"><img class="logo_qgd" src="@com.noeupapp.middleware.controllers.routes.Assets.versioned("images/qgd.png")" alt="Logo qgd"></a></h1>
-                    </section>
-                </div>
-
-                <div class="wrapper">
-                    <div class="main-body">
-
-                        <div class="card bg-white">
-                        @helper.form(action = com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.subscribe()) {
-                            @* @helper.CSRF.formField *@
-                            <div class="card-content">
-
-                                    @request.flash.get("error").map { msg =>
-                                        <div class="alert ng-isolate-scope alert-danger alert-dismissible">
-                                            <a href="#" class="close" data-dismiss="alert">&times;</a>
-                                            @msg
-                                        </div>
-                                    }
-
-                                    <fieldset>
-                                        <div class="form-group">
-                                            <div class="ui-input-group">
-                                                <input type="text" required="" id="firstName" name="firstName" class="form-control">
-                                                <span class="input-bar"></span>
-                                                <label for="firstName">First name</label>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <div class="ui-input-group">
-                                                <input type="text" required="" id="lastName" name="lastName" class="form-control">
-                                                <span class="input-bar"></span>
-                                                <label for="lastName">Last name</label>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <div class="ui-input-group">
-                                                <input type="text" required="" id="email" name="email"  class="form-control">
-                                                <span class="input-bar"></span>
-                                                <label for="email">Email</label>
-                                            </div>
-                                        </div>
-                                        <div class="form-group">
-                                            <div class="ui-input-group">
-                                                <input type="password" required="" id="password" name="password" class="form-control">
-                                                <span class="input-bar"></span>
-                                                <label for="password">Password</label>
-                                            </div>
-                                        </div>
-                                        <div class="divider"></div>
-                                        <div class="form-group">
-                                            <p class="additional-info text-small">By clicking on sign up, you agree to <a href="javascript:;"><i>terms</i></a> and <a href="javascript:;"><i>privacy policy</i></a></p>
-                                        </div>
-                                    </fieldset>
-                            </div>
-                            <div class="card-action no-border text-right">
-                                <a href="@com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction()">Login</a>
-                                <input type="submit" class="color-primary" value="Sign Up">
-                            </div>
-                        }
-                        </div>
-                    </div>
-                </div>
-
-            </div></section>
-            </div>
-        </div>
-
-    </body>
-
-
-    @*<div class="container">
-        <form>
+    <div class="container">
+        @helper.form(action = com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.subscribe()) {
             <div class="row">
-                <div class="col s12 center-align">
-                    <h3>Admin access</h3>
-                    <h5>by noeup'App</h5>
-                </div>
+
                 <div class="col s12 l3"></div>
                 <div class="col s12 l6">
                     <div class="row card-panel logCard">
+                        <div class="col s12 center-align">
+                            <h4>Registration</h4>
+                            <h5>by noeup'App</h5>
+                        </div>
+                        <div class="col s12 divider mtb10"></div>
+                        @request.flash.get("error").map { msg =>
+                            <div class="col s12 alert ng-isolate-scope alert-danger alert-dismissible">
+                                <a href="#" class="close" data-dismiss="alert">&times;</a>
+                                @msg
+                            </div>
+                        }
                         <div class="input-field col s12">
-                            <input id="email" type="text" class="validate">
+                            <input id="email" name="email" type="text" class="validate">
                             <label for="email">Email *</label>
                         </div>
                         <div class="input-field col s12">
-                            <input id="password" type="password" class="validate">
+                            <input id="password" name="password" type="password" class="validate">
                             <label for="password">Password *</label>
                         </div>
                         <div class="input-field col s6">
-                            <input id="firstname" type="text" class="validate">
-                            <label for="firstname">First Name</label>
+                            <input id="firstName" name="lastName" type="text" class="validate">
+                            <label for="firstName">First Name</label>
                         </div>
                         <div class="input-field col s6">
-                            <input id="lastname" type="text" class="validate">
-                            <label for="lastname">Last Name</label>
+                            <input id="lastName" name="lastName" type="text" class="validate">
+                            <label for="lastName">Last Name</label>
+                        </div>
+                        <div class="col s12">
+                            <p class="additional-info text-small">By clicking on sign up, you agree to <a href="javascript:;"><i>terms</i></a> and <a href="javascript:;"><i>privacy policy</i></a></p>
                         </div>
                         <div class="col s12 center-align">
-                            <button type="button" class="waves-effect waves-light btn">
-                                Subscribe
-                            </button>
+                            <div class="row">
+                                <div class="col s12">
+                                    <input type="submit" class="mtb10 waves-effect waves-light btn" value="Subscribe">
+                                </div>
+                                <div class="col s12">
+                                    <div class="divider mtb10"></div>
+                                </div>
+                                <a href="@com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction()" class="mtb10 waves-effect waves-light btn">Login</a>
+                                <div class="col s12">
+                                    <a type="button" class="mtb10 disabled waves-effect waves-light btn">
+                                        Signup with Facebook
+                                    </a>
+                                </div>
+                                <div class="col s12">
+                                    <a type="button" class="mtb10 disabled waves-effect waves-light btn">
+                                        Signup with Google
+                                    </a>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col s12 l3"></div>
             </div>
-        </form>
-    </div>*@
+        }
+    </div>
 
 
 
