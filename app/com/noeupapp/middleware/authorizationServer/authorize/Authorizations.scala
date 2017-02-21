@@ -134,14 +134,14 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
       "state"        -> state,
       "scope"        -> scope
     ))
-    Ok(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq())))
+    Ok(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq()),None))
   }
 
   def authenticate() = Action.async { implicit request =>
     SignInProviderForm.form.bindFromRequest.fold(
       form => {
         Logger.warn("Authorize.authenticate form ko : " + form.errors)
-        Future.successful(BadRequest(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq()))))
+        Future.successful(BadRequest(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq()),Some(Messages("internal.server.error")))))
       },
       data => {
         val authenticate = Login(data.email, data.password, data.rememberMe)
@@ -171,17 +171,15 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
           }
         }.recover {
           case e: ProviderException =>
-            Logger.warn("Logins.authenticate failed : " + authenticate + " -> " + e.getMessage)
+            Logger.warn("Logins.authenticate failed : " + authenticate + " -> " + e.getMessage + " -> data : "+data)
             /*Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
               .flashing("error" -> Messages("invalid.credentials"))*/
-            Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
-              .flashing("error" -> Messages("invalid.credentials"))
+            BadRequest(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(SignInProviderForm.form, SocialProviderRegistry(Seq()),Some(Messages("internal.server.error"))))
           case e: Exception => {
             Logger.error("An exception ocurred", e)
             /*Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
               .flashing("error" -> Messages("internal.server.error"))*/
-            Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
-              .flashing("error" -> Messages("internal.server.error"))
+            BadRequest(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(SignInProviderForm.form, SocialProviderRegistry(Seq()),Some(Messages("internal.server.error"))))
           }
         }
       }
