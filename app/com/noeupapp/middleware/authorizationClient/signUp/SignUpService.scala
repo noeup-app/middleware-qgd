@@ -82,7 +82,7 @@ class SignUpService @Inject()(userService: UserService,
   def signUpConfirmation(token: String): Future[Expect[User]] = {
     for{
       userOpt <- EitherT(confirmEmailService.checkTokenValidity(token))
-      user    <- EitherT(userOpt |> (s"Wrong token or expired: $userOpt", BadRequest))
+      user    <- EitherT(userOpt |> (s"Token [$token] is wrong or expired", BadRequest))
       _       <- EitherT(userService.changeActiveStatus(user.id, true))
     } yield user
   }.run
