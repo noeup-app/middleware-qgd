@@ -84,8 +84,12 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
 
       case false =>
         SignUpForm.form.bindFromRequest.fold(
-          form => Future.successful(htmlSignUpsResult.badRequest(form)),
+          form => {
+            Logger.debug("In subscribe error "+form)
+            Future.successful(htmlSignUpsResult.badRequest(form))
+          },
           data => {
+            Logger.debug("In subscribe data "+data)
             val loginInfo = LoginInfo(CredentialsProvider.ID, data.email)
             signUp(loginInfo, data, htmlSignUpsResult)
           }

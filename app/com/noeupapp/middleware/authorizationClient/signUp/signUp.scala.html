@@ -31,12 +31,6 @@
                             }
                         </div>
                         <div class="col s12 divider mtb10"></div>
-                        @request.flash.get("error").map { msg =>
-                            <div class="col s12 alert ng-isolate-scope alert-danger alert-dismissible">
-                                <a href="#" class="close" data-dismiss="alert">&times;</a>
-                                @msg
-                            </div>
-                        }
                         <div class="input-field col s12">
                             <input id="email" name="email" type="text" class="validate">
                             <label for="email">Email *</label>
@@ -46,12 +40,12 @@
                             <label for="password">Password *</label>
                         </div>
                         <div class="input-field col s6">
-                            <input id="firstName" name="lastName" type="text" class="validate">
-                            <label for="firstName">First Name</label>
+                            <input id="firstName" name="firstName" type="text" class="validate">
+                            <label for="firstName">First Name *</label>
                         </div>
                         <div class="input-field col s6">
                             <input id="lastName" name="lastName" type="text" class="validate">
-                            <label for="lastName">Last Name</label>
+                            <label for="lastName">Last Name *</label>
                         </div>
                         <div class="col s12">
                             <p class="additional-info text-small">By clicking on sign up, you agree to <a href="javascript:;"><i>terms</i></a> and <a href="javascript:;"><i>privacy policy</i></a></p>
