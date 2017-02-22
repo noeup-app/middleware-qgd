@@ -39,7 +39,8 @@ class HtmlLoginsResult @Inject() (
   extends LoginsResult {
 
   override def badRequest(form: Form[LoginForm.Data])(implicit request: Request[Any]): Result =
-    BadRequest(com.noeupapp.middleware.authorizationClient.login.html.login(form, socialProviderRegistry))
+    Redirect(com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction())
+      .flashing("error" -> "Les identifiants que vous avez envoyé sont dans un format incorrect")
 
   override def userIsAuthenticated(): Result =
     Redirect(com.noeupapp.middleware.application.routes.Applications.index()) // TODO Check if Result return also a session

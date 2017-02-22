@@ -7,7 +7,7 @@
 @com.noeupapp.middleware.views.html.main(Messages("sign.in.title")) {
 
     <div class="container">
-        @helper.form(action = com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.authenticate()) {
+        @helper.form(action = com.noeupapp.middleware.authorizationClient.login.routes.Logins.authenticateAction()) {
             <div class="row">
                 <div class="col s12 l3"></div>
                 <div class="col s12 l6">

@@ -77,12 +77,26 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
    * @return The Silhouette environment.
    */
   @Provides
-  def provideEnvironment(
+  def provideBearerTokenEnvironment(
                           accountService: AccountService,
                           authenticatorService: AuthenticatorService[BearerTokenAuthenticator],
                           eventBus: EventBus): Environment[Account, BearerTokenAuthenticator] = {
 
     Environment[Account, BearerTokenAuthenticator](
+      accountService,
+      authenticatorService,
+      Seq(),
+      eventBus
+    )
+  }
+
+
+  @Provides
+  def provideCookieEnvironment(accountService: AccountService,
+                         authenticatorService: AuthenticatorService[CookieAuthenticator],
+                         eventBus: EventBus): Environment[Account, CookieAuthenticator] = {
+
+    Environment[Account, CookieAuthenticator](
       accountService,
       authenticatorService,
       Seq(),
@@ -110,7 +124,7 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
    * @return The authenticator service.
    */
   @Provides
-  def provideAuthenticatorService(
+  def provideBearerTokenAuthenticatorService(
                                  idGenerator: IDGenerator,
                                  cacheLayer: CacheLayer,
 //                                 dao: BearerAuthenticatorDAO,
@@ -123,6 +137,17 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
     val dao = new BearerAuthenticatorDAO(accessTokenService, userService)
     val config: BearerTokenAuthenticatorSettings = BearerTokenAuthenticatorSettings()
     new BearerTokenAuthenticatorService(config, dao, idGenerator, clock)
+  }
+
+  @Provides
+  def provideCookieAuthenticatorService(
+                                         fingerprintGenerator: FingerprintGenerator,
+                                         idGenerator: IDGenerator,
+                                         configuration: Configuration,
+                                         clock: Clock): AuthenticatorService[CookieAuthenticator] = {
+
+    val config = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
+    new CookieAuthenticatorService(config, None, fingerprintGenerator, idGenerator, clock)
   }
 
   /**
