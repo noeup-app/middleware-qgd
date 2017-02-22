@@ -15,6 +15,20 @@
                         <div class="col s12 center-align">
                             <h4>Registration</h4>
                             <h5>by noeup'App</h5>
+                            @request.flash.get("error").map { msg =>
+                                <div class="card red lighten-2">
+                                    <div class="card-content">
+                                        @msg
+                                    </div>
+                                </div>
+                            }
+                            @request.flash.get("info").map { msg =>
+                                <div class="card green lighten-4">
+                                    <div class="card-content">
+                                        @msg
+                                    </div>
+                                </div>
+                            }
                         </div>
                         <div class="col s12 divider mtb10"></div>
                         @request.flash.get("error").map { msg =>
