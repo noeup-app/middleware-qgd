@@ -188,15 +188,15 @@ class UserService @Inject()(userDAO: UserDAO,
   def addInactive(userInput: UserIn): Future[User] = Future {
     DB.withTransaction({ implicit c =>
       val userId = UUID.randomUUID()
-      val user = User(  userId,
-                        userInput.firstName,
-                        userInput.lastName,
-                        userInput.email,
-                        userInput.avatarUrl,
-                        DateTime.now,
-                        false,
-                        false,
-                        Some(tierAccessTokenConfig.tierClientId)
+      val user = User(userId,
+                      userInput.firstName,
+                      userInput.lastName,
+                      userInput.email,
+                      userInput.avatarUrl,
+                      DateTime.now,
+                      active = false,
+                      deleted = false,
+                      Some(tierAccessTokenConfig.tierClientId)
       )
       userDAO.add(user)
       user
