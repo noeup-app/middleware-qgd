@@ -1,12 +1,19 @@
-@(title: String, content: String, receiverName: String, senderName: Option[String], appName: String)(implicit messages: Messages)
+@import com.noeupapp.middleware.utils.mailer.EmailTemplate
+@(title: String, content: String, receiverName: String, senderName: Option[String], appName: String, emailConfig: EmailTemplate)(implicit messages: Messages)
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 <html xmlns="http://www.w3.org/1999/xhtml"><head></head>
 
-    <body style="margin-top:0 !important;margin-bottom:0 !important;margin-right:0 !important;margin-left:0 !important;padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;color: #DDD;">
-
-
+    <body style="margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+        padding-top: 0;
+        padding-bottom: 0;
+        padding-right: 0;
+        padding-left: 0;
+        color: #DDD;">
 
 
         <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -23,118 +30,182 @@
         <style type="text/css">
 
         body {
-        margin: 0 !important;
-        padding: 0;
-        background-color: #ffffff;
+            margin: 0 !important;
+            padding: 0;
+            background-color: #ffffff;
         }
+
         table {
-        border-spacing: 0;
-        font-family: sans-serif;
-        color: #333333;
+            border-spacing: 0;
+            font-family: sans-serif;
+            color: #333333;
         }
+
         td {
-        padding: 0;
+            padding: 0;
         }
+
         img {
-        border: 0;
+            border: 0;
         }
+
         div[style*="margin: 16px 0"] {
-        margin:0 !important;
+            margin: 0 !important;
         }
+
         .wrapper {
-        width: 100%;
-        table-layout: fixed;
-        -webkit-text-size-adjust: 100%;
-        -ms-text-size-adjust: 100%;
+            width: 100%;
+            table-layout: fixed;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
         }
+
         .webkit {
-        max-width: 600px;
-        margin: 0 auto;
+            max-width: 600px;
+            margin: 0 auto;
         }
+
         .outer {
-        Margin: 0 auto;
-        width: 100%;
-        max-width: 600px;
+            Margin: 0 auto;
+            width: 100%;
+            max-width: 600px;
         }
+
         .logo-image img {
-        width: 60%;
-        max-width: 600px;
-        height: auto;
+            width: 60%;
+            max-width: 600px;
+            height: auto;
         }
+
         .full-width-image img {
-        width: 100%;
-        max-width: 600px;
-        height: auto;
+            width: 100%;
+            max-width: 600px;
+            height: auto;
         }
+
         .inner {
-        padding: 10px;
+            padding: 10px;
         }
+
         p {
-        Margin: 0;
+            Margin: 0;
         }
+
         a {
-        color: #ee6a56;
-        text-decoration: underline;
+            color: #ee6a56;
+            text-decoration: underline;
         }
+
         .h1 {
-        font-size: 21px;
-        Margin-bottom: 18px;
+            font-size: 21px;
+            Margin-bottom: 18px;
         }
+
         .mail {
-        font-size: 14px;
-        color: #5c5858;
-        Margin-bottom: 12px;
+            font-size: 14px;
+            color: #5c5858;
+            Margin-bottom: 12px;
         }
+
         .one-column .contents {
-        text-align: left;
+            text-align: left;
         }
+
         .one-column p {
-        font-size: 14px;
-        Margin-bottom: 10px;
+            font-size: 14px;
+            Margin-bottom: 10px;
         }
 
         .footer-text {
-        font-family: sans-serif;
-        font-size: 12px;
-        color: #ffffff;
+            font-family: sans-serif;
+            font-size: 12px;
+            color: #ffffff;
         }
 
         </style>
 
 
-        <center class="wrapper" style="width:100%;table-layout:fixed;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;background-color: #f5f5f5;padding-top: 20px;">
-            <div class="webkit" style="max-width:600px;margin-top:0;margin-bottom:0;margin-right:auto;margin-left:auto;">
+        <center class="wrapper" style="width: 100%;
+            table-layout: fixed;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            background-color: #f5f5f5;
+            padding-top: 20px;">
+            <div class="webkit" style="max-width: 600px;
+                margin-top: 0;
+                margin-bottom: 0;
+                margin-right: auto;
+                margin-left: auto;">
                     <!--[if (gte mso 9)|(IE)]>
                 <table width="600" align="center" style="border-spacing:0;font-family:sans-serif;color:#333333;" >
                 <tr>
                 <td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;" >
                 <![endif]-->
-                <table class="outer" align="center" style="border-spacing:0;font-family:sans-serif;color:#333333;Margin: 10px auto;width:100%;max-width:600px;background-color: #FFF;border-radius: 6px;border: 1px solid #ececec;">
+                <table class="outer" align="center" style="border-spacing: 0;
+                    font-family: sans-serif;
+                    color: #333333;
+                    Margin: 10px auto;
+                    width: 100%;
+                    max-width: 600px;
+                    background-color: #FFF;
+                    border-radius: 6px;
+                    border: 1px solid #ececec;">
                     <tbody style="
                     "><tr>
-                        <td style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;">
-                            <table class="outer" align="center" style="border-spacing:0;font-family:sans-serif;Margin:0 auto;width:100%;max-width:600px;">
+                        <td style="padding-top: 0;
+                            padding-bottom: 0;
+                            padding-right: 0;
+                            padding-left: 0;">
+                            <table class="outer" align="center" style="border-spacing: 0;
+                                font-family: sans-serif;
+                                Margin: 0 auto;
+                                width: 100%;
+                                max-width: 600px;">
                                 <tbody><tr>
-                                    <td class="logo-image" align="left" style="padding-top: 10px;padding-bottom: 10px;padding-right:0;padding-left: 10px;border-radius: 6px 6px 0 0;">
-                                        <img src="http://www.noeupapp.com/images/mail/logo.png" alt="" style="border-width:0;width: auto;max-width:600px;height: 30px;display:block !important;float: right;margin-right: 10px;"><div style="
-                                    margin: 6px;
-                                    color: #6b6b6b;
-                                    ">@appName | @title</div></td>
+                                    <td class="logo-image" align="left" style="padding-top: 10px;
+                                        padding-bottom: 10px;
+                                        padding-right: 0;
+                                        padding-left: 10px;
+                                        border-radius: 6px 6px 0 0;">
+                                        <img src="@emailConfig.getLogoUrl" alt="" style="border-width: 0;
+                                            width: auto;
+                                            max-width: 600px;
+                                            height: 30px;
+                                            display: block !important;
+                                            float: right;
+                                            margin-right: 10px;"><div style="
+                                        margin: 6px;
+                                        color: #6b6b6b;
+                                    ">@emailConfig.getAppName | @title</div></td>
                                 </tr>
                                     <tr><td style="
-                                    border-top: 1px solid #e2e2e2;
+                                        border-top: 1px solid #e2e2e2;
                                     "></td></tr>
                                 </tbody></table>
                         </td>
                     </tr><tr style="
                     ">
-                        <td class="one-column" style="padding-top:0;padding-bottom:0;padding-right:0;padding-left:0;border-bottom: 1px solid #ececec;background-color: #ECECEC;">
-                            <table width="100%" style="border-spacing:0;font-family:sans-serif;color:#333333;">
+                        <td class="one-column" style="padding-top: 0;
+                            padding-bottom: 0;
+                            padding-right: 0;
+                            padding-left: 0;
+                            border-bottom: 1px solid #ececec;
+                            background-color: #ECECEC;">
+                            <table width="100%" style="border-spacing: 0;
+                                font-family: sans-serif;
+                                color: #333333;">
                                 <tbody><tr>
-                                    <td class="inner contents" style="padding-top:10px;padding-bottom:10px;padding-right:10px;padding-left:10px;text-align:left;">
-                                        <p class="h1" style="Margin:0;font-size:14px;Margin-bottom:10px;">
+                                    <td class="inner contents" style="padding-top: 10px;
+                                        padding-bottom: 10px;
+                                        padding-right: 10px;
+                                        padding-left: 10px;
+                                        text-align: left;">
+                                        <p class="h1" style="Margin: 0;
+                                            font-size: 14px;
+                                            Margin-bottom: 10px;">
                                             Hello @receiverName,
-                                            <br>you just received the following email@Html(senderName.map(" from "+ _ ).getOrElse("")) :
+                                            <br>
+                                            you just received the following email@Html(senderName.map(" from " + _).getOrElse("")) :
                                         </p>
                                     </td>
                                 </tr>
@@ -142,11 +213,23 @@
                         </td>
                     </tr>
                         <tr>
-                            <td class="inner one-column" style="padding-top:10px;padding-bottom:10px;padding-right:10px;padding-left:10px;">
-                                <table width="100%" style="border-spacing:0;font-family:sans-serif;color:#333333;">
+                            <td class="inner one-column" style="padding-top: 10px;
+                                padding-bottom: 10px;
+                                padding-right: 10px;
+                                padding-left: 10px;">
+                                <table width="100%" style="border-spacing: 0;
+                                    font-family: sans-serif;
+                                    color: #333333;">
                                     <tbody><tr>
-                                        <td class="inner contents" style="padding-top:10px;padding-bottom:10px;padding-right:10px;padding-left:10px;text-align:left;">
-                                            <p class="mail" style="Margin:0;color:#5c5858;font-size:14px;Margin-bottom:10px;">@Html(content)</p>
+                                        <td class="inner contents" style="padding-top: 10px;
+                                            padding-bottom: 10px;
+                                            padding-right: 10px;
+                                            padding-left: 10px;
+                                            text-align: left;">
+                                            <p class="mail" style="Margin: 0;
+                                                color: #5c5858;
+                                                font-size: 14px;
+                                                Margin-bottom: 10px;">@Html(content)</p>
                                         </td>
                                     </tr>
                                     </tbody></table>
@@ -154,27 +237,42 @@
                         </tr>
 
 
-
-
                     </tbody></table>
 
-                <table class="outer" align="center" style="border-spacing:0;font-family:sans-serif;color:#333333;Margin: 10px auto;width:100%;max-width:600px;">
+                <table class="outer" align="center" style="border-spacing: 0;
+                    font-family: sans-serif;
+                    color: #333333;
+                    Margin: 10px auto;
+                    width: 100%;
+                    max-width: 600px;">
                     <tbody style="
                     ">
 
                         <tr>
-                            <td class="one-column" style="padding-top: 10px;padding-bottom:0;padding-right:0;padding-left:0;">
-                                <table width="100%" style="border-spacing:0;font-family:sans-serif;color:#333333;font-size: 9px;">
+                            <td class="one-column" style="padding-top: 10px;
+                                padding-bottom: 0;
+                                padding-right: 0;
+                                padding-left: 0;">
+                                <table width="100%" style="border-spacing: 0;
+                                    font-family: sans-serif;
+                                    color: #333333;
+                                    font-size: 9px;">
                                     <tbody><tr>
-                                        <td class="inner contents" style="padding-top:0;padding-bottom: 10px;padding-right:0;padding-left:10px;text-align:left;">
+                                        <td class="inner contents" style="padding-top: 0;
+                                            padding-bottom: 10px;
+                                            padding-right: 0;
+                                            padding-left: 10px;
+                                            text-align: left;">
                                             <p class="mail" style="
-                                            font-size: 10px;
-                                            ">Your're receiving this email because you subscribed to bebroker.net and your address xx@@yy.com is registered on the plateform.
-                                                <br><br>bebroker SAS
-                                                <br>contact@@bebroker.net
+                                                font-size: 10px;
+                                            ">Your're receiving this email because you subscribed to @emailConfig.getAppLink.
+                                                <br><br>@emailConfig.getCompanyName
+                                                <br>@emailConfig.getCompanyEmail
                                                 <br>2017 ©
                                             </p>
-                                            <p class="mail" style="text-align: right;font-size: 10px;color: #b7b7b7;">
+                                            <p class="mail" style="text-align: right;
+                                                font-size: 10px;
+                                                color: #b7b7b7;">
                                                 <i> @appName, a noeup'App© application</i>
                                             </p>
                                         </td>
@@ -182,7 +280,6 @@
                                     </tbody></table>
                             </td>
                         </tr>
-
 
 
                     </tbody></table>

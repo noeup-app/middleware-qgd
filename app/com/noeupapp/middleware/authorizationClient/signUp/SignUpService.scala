@@ -12,13 +12,10 @@ import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.entities.user.{User, UserIn, UserService}
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
-import com.noeupapp.middleware.utils.MessageEmail
 import com.noeupapp.middleware.utils.TypeCustom._
 import com.noeupapp.middleware.utils.FutureFunctor._
-import play.api.Logger
-import play.api.libs.json.Json
+import com.noeupapp.middleware.utils.mailer.MessageEmail
 import play.api.mvc.Results._
-
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
