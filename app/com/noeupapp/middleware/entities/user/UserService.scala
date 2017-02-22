@@ -210,7 +210,7 @@ class UserService @Inject()(userDAO: UserDAO,
     * @param password non hashed pwd
     */
   def validateUser(email: String, password: String): Future[Expect[Option[User]]] = {
-    Logger.debug(s"--- Into validateUser --- Email: $email --- PWD: $password")
+    Logger.debug(s"--- Into validateUser --- Email: $email")
     val result: ValidationFuture[Option[User]] =
     for{
       user         <- EitherT(findByEmail(email))
