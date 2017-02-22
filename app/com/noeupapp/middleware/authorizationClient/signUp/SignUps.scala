@@ -86,7 +86,10 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
 
       case false =>
         SignUpForm.form.bindFromRequest.fold(
-          form => Future.successful(htmlSignUpsResult.badRequest(form)),
+          form => {
+            Logger.debug(s"Sign up form error : ${form.errors}")
+            Future.successful(htmlSignUpsResult.badRequest(form))
+          },
           data => {
             val loginInfo = LoginInfo(CredentialsProvider.ID, data.email)
             signUp(loginInfo, data, htmlSignUpsResult)
@@ -107,9 +110,13 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
   def signUp(loginInfo: LoginInfo, data: SignUpForm.Data, authorizationResult: SignUpsResult)(implicit request: Request[Any]): Future[Result] = {
     accountService.retrieve(loginInfo).flatMap {
 
-      case Some(user) => Future.successful(authorizationResult.userAlreadyExists())
+      case Some(user) =>
+        Logger.debug(s"Sign up, user ${data.firstName} ${data.lastName} <${data.email}> found in database, abording")
+        Future.successful(authorizationResult.userAlreadyExists())
 
-      case None => signUpService.signUp(loginInfo, data, authorizationResult).flatMap {
+      case None =>
+        Logger.debug(s"Sign up user ${data.firstName} ${data.lastName} <${data.email}>...")
+        signUpService.signUp(loginInfo, data, authorizationResult).flatMap {
         case -\/(e) =>
 
           Logger.error(s"An exception occurred $e")
