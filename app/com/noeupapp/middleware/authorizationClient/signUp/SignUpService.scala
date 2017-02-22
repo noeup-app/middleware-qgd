@@ -59,7 +59,8 @@ class SignUpService @Inject()(userService: UserService,
           firstName = Some(data.firstName),
           lastName  = Some(data.lastName),
           email     = Some(data.email),
-          avatarUrl = None
+          avatarUrl = None,
+          ownedByClient = data.ownedBy
         )
         for {
         //          avatar <- avatarService.retrieveURL(data.email)

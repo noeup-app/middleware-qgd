@@ -196,7 +196,7 @@ class UserService @Inject()(userDAO: UserDAO,
                       DateTime.now,
                       active = false,
                       deleted = false,
-                      Some(tierAccessTokenConfig.tierClientId)
+                      userInput.ownedByClient
       )
       userDAO.add(user)
       user
