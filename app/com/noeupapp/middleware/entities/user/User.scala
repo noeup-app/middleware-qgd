@@ -24,8 +24,9 @@ case class UserIn(
                    firstName: Option[String],
                    lastName: Option[String],
                    email: Option[String],
-                   avatarUrl: Option[String]
-                 )
+                   avatarUrl: Option[String],
+                   ownedByClient: Option[String] = None
+                  )
 
 case class UserOut(
                     id: UUID,

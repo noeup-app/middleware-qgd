@@ -188,15 +188,15 @@ class UserService @Inject()(userDAO: UserDAO,
   def addInactive(userInput: UserIn): Future[User] = Future {
     DB.withTransaction({ implicit c =>
       val userId = UUID.randomUUID()
-      val user = User(  userId,
-                        userInput.firstName,
-                        userInput.lastName,
-                        userInput.email,
-                        userInput.avatarUrl,
-                        DateTime.now,
-                        false,
-                        false,
-                        Some(tierAccessTokenConfig.tierClientId)
+      val user = User(userId,
+                      userInput.firstName,
+                      userInput.lastName,
+                      userInput.email,
+                      userInput.avatarUrl,
+                      DateTime.now,
+                      active = false,
+                      deleted = false,
+                      userInput.ownedByClient
       )
       userDAO.add(user)
       user
@@ -210,7 +210,7 @@ class UserService @Inject()(userDAO: UserDAO,
     * @param password non hashed pwd
     */
   def validateUser(email: String, password: String): Future[Expect[Option[User]]] = {
-    Logger.debug(s"--- Into validateUser --- Email: $email --- PWD: $password")
+    Logger.debug(s"--- Into validateUser --- Email: $email")
     val result: ValidationFuture[Option[User]] =
     for{
       user         <- EitherT(findByEmail(email))

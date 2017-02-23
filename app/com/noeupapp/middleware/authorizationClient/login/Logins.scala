@@ -6,7 +6,7 @@ import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.api.util.Clock
-import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
+import com.mohiva.play.silhouette.impl.authenticators.{BearerTokenAuthenticator, CookieAuthenticator}
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers._
 import play.api.i18n.MessagesApi
@@ -17,8 +17,10 @@ import Login.authenticateFormat
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.RequestHelper
+import com.typesafe.config.Config
 
 import scala.concurrent.Future
+import scala.concurrent.duration.FiniteDuration
 
 /**
   * The credentials auth controller.
@@ -34,7 +36,7 @@ import scala.concurrent.Future
   */
 class Logins @Inject()(
                         val messagesApi: MessagesApi,
-                        val env: Environment[Account, BearerTokenAuthenticator],
+                        val env: Environment[Account, CookieAuthenticator],
                         userService: AccountService,
                         authInfoRepository: AuthInfoRepository,
                         credentialsProvider: CredentialsProvider,
@@ -43,7 +45,7 @@ class Logins @Inject()(
                         ajaxLoginsResult: AjaxLoginsResult,
                         configuration: Configuration,
                         clock: Clock)
-  extends Silhouette[Account, BearerTokenAuthenticator] {
+  extends Silhouette[Account, CookieAuthenticator] {
 
 
   /**
@@ -89,7 +91,8 @@ class Logins @Inject()(
         authenticate(authenticateData, ajaxLoginsResult)
       case false =>
         LoginForm.form.bindFromRequest.fold(
-          form => Future.successful(htmlLoginsResult.badRequest(form)),
+          form =>
+            Future.successful(htmlLoginsResult.badRequest(form)),
           data => {
             val authenticateData = Login(data.email, data.password, data.rememberMe)
             authenticate(authenticateData, htmlLoginsResult)
@@ -98,12 +101,16 @@ class Logins @Inject()(
     }
 
   }
+
+
   def authenticate(authenticate: Login, loginsResult: LoginsResult)(implicit request: Request[Any]): Future[Result] = {
+    Logger.debug(s"Try to login with ${authenticate.identifier}...")
     val credentials = authenticate.getCredentials
     credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
       val result = loginsResult.userIsAuthenticated()
       userService.retrieve(loginInfo).flatMap {
         case Some(user) =>
+//          val c = configuration.underlying
           env.authenticatorService.create(loginInfo).map {
             case authenticator if authenticate.rememberMe =>
 //              authenticator.copy(
@@ -116,6 +123,7 @@ class Logins @Inject()(
           }.flatMap { authenticator =>
             env.eventBus.publish(LoginEvent(user, request, request2Messages))
             env.authenticatorService.init(authenticator).flatMap { v =>
+              Logger.debug(s"Logged (${authenticate.identifier})")
               env.authenticatorService.embed(v, result)
             }
           }

@@ -1,8 +1,11 @@
 @import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailForm
 
+
+
 @(data: ConfirmEmailForm.Data)(implicit request: RequestHeader, messages: Messages)
 
 @com.noeupapp.middleware.views.html.main(Messages("confirm.email.title")) {
+
 
     <div class="container">
 
@@ -18,53 +21,64 @@
 
                     <div class="col s12 divider mtb10"></div>
 
-
                     @if(data.user != null) {
-                        <div class="col s12">
-                            <p class="additional-info text-small">
-                                Hello <b>@data.user.firstName <font style="text-transform: uppercase;">@data.user.lastName</font></b>
-                                ,
-                            </p>
-                            <p>
-                                Your account has been activated with the following mail address: <b>@data.user.email</b>
-                                .
-                            </p>
+                        @if(data.message == "Activated") {
+                            <div class="col s12">
+                                <p class="additional-info text-small">
+                                    Hello <b>@data.user.firstName <font style="text-transform: uppercase;">@data.user.lastName</font></b>,
+                                </p>
+                                <p>
+                                    Your account has been activated with the following mail address: <b>@data.user.email</b>.
+                                </p>
 
-                            <div class="col s12 center-align">
-                                <div class="row">
-                                    <div class="col s12">
-                                        <div class="divider mtb10"></div>
+                                <div class="col s12 center-align">
+                                    <div class="row">
+                                        <div class="col s12">
+                                            <div class="divider mtb10"></div>
+                                        </div>
+                                        <a href="@com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction()" class="mtb10 waves-effect waves-light btn">
+                                            Login
+                                        </a>
                                     </div>
-                                    <a href="@com.noeupapp.middleware.authorizationClient.login.routes.Logins.loginAction()" class="mtb10 waves-effect waves-light btn">
-                                        Login
-                                    </a>
+                                </div>
+                            </div>
+                        }
+                        @if(data.message == "Resend") {
+                            <div class="col s12">
+                                <p class="additional-info text-small">
+                                    An email confirmation have been sent to the following address: <b>@data.user.email</b>
+                                </p>
+                            </div>
+                        }
+                    } else {
+                        <div class="row">
+                            <div class="col s12">
+                                <div class="card red lighten-2">
+                                    <div class="card-content">
+                                    @data.message
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    } else {
-                        <div class="col s12 alert ng-isolate-scope alert-danger alert-dismissible">
-                            <a href="#" class="close" data-dismiss="alert">&times;</a>
-                            @data.message
-                        </div>
 
+                        @helper.form(action = com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.resendingEmailConfirmation()) {
+                            <div class="row">
+                                <div class="input-field col s12">
+                                    <input id="email" name="email" type="text" class="validate">
+                                    <label for="email">Email *</label>
+                                </div>
+                            </div>
 
-                        @* TODO: create new root
-                        @*<div class="row">*@
-                            @*<div class="input-field col s12">*@
-                                @*<input id="email" name="email" type="text" class="validate">*@
-                                @*<label for="email">Email *</label>*@
-                            @*</div>*@
-                        @*</div>*@
+                            <div class="col s12 center-align">
+                                <div class="row">
+                                    <div class="col s4">
+                                        <input type="submit" class="mtb10 waves-effect waves-light btn" value="Subscribe">
+                                    </div>
+                                </div>
+                            </div>
+                        }
 
-                        @*<div class="col s12 center-align">*@
-                            @*<div class="row">*@
-                                @*<div class="col s4">*@
-                                    @*<input type="submit" class="mtb10 waves-effect waves-light btn" value="Subscribe">*@
-                                @*</div>*@
-                            @*</div>*@
-                        @*</div>*@
                     }
-
 
                 </div>
             </div>

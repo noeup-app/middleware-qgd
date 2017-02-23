@@ -13,7 +13,8 @@ GET         /login                               com.noeupapp.middleware.authori
 
 GET         /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.signUpActionGet
 POST        /signUp                              com.noeupapp.middleware.authorizationClient.signUp.SignUps.subscribe
-GET        /signUp/confirmation/:token          com.noeupapp.middleware.authorizationClient.signUp.SignUps.emailConfirmation(token: String)
+GET         /signUp/confirmation/:token          com.noeupapp.middleware.authorizationClient.signUp.SignUps.emailConfirmation(token: String)
+POST        /signUp/confirmation                 com.noeupapp.middleware.authorizationClient.signUp.SignUps.resendingEmailConfirmation
 
 GET         /logout                              com.noeupapp.middleware.authorizationClient.login.Logins.logOut
 GET         /forgotPassword                      com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswords.forgotPasswordGet
@@ -46,8 +47,8 @@ POST        /oauth2/authenticate                com.noeupapp.middleware.authoriz
 # OAuth2 Routes
 POST        /oauth2/access_token                 com.noeupapp.middleware.authorizationServer.oauth2.OAuth2s.accessToken
 
-POST        /oauth2/alternative_access_token     com.noeupapp.middleware.oauth2.AlternativeFlows.alternativeFlow
-GET         /oauth2/tier/access_token             com.noeupapp.middleware.oauth2.TierAccessToken.getAccessToken
+POST        /oauth2/alternative_access_token    com.noeupapp.middleware.oauth2.AlternativeFlows.alternativeFlow
+GET         /oauth2/tier/access_token           com.noeupapp.middleware.oauth2.TierAccessToken.getAccessToken
 
 
 

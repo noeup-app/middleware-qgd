@@ -70,7 +70,7 @@ class ConfirmEmailService @Inject() (pool: Pool,
     val domain = confirmEmailConfig.url
     for {
       userOpt <- EitherT(userService.findByEmail(email))
-      user    <- EitherT(userOpt |> "This is not user with this email")
+      user    <- EitherT(userOpt |> s"Couldn't find user with this email: $email")
       token   <- EitherT(generateAndSaveToken(user))
       send    <- EitherT{
         val correctDomain = if (domain.endsWith("/")) domain else domain + "/"
@@ -96,8 +96,20 @@ class ConfirmEmailService @Inject() (pool: Pool,
       }
     } yield {
       Logger.info("Account confirmation email sent")
-      send
+      email
     }
+  }.run
+
+
+  def resendingEmail(email: String): Future[Expect[User]] = {
+    for {
+      check <- EitherT(userService.findInactive(email))
+      _ <- EitherT(userService.getUserFromOpt(check))
+      email <- EitherT(sendEmailConfirmation(email))
+      userOpt <- EitherT(userService.findByEmail(email))
+      user <- EitherT(userService.getUserFromOpt(userOpt))
+      logger2 = Logger.debug("USER RESULT " + user)
+    } yield user
   }.run
 }
 

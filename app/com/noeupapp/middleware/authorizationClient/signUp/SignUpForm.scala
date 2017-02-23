@@ -17,7 +17,8 @@ object SignUpForm {
       "firstName" -> nonEmptyText,
       "lastName" -> nonEmptyText,
       "email" -> email,
-      "password" -> nonEmptyText
+      "password" -> nonEmptyText,
+      "ownedBy" -> optional(text)
     )(Data.apply)(Data.unapply)
   )
 
@@ -33,7 +34,8 @@ object SignUpForm {
     firstName: String,
     lastName: String,
     email: String,
-    password: String)
+    password: String,
+    ownedBy: Option[String])
 
   implicit val signUpFormDataFormat = Json.format[Data]
 }

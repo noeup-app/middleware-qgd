@@ -63,6 +63,7 @@ class SocialAuths @Inject()(
             result <- env.authenticatorService.embed(value, authorizationResult.userSuccessfullyAuthenticated())
           } yield {
             env.eventBus.publish(LoginEvent(user, request, request2Messages))
+            logger.debug(s"Authenticate with $provider")
             result
           }
         }
