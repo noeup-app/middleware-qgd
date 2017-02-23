@@ -1,4 +1,4 @@
-package com.noeupapp.middleware.authorizationClient.login
+package com.noeupapp.middleware.authorizationClient.loginInfo
 
 import anorm.SqlParser._
 import anorm._
@@ -12,7 +12,4 @@ object LoginInfo {
       case provider_id ~ provider_key => api.LoginInfo(provider_id, provider_key)
     }
   }
-
-  // TODO rapatriate DAO !!!!
-
 }
