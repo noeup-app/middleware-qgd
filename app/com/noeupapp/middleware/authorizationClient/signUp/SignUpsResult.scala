@@ -39,7 +39,8 @@ class HtmlSignUpsResult @Inject() (
     BadRequest(com.noeupapp.middleware.authorizationClient.signUp.html.signUp(form))
 
   override def userSuccessfullyCreated(): Result =
-    Redirect(com.noeupapp.middleware.application.routes.Applications.index())
+    Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.signUpActionGet())
+      .flashing("info" -> Messages("user.successfully.created"))
 
   override def manageError(): Result =
     Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.subscribe())

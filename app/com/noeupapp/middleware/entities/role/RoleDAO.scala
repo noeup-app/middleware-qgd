@@ -5,6 +5,7 @@ import java.util.UUID
 
 import anorm._
 import anorm.SqlParser._
+import com.noeupapp.middleware.entities.user.User
 
 import scala.language.postfixOps
 
@@ -43,6 +44,19 @@ class RoleDAO {
       .on(
         'userId -> userId
       ).as(scalar[String] *)
+  }
+
+
+  def getIdByRoleName(name: String)(implicit connection: Connection): Option[UUID] = {
+    SQL(
+      """
+        SELECT id
+        FROM entity_roles role
+        WHERE role_name = {name};
+      """)
+      .on(
+        'name -> name
+      ).as(scalar[UUID].singleOpt)
   }
 
 }

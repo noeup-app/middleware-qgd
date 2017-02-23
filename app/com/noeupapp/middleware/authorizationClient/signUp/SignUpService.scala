@@ -9,6 +9,7 @@ import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailServ
 import com.noeupapp.middleware.authorizationClient.forgotPassword.{ForgotPasswordConfig, ForgotPasswordService}
 import com.noeupapp.middleware.authorizationClient.signUp.SignUpForm.Data
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
+import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.entities.user.{User, UserIn, UserService}
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
@@ -33,6 +34,7 @@ import scalaz.{-\/, EitherT, \/-}
   */
 class SignUpService @Inject()(userService: UserService,
                               accountService: AccountService,
+                              roleService: RoleService,
                               forgotPasswordService: ForgotPasswordService,
                               confirmEmailService: ConfirmEmailService,
                               forgotPasswordConfig: ForgotPasswordConfig,
@@ -84,7 +86,31 @@ class SignUpService @Inject()(userService: UserService,
       userOpt <- EitherT(confirmEmailService.checkTokenValidity(token))
       user    <- EitherT(userOpt |> (s"Token [$token] is wrong or expired", BadRequest))
       _       <- EitherT(userService.changeActiveStatus(user.id, true))
+      _       <- EitherT(grantToAdminFirstUser(user))
     } yield user
   }.run
+
+  def grantToAdminFirstUser(user: User): Future[Expect[Boolean]] = {
+    for{
+      nbActiveUser  <- EitherT(userService.getNumberActiveUser())
+      updated       <- EitherT(updateFirstUserFlow(user,nbActiveUser))
+    } yield true
+  }.run
+
+  def updateUserRoleFlow(user: User, superadminRoleName : String): Future[Expect[Boolean]] = {
+    for{
+      idSuperadminRole    <- EitherT(roleService.getIdByRoleName("superadmin"))
+      roleIsSet           <- EitherT(roleService.setRoleOptionToUser(idSuperadminRole,user))
+    } yield roleIsSet
+  }.run
+
+  def updateFirstUserFlow(user: User, nbActiveUser: Int): Future[Expect[Boolean]] = {
+    var superadminRoleName : String  = "superadmin";
+    nbActiveUser match {
+      case 1 => updateUserRoleFlow(user, superadminRoleName)
+      case _ => Future.successful(\/-(true))
+    }
+  }
+
 
 }

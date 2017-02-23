@@ -258,6 +258,18 @@ class UserService @Inject()(userDAO: UserDAO,
       \/-(userDAO.updateActive(userId, status))
     }
   }
+  /**
+    * Get number of active user in db
+    * @return
+    */
+  def getNumberActiveUser(): Future[Expect[Int]] = {
+    TryBDCall{ implicit c =>
+      \/-(userDAO.countActiveUsers())
+    }
+  }
+
+
+
 
   /**
     * Set deleted field to true

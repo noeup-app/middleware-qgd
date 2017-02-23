@@ -254,6 +254,11 @@ class Evolution extends Controller {
         |  'Administrators'
         |);
         |
+        |INSERT INTO entity_roles (id, role_name)
+        |VALUES (
+        |  '50000000-0000-0000-0000-000000000000',
+        |  'superadmin'
+        |);
         |
         |
         |INSERT INTO middle_versions (id, applied_version)
