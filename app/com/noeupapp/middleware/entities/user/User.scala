@@ -18,7 +18,17 @@ case class User(
                  active: Boolean,
                  deleted: Boolean,
                  ownedByClient: Option[String]
-               )
+               ) {
+
+  lazy val toUserIn: UserIn =
+    UserIn(
+      firstName,
+      lastName,
+      email,
+      avatarUrl,
+      ownedByClient
+    )
+}
 
 case class UserIn(
                    firstName: Option[String],
@@ -26,7 +36,24 @@ case class UserIn(
                    email: Option[String],
                    avatarUrl: Option[String],
                    ownedByClient: Option[String] = None
-                  )
+                  ) {
+
+  lazy val toUser: User =
+    User(
+      UUID.randomUUID(),
+      firstName,
+      lastName,
+      email,
+      avatarUrl,
+      DateTime.now(),
+      active = true,
+      deleted = false,
+      ownedByClient
+    )
+
+  lazy val toNotActivatedUser: User = toUser.copy(active = false)
+
+}
 
 case class UserOut(
                     id: UUID,
@@ -66,6 +93,8 @@ object User {
   implicit def toUserOut(u:User):UserOut = UserOut(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created, u.active, u.ownedByClient)
 
   implicit def toUser(u:UserOut):User = User(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created, u.active, deleted = false, u.ownedByClient)
+
+
 
 
 

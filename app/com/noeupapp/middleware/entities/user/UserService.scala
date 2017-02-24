@@ -5,7 +5,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordHasher
-import com.noeupapp.middleware.authorizationClient.login.PasswordInfoDAO
+import com.noeupapp.middleware.authorizationClient.authInfo.PasswordInfoDAO
 import com.noeupapp.middleware.entities.entity.EntityService
 import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
@@ -140,18 +140,7 @@ class UserService @Inject()(userDAO: UserDAO,
 
   private def addDao(userInput: UserIn): Future[Expect[UserOut]] = {
     TryBDCall[UserOut] { implicit c =>
-      val userId = UUID.randomUUID()
-      val user = User(
-        id = userId,
-        firstName = userInput.firstName,
-        lastName = userInput.lastName,
-        email = userInput.email,
-        avatarUrl = userInput.avatarUrl,
-        created = DateTime.now,
-        active = true,
-        deleted = false,
-        ownedByClient = Some(tierAccessTokenConfig.tierClientId)
-      )
+      val user = userInput.toUser
       userDAO.add(user)
       \/-(user)
     }
@@ -178,6 +167,12 @@ class UserService @Inject()(userDAO: UserDAO,
       user
     })
   }
+
+  def add(user: User): Future[Expect[User]] =
+    TryBDCall { implicit c =>
+      userDAO.add(user)
+      \/-(user)
+    }
 
 
   /**
