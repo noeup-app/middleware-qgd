@@ -72,6 +72,23 @@
                 <div class="col s12 l3"></div>
             </div>
         }
+
+
+        @if(socialProviders.providers.nonEmpty) {
+            <div style="margin: 20px; padding: 10px; background-color:#263237 ;">
+                <p style="color:white ;">@Messages("or.use.social")</p>
+                <div>
+                @for(p <- socialProviders.providers if p.id != "clef") {
+                    <a href="@com.noeupapp.middleware.authorizationClient.socialAuth.routes.SocialAuths.authenticateAction(p.id)" class="provider @p.id" title="@Messages(p.id)"><img src="@com.noeupapp.middleware.controllers.routes.Assets.versioned(s"images/providers/${p.id}.png")" width="64px" height="64px" alt="@Messages(p.id)"></a>
+                }
+                </div>
+                @defining(socialProviders.get[ClefProvider]) { clef =>
+                    @if(clef.isDefined) {
+                        <script type="text/javascript" src="https://clef.io/v3/clef.js" class="clef-button" data-app-id="@clef.get.settings.clientID" data-color="blue" data-style="flat" data-redirect-url="@clef.get.settings.redirectURL" data-type="login"></script>
+                    }
+                }
+            </div>
+        }
     </div>
 
 
