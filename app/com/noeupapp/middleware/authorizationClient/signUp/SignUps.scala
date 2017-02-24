@@ -109,19 +109,25 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
     * @return
     */
   def signUp(loginInfo: LoginInfo, data: SignUpForm.Data, authorizationResult: SignUpsResult)(implicit request: Request[Any]): Future[Result] = {
-    accountService.retrieve(loginInfo).flatMap {
+    userService.findByEmail(data.email).flatMap {
 
-      case Some(user) =>
+      case \/-(Some(user)) =>
         Logger.debug(s"Sign up, user ${data.firstName} ${data.lastName} <${data.email}> found in database, abording")
         Future.successful(authorizationResult.userAlreadyExists())
 
-      case None =>
-        Logger.debug(s"Sign up user ${data.firstName} ${data.lastName} <${data.email}>...")
-        signUpService.signUp(loginInfo, data, authorizationResult).flatMap {
-        case -\/(e) =>
+      case -\/(error) =>
+        Logger.error(s"An exception occurred $error")
+        Future.successful(authorizationResult.manageError())
 
+      case \/-(None) =>
+        Logger.debug(s"Sign up user ${data.firstName} ${data.lastName} <${data.email}>...")
+
+        signUpService.signUp(loginInfo, data, authorizationResult).flatMap {
+
+        case -\/(e) =>
           Logger.error(s"An exception occurred $e")
           Future.successful(authorizationResult.manageError())
+
         case \/-(account) =>
           for {
             authenticator <- env.authenticatorService.create(loginInfo)
@@ -134,6 +140,7 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
             result
           }
       }
+
     }.recover {
       case e: Exception =>
         Logger.error(s"An exception occurred $e")

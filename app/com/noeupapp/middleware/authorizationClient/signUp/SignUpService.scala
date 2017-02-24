@@ -3,7 +3,7 @@ package com.noeupapp.middleware.authorizationClient.signUp
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
-import com.mohiva.play.silhouette.api.util.PasswordHasher
+import com.mohiva.play.silhouette.api.util.{PasswordHasher, PasswordInfo}
 import com.mohiva.play.silhouette.api._
 import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailService
 import com.noeupapp.middleware.authorizationClient.forgotPassword.{ForgotPasswordConfig, ForgotPasswordService}
@@ -19,7 +19,6 @@ import com.noeupapp.middleware.utils.FutureFunctor._
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.Results._
-
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -51,43 +50,49 @@ class SignUpService @Inject()(userService: UserService,
     * @param authorizationResult
     * @return
     */
-  def signUp(loginInfo: LoginInfo, data: Data, authorizationResult: SignUpsResult): Future[Expect[(Account)]] = {
+  def signUp(loginInfo: LoginInfo, data: Data, authorizationResult: SignUpsResult): Future[Expect[Account]] = {
     accountService.retrieve(loginInfo).flatMap {
-      case Some(user) => Future.successful(-\/(FailError("User already exist")))
+      case Some(user) => Future.successful(-\/(FailError(s"User (${user.user.email}) already exist")))
 
       case None =>
-        val authInfo = passwordHasher.hash(data.password)
-        val newUser = UserIn(
-          firstName = Some(data.firstName),
-          lastName  = Some(data.lastName),
-          email     = Some(data.email),
-          avatarUrl = None,
-          ownedByClient = data.ownedBy
-        )
-        for {
-        //          avatar <- avatarService.retrieveURL(data.email)
 
-        //          user      <- userService.simplyAdd(newUser) // TODO modify simplyAdd and generalise this type off call
-          user      <- userService.addInactive(newUser) // TODO modify simplyAdd and generalise this type off call
+        val res: Future[Expect[Account]] = {
+          val authInfo = passwordHasher.hash(data.password)
 
-          account   <- accountService.save(Account(loginInfo, user, None))
-          _         <- authInfoRepository.add(loginInfo, authInfo)
+          val newUser = UserIn(
+            firstName = Some(data.firstName),
+            lastName  = Some(data.lastName),
+            email     = Some(data.email),
+            avatarUrl = None,
+            ownedByClient = data.ownedBy
+          ).toNotActivatedUser
 
-          confirm   <- confirmEmailService.sendEmailConfirmation(data.email)
-        } yield {
-          \/-(account)
+          signUpFlow(loginInfo, newUser, authInfo, data.email)
         }
+        res
     }
   }.recover {
     case e: Exception => -\/(FailError(e))
   }
 
+
+  private def signUpFlow(loginInfo: LoginInfo, user: User, authInfo: PasswordInfo, email: String): Future[Expect[Account]] = {
+
+    lazy val authInfoRepositoryAdd: Future[Expect[PasswordInfo]] = authInfoRepository.add[PasswordInfo](loginInfo, authInfo).map(e => \/-(e))
+
+    for {
+      account <- EitherT(accountService.save(loginInfo, user))
+      _       <- EitherT(authInfoRepositoryAdd)
+      _       <- EitherT(confirmEmailService.sendEmailConfirmation(email))
+    } yield account
+  }.run
+
   def signUpConfirmation(token: String): Future[Expect[User]] = {
     for{
       userOpt <- EitherT(confirmEmailService.checkTokenValidity(token))
       user    <- EitherT(userOpt |> (s"Token [$token] is wrong or expired", BadRequest))
-      _       <- EitherT(userService.changeActiveStatus(user.id, true))
       _       <- EitherT(grantToAdminFirstUser(user))
+      _       <- EitherT(userService.changeActiveStatus(user.id, status = true))
     } yield user
   }.run
 
