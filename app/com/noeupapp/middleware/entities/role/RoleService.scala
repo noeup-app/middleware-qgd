@@ -17,13 +17,13 @@ import scalaz.{-\/, \/-}
 class RoleService  @Inject() (relationUserRole: RelationUserRoleDAO,
                               roleDAO: RoleDAO) {
 
-  def addUserRoles(user: Account): Future[Boolean] = Future {
+  /*def addUserRoles(user: Account): Future[Expect[Boolean]] = Future {
 //    DB.withTransaction({ implicit c =>
 //      // TODO
 ////      user.roles.map(relationUserRole.addRoleToUser(user.id, _))
 //    })
     true
-  }
+  }*/
 
 
 

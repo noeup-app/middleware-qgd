@@ -7,9 +7,10 @@ import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.services.IdentityService
 import com.mohiva.play.silhouette.impl.providers.CommonSocialProfile
-import com.noeupapp.middleware.entities.organisation.OrganisationService
+import com.noeupapp.middleware.authorizationClient.loginInfo.{AuthLoginInfo, AuthLoginInfoService}
+import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
 import com.noeupapp.middleware.entities.role.RoleService
-import com.noeupapp.middleware.entities.user.{User, UserService}
+import com.noeupapp.middleware.entities.user.{User, UserIn, UserOut, UserService}
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.oauth2.TierAccessTokenConfig
 import org.joda.time.DateTime
@@ -21,6 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
+import com.noeupapp.middleware.utils.TypeCustom._
 
 
 /**
@@ -29,6 +31,7 @@ import com.noeupapp.middleware.utils.FutureFunctor._
 class AccountService @Inject()(userService: UserService,
                                roleService: RoleService,
                                organisationService: OrganisationService,
+                               authLoginInfoService: AuthLoginInfoService,
                                tierAccessTokenConfig: TierAccessTokenConfig)
   extends IdentityService[Account] {
 
@@ -38,11 +41,13 @@ class AccountService @Inject()(userService: UserService,
     * @param loginInfo The login info to retrieve a user.
     * @return The retrieved user or None if no user could be retrieved for the given login info.
     */
-  def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
+  override def retrieve(loginInfo: LoginInfo): Future[Option[Account]] = {
     {
         for {
-          user         <- EitherT(userService.findByEmail(loginInfo.providerKey))
-          organisation <- EitherT(userService.findOrganisationByUserId(user.get.id))
+          authLoginInfoOpt <- EitherT(authLoginInfoService.find(loginInfo))
+          authLoginInfo    <- EitherT(authLoginInfoOpt |> "authLoginInfoOpt is not defined")
+          user             <- EitherT(userService.findById(authLoginInfo.user))
+          organisation     <- EitherT(userService.findOrganisationByUserId(user.get.id))
         } yield Account(loginInfo, user.get, organisation)
       }.run map {
         case -\/(e) =>
@@ -66,76 +71,71 @@ class AccountService @Inject()(userService: UserService,
   }.run
 
 
-  /**
-    * Saves a user.
-    *
-    * @param account The user to save.
-    * @return The saved user.
-    */
-  def save(account: Account): Future[Account] = {
-    DB.withTransaction({ implicit c =>
 
-      for{
-        //userSuccessfullyAdded <- userService.add(account.user)
-//        _ <- userDAO.addLoginInfo(account)
-        roleSuccessfullyAdded <- roleService.addUserRoles(account)
-      } yield {
-        if(/*userSuccessfullyAdded && */roleSuccessfullyAdded) {
-          Logger.debug("Account saved")
-          account
-        }else {
-          //val errorMessageUser = if(userSuccessfullyAdded) "Error while saving user" else ""
-          val errorMessageRole = if(roleSuccessfullyAdded) "Error while saving role" else ""
+  def createOrRetrieve(profile: CommonSocialProfile): Future[Account] = {
+    profile.email match {
+      case None => Future.failed(new Exception("Email is not defined !"))
+      case Some(email) =>
 
-          Logger.error("An error occurred when saving account : "/*$errorMessageUser |*/ + errorMessageRole)
-          account
-        }
-      }
-    })
-  }
-
-  /**
-    * Saves the social profile for a user.
-    *
-    * If a user exists for this profile then update the user, otherwise create a new user with the given profile.
-    *
-    * @param profile The social profile to save.
-    * @return The user for whom the profile was saved.
-    */
-  def save(profile: CommonSocialProfile): Future[Account] = { DB.withTransaction({ implicit c =>
-    Logger.debug("AccountService.save(" + profile + ")")
-
-    userService.findByEmail(profile.loginInfo.providerKey) flatMap  {
-      case \/-(Some(user)) => // Update user with profile
-        val account = Account(
-          profile.loginInfo,
-          user.copy(
-            firstName = profile.firstName,
-            lastName = profile.lastName,
-            email = profile.email,
-            avatarUrl = profile.avatarURL
-          ),
-          None
+        val userIn = UserIn(
+          firstName = profile.firstName,
+          lastName = profile.lastName,
+          email = profile.email,
+          avatarUrl = profile.avatarURL,
+          ownedByClient = None
         )
-        save(account)
-      case _ => // Insert a new user
+
         val account = Account(
           loginInfo = profile.loginInfo,
-          user = User(
-            id = UUID.randomUUID(),
-            firstName = profile.firstName,
-            lastName = profile.lastName,
-            email = profile.email,
-            avatarUrl = profile.avatarURL,
-            created = DateTime.now(),
-            active = false,
-            deleted = false,
-            ownedByClient = Some(tierAccessTokenConfig.tierClientId)
-          ),
+          user = userIn.toUser,
           None
         )
 
-        save(account)
+        {
+          for {
+            userOpt          <- EitherT(userService.findByEmail(email))
+            authLoginInfoOpt <- EitherT(authLoginInfoService.find(profile.loginInfo))
+            accountRes       <- EitherT(handleUserOptAndAuthLoginInfoOpt(userOpt, authLoginInfoOpt, account, profile.loginInfo))
+          } yield accountRes
+
+        }.run map {
+          case -\/(error) => throw new Exception(s"Error occurred while trying to get user by email : email = $email ; error = $error !")
+          case \/-(accountRes) => accountRes
+        }
     }
-  })}
+  }
+
+
+  private def handleUserOptAndAuthLoginInfoOpt(userOpt: Option[User], authLoginInfoOpt: Option[AuthLoginInfo], account: Account, loginInfo: LoginInfo): Future[Expect[Account]] = {
+
+    (userOpt, authLoginInfoOpt) match {
+
+      case (Some(user), Some(authLoginInfo)) if user.id == authLoginInfo.user =>
+        Future.successful(\/-(account.copy(user = user)))
+
+      case (Some(user), Some(authLoginInfo)) => // Problem ! you are trying to connect with some provider that is already linked to another user. May append when user has changed his/her email in the provider
+        Future.failed(new Exception("TODO"))
+
+      case (Some(user), None) => // May append when you try to link a new provider ton an existing account
+        authLoginInfoService.add(AuthLoginInfo.fromLoginInfo(loginInfo, user.id)).map(_.map(_ => account))
+
+      // Never append because authLoginInfo has a foreign key linked to a user : a authLoginInfo can not exist without user
+      // case (None, Some(authLoginInfo)) =>
+
+      case (None, None) =>
+        save(account)
+
+    }
+  }
+
+  def save(account: Account): Future[Expect[Account]] =
+    save(account.loginInfo, account.user, account.organisation)
+
+  def save(loginInfo: LoginInfo, userInput: User, organisation: Option[Organisation] = None): Future[Expect[Account]] = {
+    for {
+      user <- EitherT(userService.add(userInput))
+      _    <- EitherT(authLoginInfoService.add(AuthLoginInfo.fromLoginInfo(loginInfo, user.id)))
+    } yield Account(loginInfo, user, organisation)
+  }.run
+
 }
