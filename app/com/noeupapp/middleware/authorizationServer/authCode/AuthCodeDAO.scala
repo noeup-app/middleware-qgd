@@ -3,8 +3,9 @@ package com.noeupapp.middleware.authorizationServer.authCode
 import java.sql.Connection
 
 import anorm._
+import com.noeupapp.middleware.utils.GlobalReadsWrites
 
-class AuthCodeDAO {
+class AuthCodeDAO extends GlobalReadsWrites {
 
 
   /**
@@ -70,7 +71,7 @@ class AuthCodeDAO {
            SELECT *
            FROM auth_auth_codes
            WHERE
-            authorization_code = {code}
+            authorization_code = {code} AND
             used = false
       """)
       .on(
