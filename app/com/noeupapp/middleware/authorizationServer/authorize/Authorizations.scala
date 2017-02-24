@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.{Environment, LoginEvent, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.{CredentialsProvider, SocialProviderRegistry}
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
 import com.noeupapp.middleware.authorizationClient.login.Login
 import com.noeupapp.middleware.authorizationServer.authCode.AuthCodeService
 import com.noeupapp.middleware.authorizationServer.client.ClientService
@@ -17,19 +18,17 @@ import play.api.{Configuration, Logger}
 
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
-
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
 class Authorizations @Inject()(val messagesApi: MessagesApi,
-                               val env: Environment[Account, BearerTokenAuthenticator],
+                               val env: Environment[Account, CookieBearerTokenAuthenticator],
                                userService: AccountService,
                                configuration: Configuration,
                                credentialsProvider: CredentialsProvider,
                                authCodeService: AuthCodeService,
                                clientService: ClientService)
-    extends Silhouette[Account, BearerTokenAuthenticator] {
+    extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
 
   val log = play.Logger.of("application")
@@ -79,6 +78,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
             Logger.info(s"Auth : $aaInfoForm")
             Ok(com.noeupapp.middleware.authorizationServer.authorize.html.authorize(user.user, aaInfoForm))
           case None => // User is not connected, let's redirect him to login page
+            Logger.debug("User is not connected, let's redirect him to login page")
             Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(client_id, redirect_uri, state, scope))
         }
     }

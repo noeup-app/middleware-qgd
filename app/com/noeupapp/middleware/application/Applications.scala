@@ -9,6 +9,7 @@ import com.noeupapp.middleware.authorizationClient.{RoleAuthorization, ScopeAndR
 import play.api.i18n.MessagesApi
 import RoleAuthorization.WithRole
 import ScopeAuthorization.WithScope
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
 import com.noeupapp.middleware.entities.account.Account
 
 
@@ -21,10 +22,10 @@ import com.noeupapp.middleware.entities.account.Account
  */
 class Applications @Inject()(
                               val messagesApi: MessagesApi,
-                              val env: Environment[Account, CookieAuthenticator],
+                              val env: Environment[Account, CookieBearerTokenAuthenticator],
                               socialProviderRegistry: SocialProviderRegistry,
                               scopeAndRoleAuthorization: ScopeAndRoleAuthorization)
-  extends Silhouette[Account, CookieAuthenticator] {
+  extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
   /**
    * Handles the index action.

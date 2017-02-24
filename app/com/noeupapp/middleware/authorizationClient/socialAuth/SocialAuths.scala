@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.exceptions.ProviderException
 import com.mohiva.play.silhouette.api.repositories.AuthInfoRepository
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
@@ -26,13 +27,13 @@ import scala.concurrent.Future
  */
 class SocialAuths @Inject()(
                              val messagesApi: MessagesApi,
-                             val env: Environment[Account, BearerTokenAuthenticator],
+                             val env: Environment[Account, CookieBearerTokenAuthenticator],
                              userService: AccountService,
                              authInfoRepository: AuthInfoRepository,
                              htmlSocialAuthsResult: HtmlSocialAuthsResult,
                              ajaxSocialAuthsResult: AjaxSocialAuthsResult,
                              socialProviderRegistry: SocialProviderRegistry)
-  extends Silhouette[Account, BearerTokenAuthenticator] with Logger {
+  extends Silhouette[Account, CookieBearerTokenAuthenticator] with Logger {
 
   /**
    * Authenticates a user against a social provider.
@@ -56,7 +57,7 @@ class SocialAuths @Inject()(
           case Left(result) => Future.successful(result)
           case Right(authInfo) => for {
             profile <- p.retrieveProfile(authInfo)
-            user <- userService.save(profile)
+            user <- userService.createOrRetrieve(profile)
             authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
             authenticator <- env.authenticatorService.create(profile.loginInfo)
             value <- env.authenticatorService.init(authenticator)

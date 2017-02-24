@@ -18,6 +18,7 @@ import com.mohiva.play.silhouette.impl.repositories.DelegableAuthInfoRepository
 import com.mohiva.play.silhouette.impl.services._
 import com.mohiva.play.silhouette.impl.util._
 import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailConfig
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.{CookieBearerTokenAuthenticator, CookieBearerTokenAuthenticatorDAO, CookieBearerTokenAuthenticatorService, CookieBearerTokenAuthenticatorSettings}
 import com.noeupapp.middleware.authorizationClient.login._
 import com.noeupapp.middleware.authorizationClient.{ScopeAndRoleAuthorization, ScopeAndRoleAuthorizationImpl}
 import com.noeupapp.middleware.entities.user.UserService
@@ -29,12 +30,14 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.ws.WSClient
 import com.noeupapp.middleware.authorizationClient.provider.QGDProvider
 import com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswordConfig
-import com.noeupapp.middleware.authorizationServer.authenticator.BearerAuthenticatorDAO
+import com.noeupapp.middleware.authorizationClient.authenticator.BearerAuthenticatorDAO
+import com.noeupapp.middleware.authorizationClient.authInfo.{OAuth1InfoDAO, OAuth2InfoDAO, OpenIDInfoDAO, PasswordInfoDAO}
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenService
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.oauth2.TierAccessTokenConfig
 import com.noeupapp.middleware.utils.{Html2PdfConfig, SendinBlueConfig}
 import com.noeupapp.middleware.utils.s3.{AmazonS3CoweboClient, S3Config, S3CoweboConfig}
+import org.sedis.Pool
 
 
 /**
@@ -90,19 +93,33 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
     )
   }
 
-
   @Provides
-  def provideCookieEnvironment(accountService: AccountService,
-                         authenticatorService: AuthenticatorService[CookieAuthenticator],
-                         eventBus: EventBus): Environment[Account, CookieAuthenticator] = {
+  def provideCookieBearerTokenEnvironment(
+                          accountService: AccountService,
+                          authenticatorService: AuthenticatorService[CookieBearerTokenAuthenticator],
+                          eventBus: EventBus): Environment[Account, CookieBearerTokenAuthenticator] = {
 
-    Environment[Account, CookieAuthenticator](
+    Environment[Account, CookieBearerTokenAuthenticator](
       accountService,
       authenticatorService,
       Seq(),
       eventBus
     )
   }
+
+
+//  @Provides
+//  def provideCookieEnvironment(accountService: AccountService,
+//                         authenticatorService: AuthenticatorService[CookieAuthenticator],
+//                         eventBus: EventBus): Environment[Account, CookieAuthenticator] = {
+//
+//    Environment[Account, CookieAuthenticator](
+//      accountService,
+//      authenticatorService,
+//      Seq(),
+//      eventBus
+//    )
+//  }
 
   /**
    * Provides the social provider registry.
@@ -124,31 +141,55 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
    * @return The authenticator service.
    */
   @Provides
-  def provideBearerTokenAuthenticatorService(
-                                 idGenerator: IDGenerator,
-                                 cacheLayer: CacheLayer,
-//                                 dao: BearerAuthenticatorDAO,
-                                 accessTokenService: OAuthAccessTokenService,
-                                 userService: UserService,
-                                 configuration: Configuration,
-                                 clock: Clock): AuthenticatorService[BearerTokenAuthenticator] = {
+  def provideCookieBearerTokenAuthenticatorService(pool: Pool,
+                                                    idGenerator: IDGenerator,
+                                                    cacheLayer: CacheLayer,
+                                                    fingerprintGenerator: FingerprintGenerator,
+                                                    //                                 dao: BearerAuthenticatorDAO,
+                                                    accessTokenService: OAuthAccessTokenService,
+                                                    userService: UserService,
+                                                    configuration: Configuration,
+                                                    clock: Clock): AuthenticatorService[CookieBearerTokenAuthenticator] = {
 
 
+    val config = configuration.underlying.as[CookieBearerTokenAuthenticatorSettings]("silhouette.authenticator")
+    val dao = new CookieBearerTokenAuthenticatorDAO(config, accessTokenService, userService, pool)
+    //    val config: BearerTokenAuthenticatorSettings = BearerTokenAuthenticatorSettings()
+    new CookieBearerTokenAuthenticatorService(config, dao, fingerprintGenerator, idGenerator, clock)
+  }
+
+
+  @Provides
+  def provideCookieBearerTokenAuthenticatorSettings(configuration: Configuration): CookieBearerTokenAuthenticatorSettings =
+    configuration.underlying.as[CookieBearerTokenAuthenticatorSettings]("silhouette.authenticator")
+
+  @Provides
+  def provideBearerTokenAuthenticatorService(pool: Pool,
+                                                    idGenerator: IDGenerator,
+                                                    cacheLayer: CacheLayer,
+                                                    fingerprintGenerator: FingerprintGenerator,
+                                                    //                                 dao: BearerAuthenticatorDAO,
+                                                    accessTokenService: OAuthAccessTokenService,
+                                                    userService: UserService,
+                                                    configuration: Configuration,
+                                                    clock: Clock): AuthenticatorService[BearerTokenAuthenticator] = {
+
+    val config = configuration.underlying.as[BearerTokenAuthenticatorSettings]("silhouette.authenticator")
     val dao = new BearerAuthenticatorDAO(accessTokenService, userService)
-    val config: BearerTokenAuthenticatorSettings = BearerTokenAuthenticatorSettings()
+    //    val config: BearerTokenAuthenticatorSettings = BearerTokenAuthenticatorSettings()
     new BearerTokenAuthenticatorService(config, dao, idGenerator, clock)
   }
 
-  @Provides
-  def provideCookieAuthenticatorService(
-                                         fingerprintGenerator: FingerprintGenerator,
-                                         idGenerator: IDGenerator,
-                                         configuration: Configuration,
-                                         clock: Clock): AuthenticatorService[CookieAuthenticator] = {
-
-    val config = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
-    new CookieAuthenticatorService(config, None, fingerprintGenerator, idGenerator, clock)
-  }
+//  @Provides
+//  def provideCookieAuthenticatorService(
+//                                         fingerprintGenerator: FingerprintGenerator,
+//                                         idGenerator: IDGenerator,
+//                                         configuration: Configuration,
+//                                         clock: Clock): AuthenticatorService[CookieAuthenticator] = {
+//
+//    val config = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
+//    new CookieAuthenticatorService(config, None, fingerprintGenerator, idGenerator, clock)
+//  }
 
   /**
    * Provides the auth info repository.
@@ -271,9 +312,11 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
   def provideQGDProvider(
     httpLayer: HTTPLayer,
     stateProvider: OAuth2StateProvider,
-    configuration: Configuration): QGDProvider = {
+    configuration: Configuration,
+    accessTokenService: OAuthAccessTokenService,
+    userService: UserService): QGDProvider = {
 
-    new QGDProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.qgd"))
+    new QGDProvider(httpLayer, stateProvider, configuration.underlying.as[OAuth2Settings]("silhouette.qgd"),accessTokenService, userService)
   }
 
 

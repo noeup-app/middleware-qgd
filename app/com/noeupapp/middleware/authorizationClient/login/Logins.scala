@@ -14,6 +14,7 @@ import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import play.api.{Configuration, Logger}
 import Login.authenticateFormat
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.RequestHelper
@@ -37,6 +38,7 @@ import scala.concurrent.duration.FiniteDuration
 class Logins @Inject()(
                         val messagesApi: MessagesApi,
                         val env: Environment[Account, CookieBearerTokenAuthenticator],
+                        accountService: AccountService,
                         authInfoRepository: AuthInfoRepository,
                         credentialsProvider: CredentialsProvider,
                         socialProviderRegistry: SocialProviderRegistry,
@@ -44,7 +46,7 @@ class Logins @Inject()(
                         ajaxLoginsResult: AjaxLoginsResult,
                         configuration: Configuration,
                         clock: Clock)
-  extends Silhouette[Account, CookieAuthenticator] {
+  extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
 
   /**
