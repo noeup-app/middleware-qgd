@@ -3,7 +3,10 @@ package com.noeupapp.middleware.authorizationServer.oauth2
 import java.util.{Date, NoSuchElementException}
 
 import com.google.inject.Inject
-import com.noeupapp.middleware.authorizationClient.login.PasswordInfoDAO
+import com.mohiva.play.silhouette.api.LoginInfo
+import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
+import com.noeupapp.middleware.authorizationClient.authInfo.PasswordInfoDAO
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.{CookieBearerTokenAuthenticator, CookieBearerTokenAuthenticatorDAO}
 import com.noeupapp.middleware.authorizationServer.authCode.AuthCodeService
 import com.noeupapp.middleware.authorizationServer.client.ClientService
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.{OAuthAccessToken, OAuthAccessTokenService}
@@ -18,12 +21,18 @@ import scalaoauth2.provider._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
+import org.joda.time.DateTime
+
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration._
 
 class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
                                       accessTokenService: OAuthAccessTokenService,
                                       userService: UserService,
                                       authCodeService: AuthCodeService,
-                                      clientService: ClientService)
+                                      clientService: ClientService,
+                                      cookieBearerTokenAuthenticatorDAO: CookieBearerTokenAuthenticatorDAO
+                                     )
   extends DataHandler[User] with NamedLogger {
 
   /**
@@ -83,17 +92,42 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
 
     //authAccessService.saveAccessToken(token, authInfo) // TODO Check if needed here (does provider really needs to keep token ?)
 
-    accessTokenService.insert(token) map {
-      case -\/(e) =>
+    val expir = expiration.map(_.toInt).getOrElse(60 * 60)
+
+
+
+
+    val cookieBearerTokenAuthenticator =
+      CookieBearerTokenAuthenticator(
+        id = accessToken,
+        loginInfo = LoginInfo(CredentialsProvider.ID, authInfo.user.email.getOrElse(throw new Exception("createAccessToken : User's email is not defined"))),
+        lastUsedDateTime = DateTime.now,
+        expirationDateTime = DateTime.now.plusSeconds(expir),
+        idleTimeout = None,
+        cookieMaxAge = Some(FiniteDuration.apply(expir.toLong, SECONDS)),
+        fingerprint = None
+      )
+
+
+    cookieBearerTokenAuthenticatorDAO.add(cookieBearerTokenAuthenticator).map { cbtAuth =>
+      oauthAccessTokenToAccessToken(token)
+    }.recover{
+      case e: Exception =>
         Logger.error(s"Error on creating access token $e")
-//        e.cause match {
-//          case Some(\/-(error)) => Logger.error("AuthorizationHandler.createAccessToken " + error.toString)
-//          case Some(-\/(error)) => Logger.error("AuthorizationHandler.createAccessToken " + error.toString)
-//          case _ =>
-//        }
-        throw new Exception("Error on creating access token")
-      case \/-(t) => token
+        throw e
     }
+
+//    accessTokenService.insert(token) map {
+//      case -\/(e) =>
+//        Logger.error(s"Error on creating access token $e")
+////        e.cause match {
+////          case Some(\/-(error)) => Logger.error("AuthorizationHandler.createAccessToken " + error.toString)
+////          case Some(-\/(error)) => Logger.error("AuthorizationHandler.createAccessToken " + error.toString)
+////          case _ =>
+////        }
+//        throw new Exception("Error on creating access token")
+//      case \/-(t) => token
+//    }
   }
 
 
@@ -236,14 +270,25 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
         userService.findById(authCode.userId).map{
           case \/-(Some(user)) => Some(user)
           case _ => None
-        }.map{_.map{user=>
+        }.map{_.map{ user =>
 
-            val authInfo = AuthInfo(user, Some(authCode.clientId), authCode.scope, authCode.redirectUri)
+//            val authInfo = AuthInfo(user, Some(authCode.clientId), authCode.scope, authCode.redirectUri)
+            val authInfo = AuthInfo(user, Some(authCode.clientId), None, authCode.redirectUri)
             logger.debug(s"findAuthInfoByCode: $code -> authInfo: $authInfo")
             authInfo
         }}
 
-      case _ => Future.successful(None)
+      case \/-(Some(_)) =>
+        logger.debug(s"findAuthInfoByCode : authCode auth code is expired")
+        Future.successful(None)
+
+      case \/-(None) =>
+        logger.debug(s"findAuthInfoByCode : authCode auth code is not found")
+        Future.successful(None)
+
+      case -\/(error) =>
+        logger.error(s"findAuthInfoByCode $error")
+        Future.successful(None)
     }
   }
 
