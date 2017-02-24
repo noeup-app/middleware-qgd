@@ -3,21 +3,28 @@ package com.noeupapp.middleware.authorizationClient.provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.HTTPLayer
 import com.mohiva.play.silhouette.impl.providers._
+import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenService
+import com.noeupapp.middleware.entities.user.UserService
 import play.api.Logger
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.JsValue
 
 import scala.concurrent.Future
+import scalaz.{-\/, \/-}
 
 class QGDProvider (
                    protected val httpLayer: HTTPLayer,
                    protected val stateProvider: OAuth2StateProvider,
-                   val settings: OAuth2Settings)
+                   val settings: OAuth2Settings,
+                   accessTokenService: OAuthAccessTokenService,
+                   userService: UserService
+                  )
   extends OAuth2Provider with CommonSocialProfileBuilder {
 
   override type Self = QGDProvider
 
-  override def withSettings(f: (OAuth2Settings) => OAuth2Settings): Self = new QGDProvider(httpLayer, stateProvider, f(settings))
+  override def withSettings(f: (OAuth2Settings) => OAuth2Settings): Self = new QGDProvider(httpLayer, stateProvider, f(settings), accessTokenService, userService)
 
   override protected def profileParser: SocialProfileParser[JsValue, Profile] = new QGDProfileParser
 
@@ -27,6 +34,17 @@ class QGDProvider (
   override type Content = JsValue
 
   override protected def buildProfile(authInfo: OAuth2Info): Future[Profile] = {
+// TODO !
+//    accessTokenService.find(authInfo.accessToken).flatMap {
+//
+//      case \/-(accessToken) if accessToken=>
+//        userService.findById(accessToken.userId)
+//
+//      case -\/()
+//
+//    }
+
+
     Logger.error("TODO : buildProfile " + authInfo)
     Future(CommonSocialProfile(LoginInfo("QGD TEST", "qgd")))
   }
