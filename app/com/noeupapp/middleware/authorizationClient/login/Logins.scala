@@ -27,7 +27,7 @@ import scala.concurrent.duration.FiniteDuration
   *
   * @param messagesApi The Play messages API.
   * @param env The Silhouette environment.
-  * @param userService The user service implementation.
+  * @param accountService The user service implementation.
   * @param authInfoRepository The auth info repository implementation.
   * @param credentialsProvider The credentials provider.
   * @param socialProviderRegistry The social provider registry.
@@ -36,8 +36,7 @@ import scala.concurrent.duration.FiniteDuration
   */
 class Logins @Inject()(
                         val messagesApi: MessagesApi,
-                        val env: Environment[Account, CookieAuthenticator],
-                        userService: AccountService,
+                        val env: Environment[Account, CookieBearerTokenAuthenticator],
                         authInfoRepository: AuthInfoRepository,
                         credentialsProvider: CredentialsProvider,
                         socialProviderRegistry: SocialProviderRegistry,
@@ -106,9 +105,11 @@ class Logins @Inject()(
   def authenticate(authenticate: Login, loginsResult: LoginsResult)(implicit request: Request[Any]): Future[Result] = {
     Logger.debug(s"Try to login with ${authenticate.identifier}...")
     val credentials = authenticate.getCredentials
+
     credentialsProvider.authenticate(credentials).flatMap { loginInfo =>
+
       val result = loginsResult.userIsAuthenticated()
-      userService.retrieve(loginInfo).flatMap {
+      accountService.retrieve(loginInfo).flatMap {
         case Some(user) =>
 //          val c = configuration.underlying
           env.authenticatorService.create(loginInfo).map {
