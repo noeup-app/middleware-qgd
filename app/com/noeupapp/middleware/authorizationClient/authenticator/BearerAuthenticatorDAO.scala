@@ -1,4 +1,4 @@
-package com.noeupapp.middleware.authorizationServer.authenticator
+package com.noeupapp.middleware.authorizationClient.authenticator
 
 import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
