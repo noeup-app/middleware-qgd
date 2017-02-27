@@ -8,7 +8,7 @@ import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.TypeCustom._
-import com.noeupapp.middleware.utils.{BearerTokenGenerator, CaseClassUtils, MessageEmail}
+import com.noeupapp.middleware.utils.{BearerTokenGenerator, CaseClassUtils}
 import org.sedis.Pool
 import play.api.Logger
 
@@ -16,12 +16,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPassword._
+import com.noeupapp.middleware.utils.mailer.{EmailTemplate, MessageEmail}
 
 
 class ForgotPasswordService @Inject() (messageEmail: MessageEmail,
                                        userService: UserService,
                                        pool: Pool,
-                                       forgotPasswordConfig: ForgotPasswordConfig) extends CaseClassUtils {
+                                       forgotPasswordConfig: ForgotPasswordConfig,
+                                       emailTemplateConf: EmailTemplate) extends CaseClassUtils {
 
 
 
@@ -85,13 +87,13 @@ class ForgotPasswordService @Inject() (messageEmail: MessageEmail,
           """.stripMargin
 
         messageEmail.sendEmail(
-          senderName = Some("noeup'App"),
-          senderEmail = "no-reply@noeupapp.com",
+          senderName = Some(emailTemplateConf.getSenderName),
+          senderEmail = emailTemplateConf.getSenderEmail,
           receiverName = email,
           receiverEmail = email,
-          subject = "Password recovery",
+          subject = emailTemplateConf.getForgotPwdSubject,
           text = content,
-          appName = "noeup'App"
+          appName = emailTemplateConf.getAppName
         )
       }
     } yield {
