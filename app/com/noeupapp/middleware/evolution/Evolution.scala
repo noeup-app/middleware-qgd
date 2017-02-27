@@ -16,6 +16,7 @@ class Evolution extends Controller {
   def apply(id: Int) = Action.async {
     id match {
       case 0 => _init
+      case 1 => _1
       case _ => Future.successful(NotFound)
     }
   }
@@ -248,22 +249,16 @@ class Evolution extends Controller {
         |  'myapp'
         |);
         |
-        |INSERT INTO entity_groups (id, name, owner)
+        |INSERT INTO entity_groups (id, name)
         |VALUES (
         |  '20000000-0000-0000-0000-000000000000',
-        |  'Administrators',
-        |  '10000000-0000-0000-0000-000000000000'
+        |  'Administrators'
         |);
         |
-        |INSERT INTO entity_users (id, first_name, last_name, email, avatar_url, active, deleted)
+        |INSERT INTO entity_roles (id, role_name)
         |VALUES (
-        |  '10000000-0000-0000-0000-000000000000',
-        |  'admin',
-        |  '',
-        |  'admin@myapp.np',
-        |  'avatar',
-        |  true,
-        |  false
+        |  '50000000-0000-0000-0000-000000000000',
+        |  'superadmin'
         |);
         |
         |
@@ -271,6 +266,22 @@ class Evolution extends Controller {
         |VALUES (
         |  '40000000-0000-0000-0000-000000000000',
         |  'initial setup'
+        |);
+      """
+        .stripMargin)
+
+
+
+  def _1 =
+    applyHelper(
+      """
+        |CREATE TABLE public.auth_login_info
+        |(
+        |  provider_id TEXT NOT NULL,
+        |  provider_key TEXT NOT NULL,
+        |  "user" UUID NOT NULL,
+        |  CONSTRAINT auth_login_info_provider_id_provider_key_pk PRIMARY KEY (provider_id, provider_key),
+        |  CONSTRAINT auth_login_info_entity_users_id_fk FOREIGN KEY ("user") REFERENCES entity_users (id)
         |);
       """
         .stripMargin)

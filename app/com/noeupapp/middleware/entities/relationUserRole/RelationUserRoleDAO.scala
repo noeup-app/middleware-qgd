@@ -11,16 +11,16 @@ class RelationUserRoleDAO {
     * Insert new role relation with user
     *
     * @param user_id
-    * @param roleName
+    * @param role_id
     * @param connection the implicit connection of the connection or transaction
     * @return
     */
-  def addRoleToUser(user_id: UUID, roleName: String)(implicit connection: Connection): Boolean = {
+  def addRoleToUser(role_id: UUID,user_id: UUID)(implicit connection: Connection): Boolean = {
     SQL(
-      """INSERT INTO entity_relation_users_roles (role_name, user_id)
-           VALUES ({role_name}, {user_id});""")
+      """INSERT INTO entity_relation_users_roles (role_id, user_id)
+           VALUES ({role_id}::UUID, {user_id}::UUID);""")
       .on(
-        'role_name -> roleName,
+        'role_id -> role_id,
         'user_id -> user_id
       ).execute()
   }

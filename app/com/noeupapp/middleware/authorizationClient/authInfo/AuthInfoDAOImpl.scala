@@ -1,18 +1,17 @@
-package com.noeupapp.middleware.authorizationClient.login
+package com.noeupapp.middleware.authorizationClient.authInfo
 
 import com.mohiva.play.silhouette.api
 import com.mohiva.play.silhouette.api.AuthInfo
 import com.mohiva.play.silhouette.impl.daos.DelegableAuthInfoDAO
-import org.sedis.Pool
-import play.api.libs.json.{Reads, Writes}
+import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.utils.CaseClassUtils
+import org.sedis.Pool
 import play.api.Logger
+import play.api.libs.json.{Reads, Writes}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.reflect.ClassTag
-import com.noeupapp.middleware.errorHandle.ExceptionEither._
-
 import scalaz.{-\/, \/-}
 
 abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads: Reads[T], override val classTag: ClassTag[T]) extends DelegableAuthInfoDAO[T] with CaseClassUtils {

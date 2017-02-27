@@ -1,8 +1,13 @@
-package com.noeupapp.middleware.authorizationClient.login
+package com.noeupapp.middleware.authorizationClient.loginInfo
+
+import java.util.UUID
 
 import anorm.SqlParser._
 import anorm._
 import com.mohiva.play.silhouette.api
+import play.api.libs.json.Json
+
+
 
 object LoginInfo {
 
@@ -12,7 +17,4 @@ object LoginInfo {
       case provider_id ~ provider_key => api.LoginInfo(provider_id, provider_key)
     }
   }
-
-  // TODO rapatriate DAO !!!!
-
 }

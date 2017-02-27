@@ -4,11 +4,13 @@ invalid.credentials = Invalid credentials!
 access.denied = Access denied!
 user.exists = There already exists a user with this email!
 could.not.authenticate = Could not authenticate with social provider! Please try again!
+user.successfully.created = Your account has been created. You will recieve a email to confirm your registering.
 
 home.title = Home
 sign.up.title = Sign Up
 sign.in.title = Sign In
 forgot.password.title = Forgot Password
+confirm.email.title = Email confirmation
 
 toggle.navigation = Toggle navigation
 welcome.signed.in = Welcome, you are now signed in!

@@ -5,7 +5,7 @@ import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordHasher
-import com.noeupapp.middleware.authorizationClient.login.PasswordInfoDAO
+import com.noeupapp.middleware.authorizationClient.authInfo.PasswordInfoDAO
 import com.noeupapp.middleware.entities.entity.EntityService
 import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
@@ -140,18 +140,7 @@ class UserService @Inject()(userDAO: UserDAO,
 
   private def addDao(userInput: UserIn): Future[Expect[UserOut]] = {
     TryBDCall[UserOut] { implicit c =>
-      val userId = UUID.randomUUID()
-      val user = User(
-        id = userId,
-        firstName = userInput.firstName,
-        lastName = userInput.lastName,
-        email = userInput.email,
-        avatarUrl = userInput.avatarUrl,
-        created = DateTime.now,
-        active = true,
-        deleted = false,
-        ownedByClient = Some(tierAccessTokenConfig.tierClientId)
-      )
+      val user = userInput.toUser
       userDAO.add(user)
       \/-(user)
     }
@@ -179,6 +168,12 @@ class UserService @Inject()(userDAO: UserDAO,
     })
   }
 
+  def add(user: User): Future[Expect[User]] =
+    TryBDCall { implicit c =>
+      userDAO.add(user)
+      \/-(user)
+    }
+
 
   /**
     * Add user with active status to false
@@ -188,15 +183,15 @@ class UserService @Inject()(userDAO: UserDAO,
   def addInactive(userInput: UserIn): Future[User] = Future {
     DB.withTransaction({ implicit c =>
       val userId = UUID.randomUUID()
-      val user = User(  userId,
-                        userInput.firstName,
-                        userInput.lastName,
-                        userInput.email,
-                        userInput.avatarUrl,
-                        DateTime.now,
-                        false,
-                        false,
-                        Some(tierAccessTokenConfig.tierClientId)
+      val user = User(userId,
+                      userInput.firstName,
+                      userInput.lastName,
+                      userInput.email,
+                      userInput.avatarUrl,
+                      DateTime.now,
+                      active = false,
+                      deleted = false,
+                      userInput.ownedByClient
       )
       userDAO.add(user)
       user
@@ -210,7 +205,7 @@ class UserService @Inject()(userDAO: UserDAO,
     * @param password non hashed pwd
     */
   def validateUser(email: String, password: String): Future[Expect[Option[User]]] = {
-    Logger.debug(s"--- Into validateUser --- Email: $email --- PWD: $password")
+    Logger.debug(s"--- Into validateUser --- Email: $email")
     val result: ValidationFuture[Option[User]] =
     for{
       user         <- EitherT(findByEmail(email))
@@ -258,6 +253,18 @@ class UserService @Inject()(userDAO: UserDAO,
       \/-(userDAO.updateActive(userId, status))
     }
   }
+  /**
+    * Get number of active user in db
+    * @return
+    */
+  def getNumberActiveUser(): Future[Expect[Int]] = {
+    TryBDCall{ implicit c =>
+      \/-(userDAO.countActiveUsers())
+    }
+  }
+
+
+
 
   /**
     * Set deleted field to true

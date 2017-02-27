@@ -9,17 +9,16 @@ import com.mohiva.play.silhouette.impl.providers._
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.mvc.Action
 import play.api.mvc._
-import play.api.mvc.Results.Status
 import SignUpForm.signUpFormDataFormat
-import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailService
-import com.noeupapp.middleware.authorizationClient.forgotPassword.{ForgotPasswordAskNewPasswordForm, ForgotPasswordService}
+import com.noeupapp.middleware.authorizationClient.confirmEmail.{ConfirmEmailForm, ConfirmEmailService}
+import com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPasswordService
+import com.noeupapp.middleware.authorizationClient.login.LoginsResult
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.entities.user.UserService
-import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.utils.BodyParserHelper._
 import com.noeupapp.middleware.utils.RequestHelper
-import play.api.libs.json.Json
 
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
@@ -87,8 +86,12 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
 
       case false =>
         SignUpForm.form.bindFromRequest.fold(
-          form => Future.successful(htmlSignUpsResult.badRequest(form)),
+          form => {
+            Logger.debug(s"Sign up form error : ${form.errors}")
+            Future.successful(htmlSignUpsResult.badRequest(form))
+          },
           data => {
+            Logger.debug("In subscribe data "+data)
             val loginInfo = LoginInfo(CredentialsProvider.ID, data.email)
             signUp(loginInfo, data, htmlSignUpsResult)
           }
@@ -106,15 +109,25 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
     * @return
     */
   def signUp(loginInfo: LoginInfo, data: SignUpForm.Data, authorizationResult: SignUpsResult)(implicit request: Request[Any]): Future[Result] = {
-    accountService.retrieve(loginInfo).flatMap {
+    userService.findByEmail(data.email).flatMap {
 
-      case Some(user) => Future.successful(authorizationResult.userAlreadyExists())
+      case \/-(Some(user)) =>
+        Logger.debug(s"Sign up, user ${data.firstName} ${data.lastName} <${data.email}> found in database, abording")
+        Future.successful(authorizationResult.userAlreadyExists())
 
-      case None => signUpService.signUp(loginInfo, data, authorizationResult).flatMap {
+      case -\/(error) =>
+        Logger.error(s"An exception occurred $error")
+        Future.successful(authorizationResult.manageError())
+
+      case \/-(None) =>
+        Logger.debug(s"Sign up user ${data.firstName} ${data.lastName} <${data.email}>...")
+
+        signUpService.signUp(loginInfo, data, authorizationResult).flatMap {
+
         case -\/(e) =>
-
           Logger.error(s"An exception occurred $e")
           Future.successful(authorizationResult.manageError())
+
         case \/-(account) =>
           for {
             authenticator <- env.authenticatorService.create(loginInfo)
@@ -127,6 +140,7 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
             result
           }
       }
+
     }.recover {
       case e: Exception =>
         Logger.error(s"An exception occurred $e")
@@ -140,14 +154,31 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
     signUpService.signUpConfirmation(token).map {
       case \/-(u) =>
         Logger.trace("user activated : " + u)
-        Ok(Json.toJson(u))
-
+        Ok(com.noeupapp.middleware.authorizationClient.confirmEmail.html.confirmEmail(ConfirmEmailForm.Data("Activated", u)))
       case -\/(error) =>
-        error.errorType.header.status match {
-          case INTERNAL_SERVER_ERROR => InternalServerError(Json.toJson(error.message.toString))
-          case BAD_REQUEST => BadRequest(Json.toJson(error.message.toString))
-        }
+        Logger.trace("couldn't activate user " + error.message.toString)
+        Ok(com.noeupapp.middleware.authorizationClient.confirmEmail.html.confirmEmail(ConfirmEmailForm.Data(error.message.toString, null)))
     }
   }
 
+  /**
+    * Resending an email to activate an account (userData.email here)
+    * @return
+    */
+  def resendingEmailConfirmation() = Action.async(parse.form(ConfirmEmailForm.resendingForm)) { implicit request =>
+    val userData = request.body
+    Logger.trace(s"Resending an email to $userData")
+    confirmEmailService.resendingEmail(userData.email).map {
+      case \/-(user) => Ok(com.noeupapp.middleware.authorizationClient.confirmEmail.html.confirmEmail(ConfirmEmailForm.Data("Resend", user)))
+      case -\/(error) => Ok(com.noeupapp.middleware.authorizationClient.confirmEmail.html.confirmEmail(ConfirmEmailForm.Data(error.message.toString, null)))
+    }
+  }
+
+  def login(request: UserAwareRequest[AnyContent], loginsResult: LoginsResult): Future[Result] = {
+    val req = request.asInstanceOf[loginsResult.UserAwareRequest[AnyContent]]
+    request.identity match {
+      case Some(user) => Future.successful(loginsResult.userIsConnected())
+      case None => Future.successful(loginsResult.userIsNotConnected(req))
+    }
+  }
 }

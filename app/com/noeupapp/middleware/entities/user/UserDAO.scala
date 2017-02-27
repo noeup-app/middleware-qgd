@@ -4,6 +4,7 @@ import java.sql.Connection
 import java.util.UUID
 
 import anorm._
+import anorm.SqlParser._
 import play.api.Logger
 import com.noeupapp.middleware.utils.GlobalReadsWrites
 
@@ -80,7 +81,7 @@ class UserDAO extends GlobalReadsWrites {
     SQL(
       """SELECT *
          FROM entity_users
-         WHERE email = {email} AND owned_by_client = {client_id} AND active = 'false';""")
+         WHERE email = {email} AND active = 'false';""")
       .on(
         'email  -> email
       ).as(User.parse *).headOption // One email corresponds to at most one user
@@ -123,6 +124,20 @@ class UserDAO extends GlobalReadsWrites {
       'userId -> userId,
       'status -> status
     ).execute()
+  }
+
+  /**
+    *
+    * Count active users un db
+    * @return
+    */
+  def countActiveUsers()(implicit connection: Connection): Int = {
+    SQL(
+      """
+          SELECT COUNT(*) FROM entity_users
+          WHERE active = true
+      """
+    ).as(scalar[Int].single)
   }
 
   /**

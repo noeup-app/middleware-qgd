@@ -7,6 +7,7 @@ import com.mohiva.play.silhouette.api.{Environment, LoginEvent, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.exceptions.IdentityNotFoundException
 import com.mohiva.play.silhouette.impl.providers.{CredentialsProvider, SocialProviderRegistry}
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
 import com.noeupapp.middleware.authorizationClient.login.Login
 import com.noeupapp.middleware.authorizationServer.authCode.AuthCodeService
 import com.noeupapp.middleware.authorizationServer.client.ClientService
@@ -17,19 +18,17 @@ import play.api.{Configuration, Logger}
 
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
-
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
 class Authorizations @Inject()(val messagesApi: MessagesApi,
-                               val env: Environment[Account, BearerTokenAuthenticator],
+                               val env: Environment[Account, CookieBearerTokenAuthenticator],
                                userService: AccountService,
                                configuration: Configuration,
                                credentialsProvider: CredentialsProvider,
                                authCodeService: AuthCodeService,
                                clientService: ClientService)
-    extends Silhouette[Account, BearerTokenAuthenticator] {
+    extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
 
   val log = play.Logger.of("application")
@@ -79,6 +78,7 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
             Logger.info(s"Auth : $aaInfoForm")
             Ok(com.noeupapp.middleware.authorizationServer.authorize.html.authorize(user.user, aaInfoForm))
           case None => // User is not connected, let's redirect him to login page
+            Logger.debug("User is not connected, let's redirect him to login page")
             Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(client_id, redirect_uri, state, scope))
         }
     }
@@ -134,14 +134,14 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
       "state"        -> state,
       "scope"        -> scope
     ))
-    Ok(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq())))
+    Ok(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq()),None))
   }
 
   def authenticate() = Action.async { implicit request =>
     SignInProviderForm.form.bindFromRequest.fold(
       form => {
         Logger.warn("Authorize.authenticate form ko : " + form.errors)
-        Future.successful(BadRequest(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq()))))
+        Future.successful(BadRequest(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(form, SocialProviderRegistry(Seq()),Some(Messages("internal.server.error")))))
       },
       data => {
         val authenticate = Login(data.email, data.password, data.rememberMe)
@@ -171,13 +171,15 @@ class Authorizations @Inject()(val messagesApi: MessagesApi,
           }
         }.recover {
           case e: ProviderException =>
-            Logger.warn("Logins.authenticate failed : " + authenticate + " -> " + e.getMessage)
-            Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
-              .flashing("error" -> Messages("invalid.credentials"))
+            Logger.warn("Logins.authenticate failed : " + authenticate + " -> " + e.getMessage + " -> data : "+data)
+            /*Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
+              .flashing("error" -> Messages("invalid.credentials"))*/
+            BadRequest(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(SignInProviderForm.form, SocialProviderRegistry(Seq()),Some(Messages("internal.server.error"))))
           case e: Exception => {
             Logger.error("An exception ocurred", e)
-            Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
-              .flashing("error" -> Messages("internal.server.error"))
+            /*Redirect(com.noeupapp.middleware.authorizationServer.authorize.routes.Authorizations.login(data.client_id.toString, data.redirect_uri, data.state, data.scope))
+              .flashing("error" -> Messages("internal.server.error"))*/
+            BadRequest(com.noeupapp.middleware.authorizationServer.authorize.html.signIn(SignInProviderForm.form, SocialProviderRegistry(Seq()),Some(Messages("internal.server.error"))))
           }
         }
       }

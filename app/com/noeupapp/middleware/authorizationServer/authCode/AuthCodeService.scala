@@ -14,6 +14,7 @@ import scala.util.Try
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.Play.current
 import com.noeupapp.middleware.errorHandle.FailError.Expect
+import org.joda.time.DateTime
 
 import scalaz.\/-
 class AuthCodeService @Inject() (authCodeDAO: AuthCodeDAO,
@@ -36,12 +37,12 @@ class AuthCodeService @Inject() (authCodeDAO: AuthCodeDAO,
       clientDAO.findByClientId(clientId).flatMap {
         client =>
           val code = AuthCodeGenerator.generateAuthCode()
-          val createdAt = new Timestamp(new Date().getTime)
+          val createdAt = DateTime.now()
           val authCode = AuthCode(
             code,
             createdAt,
             clientId,
-            Some(scope),
+//            Some(scope),
             expiresIn.toLong,
             Some(redirectUri),
             userId,
