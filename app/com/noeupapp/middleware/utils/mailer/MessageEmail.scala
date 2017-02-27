@@ -4,6 +4,7 @@ import com.google.inject.Inject
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError._
 import com.noeupapp.middleware.views.html.emailTemplate
+
 import play.api.Logger
 import play.api.Play.current
 import play.api.i18n.Messages.Implicits._
@@ -46,7 +47,7 @@ class MessageEmail @Inject()(mailerClient: MailerClient,
     } match {
       case Failure(e) => Future.successful(-\/(FailError("Error while sending Email", e)))
       case Success(res) =>
-        Logger.trace(s"MailerClient: email send to $res")
+        Logger.trace(s"MailerClient: email sent to $receiverEmail")
         Future.successful(\/-(res))
     }
   }
