@@ -8,7 +8,7 @@ import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.TypeCustom._
-import com.noeupapp.middleware.utils.{BearerTokenGenerator, CaseClassUtils, MessageEmail}
+import com.noeupapp.middleware.utils.{BearerTokenGenerator, CaseClassUtils}
 import org.sedis.Pool
 import play.api.Logger
 
@@ -16,12 +16,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmail._
+import com.noeupapp.middleware.utils.mailer.{EmailTemplate, MessageEmail}
 
 
 class ConfirmEmailService @Inject() (pool: Pool,
                                      userService: UserService,
                                      messageEmail: MessageEmail,
-                                     confirmEmailConfig: ConfirmEmailConfig) extends CaseClassUtils {
+                                     confirmEmailConfig: ConfirmEmailConfig,
+                                     emailTemplateConf: EmailTemplate) extends CaseClassUtils {
 
 
     def generateAndSaveToken(user: User): Future[Expect[String]] = {
@@ -85,13 +87,13 @@ class ConfirmEmailService @Inject() (pool: Pool,
           """.stripMargin
 
         messageEmail.sendEmail(
-          senderName = Some("noeup'App"),
-          senderEmail = "no-reply@noeupapp.com",
+          senderName = Some(emailTemplateConf.getSenderName),
+          senderEmail = emailTemplateConf.getSenderEmail,
           receiverName = email,
           receiverEmail = email,
-          subject = "Account confirmation",
+          subject = emailTemplateConf.getEmailConfirmSubject,
           text = content,
-          appName = "noeup'App"
+          appName = emailTemplateConf.getAppName
         )
       }
     } yield {
@@ -112,4 +114,3 @@ class ConfirmEmailService @Inject() (pool: Pool,
     } yield user
   }.run
 }
-
