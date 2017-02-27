@@ -108,19 +108,6 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
   }
 
 
-//  @Provides
-//  def provideCookieEnvironment(accountService: AccountService,
-//                         authenticatorService: AuthenticatorService[CookieAuthenticator],
-//                         eventBus: EventBus): Environment[Account, CookieAuthenticator] = {
-//
-//    Environment[Account, CookieAuthenticator](
-//      accountService,
-//      authenticatorService,
-//      Seq(),
-//      eventBus
-//    )
-//  }
-
   /**
    * Provides the social provider registry.
    *
@@ -180,16 +167,6 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
     new BearerTokenAuthenticatorService(config, dao, idGenerator, clock)
   }
 
-//  @Provides
-//  def provideCookieAuthenticatorService(
-//                                         fingerprintGenerator: FingerprintGenerator,
-//                                         idGenerator: IDGenerator,
-//                                         configuration: Configuration,
-//                                         clock: Clock): AuthenticatorService[CookieAuthenticator] = {
-//
-//    val config = configuration.underlying.as[CookieAuthenticatorSettings]("silhouette.authenticator")
-//    new CookieAuthenticatorService(config, None, fingerprintGenerator, idGenerator, clock)
-//  }
 
   /**
    * Provides the auth info repository.
