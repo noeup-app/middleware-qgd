@@ -298,18 +298,16 @@ class Evolution extends Controller {
         |CREATE TABLE public.package_events (
         |  id UUID PRIMARY KEY NOT NULL,
         |  action_name TEXT NOT NULL,
-        |  triggered TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+        |  triggered TIMESTAMP WITH TIME ZONE NOT NULL,
         |  user_id UUID NOT NULL,
         |  package_id INTEGER NOT NULL,
         |  params JSON,
         |  FOREIGN KEY (package_id) REFERENCES public.package_packages (id)
         |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION,
-        |  FOREIGN KEY (package_id) REFERENCES public.package_packages (id)
+        |  FOREIGN KEY (user_id) REFERENCES public.entity_users (id)
         |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION
         |);
         |ALTER TABLE public.entity_entities ADD package_id INT NULL;
-        |ALTER TABLE public.entity_entities ADD CONSTRAINT entity_entities_package_packages_id_fk
-        |FOREIGN KEY (package_id) REFERENCES package_packages (id);
         |CREATE SEQUENCE public.package_packages_id_seq NO MINVALUE NO MAXVALUE NO CYCLE;
         |ALTER TABLE public.package_packages ALTER COLUMN id SET DEFAULT nextval('public.package_packages_id_seq');
         |ALTER SEQUENCE public.package_packages_id_seq OWNED BY public.package_packages.id;
