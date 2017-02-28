@@ -309,7 +309,10 @@ class Evolution extends Controller {
         |);
         |ALTER TABLE public.entity_entities ADD package_id INT NULL;
         |ALTER TABLE public.entity_entities ADD CONSTRAINT entity_entities_package_packages_id_fk
-        |FOREIGN KEY (package_id) REFERENCES package_packages (id)
+        |FOREIGN KEY (package_id) REFERENCES package_packages (id);
+        |CREATE SEQUENCE public.package_packages_id_seq NO MINVALUE NO MAXVALUE NO CYCLE;
+        |ALTER TABLE public.package_packages ALTER COLUMN id SET DEFAULT nextval('public.package_packages_id_seq');
+        |ALTER SEQUENCE public.package_packages_id_seq OWNED BY public.package_packages.id;
         |"""
         .stripMargin)
 }
