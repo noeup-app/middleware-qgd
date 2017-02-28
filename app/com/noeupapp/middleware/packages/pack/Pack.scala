@@ -36,7 +36,7 @@ object Pack extends GlobalReadsWrites {
   implicit val PackInFormat  = Json.format[PackIn]
   implicit val PackOutFormat = Json.format[PackOut]
 
-  val action = TableQuery[PackTableDef]
+  val pack = TableQuery[PackTableDef]
 
   implicit def toPackOut(e: Pack): PackOut = PackOut(e.id, e.name, e.optionOffer, e.optionState)
 
