@@ -39,4 +39,22 @@ class EntityDAO {
       'parent -> parentId
     ).execute()
   }
+
+  /**
+    * Do an union get packageId from a userId
+    * If user is in an orga, get packageId orga
+    * @param userId
+    * @param connection
+    * @return user packageId or organisation packageId
+    */
+  def getPackageIdFromUser(userId: UUID)(implicit connection: Connection): Option[Long] = {
+    SQL("""(SELECT package_id from entity_entities
+          | WHERE id = {userId}::UUID)
+          |UNION
+          |(SELECT e_orga.package_id from entity_entities e_user
+          | INNER JOIN entity_entities e_orga ON e_user.parent = e_orga.id
+          | WHERE e_user.id = {userId}::UUID)"""
+    ).on('userId -> userId)
+        .as(SqlParser.scalar[Long].singleOpt)
+  }
 }

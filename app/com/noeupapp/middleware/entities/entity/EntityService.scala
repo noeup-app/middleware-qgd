@@ -34,4 +34,15 @@ class EntityService @Inject() (entityDAO: EntityDAO) {
       \/-(entityId)
     }
   }
+
+  /**
+    * Get packageId
+    * @param userId
+    * @return
+    */
+  def getPackageId(userId: UUID): Future[Expect[Option[Long]]] = {
+    TryBDCall { implicit c =>
+      \/-(entityDAO.getPackageIdFromUser(userId))
+    }
+  }
 }
