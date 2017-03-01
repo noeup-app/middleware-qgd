@@ -5,37 +5,54 @@ import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.packages.pack.Pack
+import com.noeupapp.middleware.utils.FutureFunctor._
 
 import scala.concurrent.Future
-import scalaz.{-\/, \/-}
+import scalaz.{-\/, EitherT, \/-}
 
 trait PackageHandler {
 
   val actionPackage: ActionPackage
   val entityService: EntityService
 
+  /**
+    * Check if the user have access to actionName
+    * @param user
+    * @param actionName
+    * @return
+    */
   def isAuthorized(user: User, actionName: String): Future[Expect[Unit]] = {
     for {
-      hasPackageAccess
-    }
-  }
+      packs <- EitherT(getPacks(actionName))
+      _     <- EitherT(hasAccessPackage(packs, user))
+      _     <- EitherT(jsonProcess())
+    } yield ()
+  }.run
 
-  private def getPack(actionName: String): Future[Expect[Set[Pack]]] =
+
+  protected def jsonProcess(): Future[Expect[Unit]]
+
+  private def getPacks(actionName: String): Future[Expect[Set[Pack]]] =
     Future.successful(\/-(actionPackage.packages(actionName)))
 
-  private def hasAccessPackage(pack: Set[Pack], user: User): Future[Expect[Unit]] = {
+  private def hasAccessPackage(packs: Set[Pack], user: User): Future[Expect[Unit]] = {
+    val userInfo = s"User ${user.firstName} ${user.lastName} <${user.email}>"
+
     def checkPack(packageId: Option[Long]): Future[Expect[Unit]] = {
-      packageId.map(pack.map(_.id).contains) match {
-        case Some(true) => Future.successful(\/-())
-        case Some(false) => Future.successful(-\/(FailError(s"")))
-        case None =>
+      val packsDesc = packs.map(pack => s"${pack.name}[${pack.id}]").mkString(", ")
+
+      packageId.map(packs.map(_.id).contains) match {
+        case Some(true)   => Future.successful(\/-(s"User $userInfo can access to $packsDesc"))
+        case Some(false)  =>
+          Future.successful(-\/(FailError(s"$userInfo doesn't have access this(those) pack(s): $packsDesc")))
+        case None => Future.successful(-\/(FailError(s"$userInfo doesn't have a pack")))
       }
     }
 
     for {
-      packageId <- entityService.getPackageId(user.id)
-      _ <- checkPack(packageId)
-    } yield
-  }
+      packageId <- EitherT(entityService.getPackageId(user.id))
+      pack      <- EitherT(checkPack(packageId))
+    } yield pack
+  }.run
 
 }
