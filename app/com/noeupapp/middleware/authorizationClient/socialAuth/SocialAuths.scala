@@ -13,6 +13,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.mvc.{Action, AnyContent, Request, Result}
 import com.noeupapp.middleware.utils.RequestHelper
+import play.api.libs.json.Json
 
 import scala.concurrent.Future
 
@@ -74,5 +75,10 @@ class SocialAuths @Inject()(
         logger.error("Unexpected provider error", e)
         authorizationResult.unexpectedProviderError();
     }
+  }
+
+
+  def getProviderIds = Action {
+    Ok(Json.toJson(socialProviderRegistry.providers.map(_.id)))
   }
 }
