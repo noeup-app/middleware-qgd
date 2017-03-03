@@ -24,7 +24,10 @@ POST        /forgotPassword/:token               com.noeupapp.middleware.authori
 
 
 GET         /authenticate/:provider              com.noeupapp.middleware.authorizationClient.socialAuth.SocialAuths.authenticateAction(provider)
+GET         /authenticateNoRedir/:provider              com.noeupapp.middleware.authorizationClient.socialAuth.SocialAuths.authenticateNoRedirect(provider)
 POST        /authenticate/credentials            com.noeupapp.middleware.authorizationClient.login.Logins.authenticateAction
+
+GET        /providers                            com.noeupapp.middleware.authorizationClient.socialAuth.SocialAuths.getProviderIds
 
 # Clients management
 GET         /admin/clients                       com.noeupapp.middleware.authorizationServer.client.Clients.list
