@@ -29,6 +29,7 @@ import scala.concurrent.Future
 class SocialAuths @Inject()(
                              val messagesApi: MessagesApi,
                              val env: Environment[Account, CookieBearerTokenAuthenticator],
+                             val envBearer: Environment[Account, BearerTokenAuthenticator],
                              userService: AccountService,
                              authInfoRepository: AuthInfoRepository,
                              htmlSocialAuthsResult: HtmlSocialAuthsResult,
@@ -74,6 +75,45 @@ class SocialAuths @Inject()(
       case e: ProviderException =>
         logger.error("Unexpected provider error", e)
         authorizationResult.unexpectedProviderError();
+    }
+  }
+
+
+  /**
+    * "Connect with" some provider from angular
+    * TODO : ugly
+    */
+  def authenticateNoRedirect(provider: String) = Action.async { implicit request =>
+    (socialProviderRegistry.get[SocialProvider](provider) match {
+      case Some(p: SocialProvider with CommonSocialProfileBuilder) =>
+        val pWithNewSettings: SocialProvider with CommonSocialProfileBuilder =
+          p.withSettings {
+            case pp: OAuth2Settings => pp.copy(redirectURL = pp.redirectURL.replace("/authenticate/", "/authenticateNoRedir/")).asInstanceOf[p.Settings]
+            case e =>
+              logger.error("authenticateNoRedirect unable to set redirect url")
+              e
+          }.asInstanceOf[SocialProvider with CommonSocialProfileBuilder]
+
+        pWithNewSettings.authenticate().flatMap {
+          case Left(result) => Future.successful(result)
+          case Right(authInfo) => for {
+            profile <- pWithNewSettings.retrieveProfile(authInfo)
+            user <- userService.createOrRetrieve(profile)
+            authInfo <- authInfoRepository.save(profile.loginInfo, authInfo)
+            authenticator <- env.authenticatorService.create(profile.loginInfo)
+            token <- env.authenticatorService.init(authenticator)
+            result <- env.authenticatorService.embed(token, Redirect("/#/token/" + token._1))
+          } yield {
+            env.eventBus.publish(LoginEvent(user, request, request2Messages))
+            logger.debug(s"Authenticate with $provider")
+            result
+          }
+        }
+      case _ => Future.failed(new ProviderException(s"Cannot authenticate with unexpected social provider $provider"))
+    }).recover {
+      case e: ProviderException =>
+        logger.error("Unexpected provider error", e)
+        Unauthorized(Json.obj("message" -> "Could not authenticate"))
     }
   }
 
