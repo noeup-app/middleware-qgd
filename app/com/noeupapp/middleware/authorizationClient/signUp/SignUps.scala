@@ -6,9 +6,11 @@ import com.mohiva.play.silhouette.api._
 import com.mohiva.play.silhouette.api.services.AvatarService
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.mohiva.play.silhouette.impl.providers._
+import com.noeupapp.middleware.entities.user.User._
 import play.api.Logger
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
+import play.api.libs.json.Json
 import play.api.mvc.Action
 import play.api.mvc._
 import SignUpForm.signUpFormDataFormat
@@ -150,19 +152,34 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
 
 
 
-  def emailConfirmation(token: String) = Action.async(jsonOrAnyContent[String]) { implicit request =>
-    signUpService.signUpConfirmation(token).map {
-      case \/-(u) =>
-        Logger.trace("user activated : " + u)
-        Ok(com.noeupapp.middleware.authorizationClient.confirmEmail.html.confirmEmail(ConfirmEmailForm.Data("Activated", u)))
-      case -\/(error) =>
-        Logger.trace("couldn't activate user " + error.message.toString)
-        Ok(com.noeupapp.middleware.authorizationClient.confirmEmail.html.confirmEmail(ConfirmEmailForm.Data(error.message.toString, null)))
+  def emailConfirmation(token: String) = Action.async { implicit request =>
+    RequestHelper.isJson(request) match {
+      case true =>
+        signUpService.signUpConfirmation(token).map {
+          case \/-(u) =>
+            Logger.trace("JSON - user activated : " + u)
+            Ok(Json.toJson(u))
+          case -\/(error) =>
+            Logger.trace("JSON - couldn't activate user " + error.message.toString)
+            InternalServerError(Json.toJson("Error while user confirmation"))
+        }
+      case false =>
+        signUpService.signUpConfirmation(token).map {
+          case \/-(u) =>
+            Logger.trace("user activated : " + u)
+            Ok(com.noeupapp.middleware.authorizationClient.confirmEmail.html.confirmEmail(ConfirmEmailForm.Data("Activated", u)))
+          case -\/(error) =>
+            Logger.trace("couldn't activate user " + error.message.toString)
+            Ok(com.noeupapp.middleware.authorizationClient.confirmEmail.html.confirmEmail(ConfirmEmailForm.Data(error.message.toString, null)))
+        }
+
     }
+
   }
 
   /**
     * Resending an email to activate an account (userData.email here)
+    *
     * @return
     */
   def resendingEmailConfirmation() = Action.async(parse.form(ConfirmEmailForm.resendingForm)) { implicit request =>
