@@ -290,27 +290,35 @@ class Evolution extends Controller {
     applyHelper(
       """
         |CREATE TABLE public.package_packages (
-        |  id INTEGER PRIMARY KEY NOT NULL,
+        |  id BIGSERIAL PRIMARY KEY NOT NULL,
         |  name TEXT NOT NULL,
-        |  option_offer JSON,
-        |  option_state JSON
+        |  option_offer JSON
         |);
         |CREATE TABLE public.package_events (
         |  id UUID PRIMARY KEY NOT NULL,
         |  action_name TEXT NOT NULL,
         |  triggered TIMESTAMP WITH TIME ZONE NOT NULL,
         |  user_id UUID NOT NULL,
-        |  package_id INTEGER NOT NULL,
+        |  package_id BIGINT NOT NULL,
         |  params JSON,
         |  FOREIGN KEY (package_id) REFERENCES public.package_packages (id)
         |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION,
         |  FOREIGN KEY (user_id) REFERENCES public.entity_users (id)
         |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION
         |);
+        |CREATE TABLE public.package_relation_entity_package (
+        |  id UUID PRIMARY KEY NOT NULL,
+        |  package_id BIGINT NOT NULL,
+        |  entity_id UUID NOT NULL,
+        |  billed TIMESTAMP WITH TIME ZONE,
+        |  created TIMESTAMP WITH TIME ZONE NOT NULL,
+        |  option_state JSON,
+        |  FOREIGN KEY (package_id) REFERENCES public.package_packages (id)
+        |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION,
+        |  FOREIGN KEY (entity_id) REFERENCES public.entity_entities (id)
+        |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION
+        |);
         |ALTER TABLE public.entity_entities ADD package_id INT NULL;
-        |CREATE SEQUENCE public.package_packages_id_seq NO MINVALUE NO MAXVALUE NO CYCLE;
-        |ALTER TABLE public.package_packages ALTER COLUMN id SET DEFAULT nextval('public.package_packages_id_seq');
-        |ALTER SEQUENCE public.package_packages_id_seq OWNED BY public.package_packages.id;
         |"""
         .stripMargin)
 }
