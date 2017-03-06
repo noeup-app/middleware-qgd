@@ -1,6 +1,7 @@
 package com.noeupapp.middleware.packages
 
 import com.noeupapp.middleware.entities.entity.EntityService
+import com.noeupapp.middleware.entities.relationEntityPackage.RelationEntityPackageService
 import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
@@ -13,7 +14,7 @@ import scalaz.{-\/, EitherT, \/-}
 trait PackageHandler {
 
   val actionPackage: ActionPackage
-  val entityService: EntityService
+  val relationEntityPackageService: RelationEntityPackageService
 
   /**
     * Check if the user have access to actionName
@@ -39,18 +40,18 @@ trait PackageHandler {
     val userInfo = s"User ${user.firstName} ${user.lastName} <${user.email}>"
 
     def checkPack(packageId: Option[Long]): Future[Expect[Unit]] = {
-      val packsDesc = packs.map(pack => s"${pack.name}[${pack.id}]").mkString(", ")
+      val packsDescription = packs.map(pack => s"${pack.name}[${pack.id}]").mkString(", ")
 
       packageId.map(packs.map(_.id).contains) match {
-        case Some(true)   => Future.successful(\/-(s"User $userInfo can access to $packsDesc"))
+        case Some(true)   => Future.successful(\/-(s"User $userInfo can access to $packsDescription"))
         case Some(false)  =>
-          Future.successful(-\/(FailError(s"$userInfo doesn't have access this(those) pack(s): $packsDesc")))
+          Future.successful(-\/(FailError(s"$userInfo doesn't have access this(those) pack(s): $packsDescription")))
         case None => Future.successful(-\/(FailError(s"$userInfo doesn't have a pack")))
       }
     }
 
     for {
-      packageId <- EitherT(entityService.getPackageId(user.id))
+      packageId <- EitherT(relationEntityPackageService.getUsersPackageId(user.id))
       pack      <- EitherT(checkPack(packageId))
     } yield pack
   }.run

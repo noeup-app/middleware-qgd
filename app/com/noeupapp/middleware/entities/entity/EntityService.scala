@@ -14,13 +14,14 @@ import scalaz.{-\/, \/-}
 class EntityService @Inject() (entityDAO: EntityDAO) {
 
   def findById(entityId: UUID): Future[Expect[Entity]] = {
-    TryBDCall{ implicit c =>
+    TryBDCall { implicit c =>
       entityDAO.findById(entityId) match {
         case Some(entity) => \/-(entity)
         case None => -\/(FailError("Entity not found"))
       }
     }
   }
+
   /**
     * Creates a new hierarchy relation to link an entity to a parent entity
     *
@@ -32,17 +33,6 @@ class EntityService @Inject() (entityDAO: EntityDAO) {
     TryBDCall { implicit c =>
       entityDAO.addHierarchy(parentId, entityId)
       \/-(entityId)
-    }
-  }
-
-  /**
-    * Get packageId
-    * @param userId
-    * @return
-    */
-  def getPackageId(userId: UUID): Future[Expect[Option[Long]]] = {
-    TryBDCall { implicit c =>
-      \/-(entityDAO.getPackageIdFromUser(userId))
     }
   }
 }
