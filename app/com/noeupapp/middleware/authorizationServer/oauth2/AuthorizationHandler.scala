@@ -45,21 +45,17 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
     Logger.debug("AuthorizationHandler.validateClient...")
     val clientCredential = request.clientCredential.get // TODO manage None
     val grantType = request.grantType
-    Logger.debug("Client credential: "+clientCredential)
-    Logger.debug("grantType: "+ grantType)
-
-
-    logger.debug(s"given : id = ${clientCredential.clientId} , secret = ${clientCredential.clientSecret}, grantType = $grantType")
+    Logger.debug(s"Client credential validity check: $clientCredential & grantType: $grantType")
 
     clientService.findByClientIDAndClientSecret(clientCredential.clientId, clientCredential.clientSecret.getOrElse("")) map {
       case -\/(e) =>
         Logger.error(e.toString)
         false
       case \/-(None) =>
-        logger.debug(s"Client is not valid")
+        Logger.debug(s"Client ($clientCredential) is not valid (not found in database)")
         false
       case \/-(Some(_)) =>
-        logger.debug(s"Client is valid")
+        Logger.debug(s"Client ($clientCredential) is valid")
         true
     }
   }
