@@ -25,12 +25,12 @@ trait PackageHandler {
     for {
       packs <- EitherT(getPacks(actionName))
       _     <- EitherT(hasAccessPackage(packs, user))
-      _     <- EitherT(jsonProcess())
+      _     <- EitherT(jsonProcess(actionName, user, packs))
     } yield ()
   }.run
 
 
-  protected def jsonProcess(): Future[Expect[Unit]]
+  protected def jsonProcess(actionName: String, user: User, usersPackages: Set[Pack]): Future[Expect[Unit]]
 
   private def getPacks(actionName: String): Future[Expect[Set[Pack]]] =
     Future.successful(\/-(actionPackage.packages(actionName)))
