@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.noeupapp.middleware.authorizationClient.ScopeAndRoleAuthorization
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
 import com.noeupapp.middleware.entities.account.Account
 import play.api.Logger
 import play.api.i18n.MessagesApi
@@ -16,9 +17,9 @@ import scalaz._
 
 class Cruds @Inject()(crudService: AbstractCrudService,
                       val messagesApi: MessagesApi,
-                      val env: Environment[Account, BearerTokenAuthenticator],
+                      val env: Environment[Account, CookieBearerTokenAuthenticator],
                       scopeAndRoleAuthorization: ScopeAndRoleAuthorization
-                     ) extends Silhouette[Account, BearerTokenAuthenticator] {
+                     ) extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
   def fetchById(model: String, id: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
 
