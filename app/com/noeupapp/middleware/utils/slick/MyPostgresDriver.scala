@@ -27,7 +27,7 @@ trait MyPostgresDriver extends ExPostgresDriver
   object MyAPI extends API with ArrayImplicits
     with DateTimeImplicits
     with JodaDateTimePlainImplicits
-    with JodaDateTimeImplicits
+//    with JodaDateTimeImplicits
     with JsonImplicits
     with NetImplicits
     with LTreeImplicits
