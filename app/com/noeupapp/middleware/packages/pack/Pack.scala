@@ -11,24 +11,21 @@ import scala.language.{implicitConversions, postfixOps}
 
 case class Pack(id: Long,
                   name: String,
-                  optionOffer: Option[JsValue],
-                  optionState: Option[JsValue]) extends Entity[Long] {
+                  optionOffer: Option[JsValue]) extends Entity[Long] {
 
   override def withNewId(id: Long): Entity[Long] = copy(id = id)
 
-  def this(e: PackIn) = this(0, e.name, e.optionOffer, e.optionState)
+  def this(e: PackIn) = this(0, e.name, e.optionOffer)
 
 }
 
 
 case class PackIn(name: String,
-                     optionOffer: Option[JsValue],
-                     optionState: Option[JsValue])
+                     optionOffer: Option[JsValue])
 
 case class PackOut(id: Long,
                       name: String,
-                      optionOffer: Option[JsValue],
-                      optionState: Option[JsValue])
+                      optionOffer: Option[JsValue])
 
 object Pack extends GlobalReadsWrites {
 
@@ -38,7 +35,7 @@ object Pack extends GlobalReadsWrites {
 
   val pack = TableQuery[PackTableDef]
 
-  implicit def toPackOut(e: Pack): PackOut = PackOut(e.id, e.name, e.optionOffer, e.optionState)
+  implicit def toPackOut(e: Pack): PackOut = PackOut(e.id, e.name, e.optionOffer)
 
 }
 
@@ -48,8 +45,7 @@ class PackTableDef(tag: Tag) extends Table[Pack](tag, "package_packages") with P
   def id          = column[Long]("id", O.AutoInc)
   def name        = column[String]("name")
   def optionOffer = column[Option[JsValue]]("option_offer")
-  def optionState = column[Option[JsValue]]("option_state")
-  override def *  = (id, name, optionOffer, optionState) <> ((Pack.apply _).tupled, Pack.unapply)
+  override def *  = (id, name, optionOffer) <> ((Pack.apply _).tupled, Pack.unapply)
 
   def pk = primaryKey("package_packages_pkey", id)
 
