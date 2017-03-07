@@ -18,12 +18,12 @@ import scalaz.{-\/, \/-}
   */
 class RelationEntityPackageService @Inject()(dao: Dao){
 
-  def getUsersPackageId(userId: UUID): Future[Expect[Option[Long]]] =
+  def getUsersActivePackage(userId: UUID): Future[Expect[Option[RelationEntityPackage]]] =
     dao.db
       .run(
         RelationEntityPackage.relEntPack
           .filter(_.entityId === userId)
-          .map(_.packageId)
+          .filter(_.billed.isEmpty)
           .result
           .headOption
       )
