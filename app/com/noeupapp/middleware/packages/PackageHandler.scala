@@ -1,5 +1,8 @@
 package com.noeupapp.middleware.packages
 
+import java.util.UUID
+
+import com.noeupapp.middleware.crudauto.CrudAutoFactory
 import com.noeupapp.middleware.entities.entity.EntityService
 import com.noeupapp.middleware.entities.relationEntityPackage.{RelationEntityPackage, RelationEntityPackageService}
 import com.noeupapp.middleware.entities.user.User
@@ -7,14 +10,30 @@ import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.packages.pack.Pack
 import com.noeupapp.middleware.utils.FutureFunctor._
+import play.api.{Configuration, Logger}
+import play.api.libs.json._
 
 import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
+import com.noeupapp.middleware.utils.FutureFunctor._
+import com.noeupapp.middleware.utils.TypeCustom._
+import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
 
-trait PackageHandler {
+
+
+trait PackageHandler extends HttpMethods {
 
   val actionPackage: ActionPackage
   val relationEntityPackageService: RelationEntityPackageService
+  val configuration: Configuration
+  val packageService: CrudAutoFactory[Pack, Long]
+  val relationEntityPackageCrudAutoService: CrudAutoFactory[RelationEntityPackage, UUID]
+
+  private val PLAY_HTTP_CONTEXT = "play.http.context"
+
+  private val httpContext = configuration.getString(PLAY_HTTP_CONTEXT).getOrElse("")
+  private val numberOfCharToRemove = Math.max(0, httpContext.length - 1)
+
 
   /**
     * Check if the user have access to actionName
@@ -30,6 +49,11 @@ trait PackageHandler {
     } yield ()
   }.run
 
+
+  def isAuthorized(user: User, httpMethod: String, withOutHttpContext: String): Future[Expect[Unit]] =
+    isAuthorized(user, mapHttpToActionName(httpMethod, withOutHttpContext.substring(numberOfCharToRemove)))
+
+  protected def mapHttpToActionName(httpMethod: String, withOutHttpContext: String): String
 
   protected def jsonProcess(actionName: String, user: User, usersPackages: Set[Pack], relEntPack: RelationEntityPackage): Future[Expect[Unit]]
 
@@ -55,5 +79,52 @@ trait PackageHandler {
       _       <- EitherT(checkPack(packOpt.map(_.packageId)))
     } yield packOpt.get // safe thanks to `checkPack`
   }.run
+
+  type PackageState
+
+
+  /**
+    *
+    * @param relEntPack
+    * @param p predicate to check if the state of the package is ok
+    * @param f update the package
+    * @return
+    */
+  protected def mapPackageState(relEntPack: RelationEntityPackage)
+                             (p: Option[PackageState] => Option[String])
+                             (f: Option[PackageState] => Option[PackageState])
+                             (implicit packageStateFormat: Format[PackageState]) = {
+    for {
+      pack <- EitherT(packageService.find(relEntPack.packageId))
+
+      packOffer <- EitherT(getPackageStageAsJson(pack.flatMap(_.optionOffer)))
+      packState <- EitherT(getPackageStageAsJson(relEntPack.optionState))
+
+      usersPackOrDefault = packState match {
+        case e @ Some(_) => e
+        case None => packOffer
+      }
+
+      predicateRes = p(usersPackOrDefault)
+      _ <- EitherT(predicateRes.isEmpty |> predicateRes.get)
+
+      packStageUpdated = f(usersPackOrDefault)
+
+      _ <- EitherT(relationEntityPackageCrudAutoService.update(
+        relEntPack.id,
+        relEntPack.copy(optionState = packStageUpdated.map(Json.toJson(_)))
+      ))
+    } yield ()
+  }.run
+
+  def getPackageStageAsJson(offer: Option[JsValue])(implicit packageStateFormat: Format[PackageState]): Future[Expect[Option[PackageState]]] =
+    offer.map(_.validate[PackageState]) match {
+      case Some(JsSuccess(value, _)) => Future.successful(\/-(Some(value)))
+      case Some(JsError(errors)) =>
+        Logger.error(s"Error while validating $errors")
+        Future.successful(\/-(None))
+      case None => Future.successful(\/-(None))
+    }
+
 
 }
