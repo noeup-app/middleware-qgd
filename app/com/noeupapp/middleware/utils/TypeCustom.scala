@@ -32,7 +32,7 @@ class BooleanCustom(boolean: Boolean) {
     * @param message message returned if boolean is false
     * @return
     */
-  def |>(message: String): Future[Expect[Unit]] = {
+  def |>(message: => String): Future[Expect[Unit]] = {
     if(boolean){
       Future.successful(\/-(()))
     }else{
