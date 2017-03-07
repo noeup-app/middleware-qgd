@@ -1,7 +1,7 @@
 package com.noeupapp.middleware.packages
 
 import com.noeupapp.middleware.entities.entity.EntityService
-import com.noeupapp.middleware.entities.relationEntityPackage.RelationEntityPackageService
+import com.noeupapp.middleware.entities.relationEntityPackage.{RelationEntityPackage, RelationEntityPackageService}
 import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
@@ -24,19 +24,19 @@ trait PackageHandler {
     */
   def isAuthorized(user: User, actionName: String): Future[Expect[Unit]] = {
     for {
-      packs <- EitherT(getPacks(actionName))
-      _     <- EitherT(hasAccessPackage(packs, user))
-      _     <- EitherT(jsonProcess(actionName, user, packs))
+      packs      <- EitherT(getPacks(actionName))
+      relEntPack <- EitherT(hasAccessPackage(packs, user))
+      _          <- EitherT(jsonProcess(actionName, user, packs, relEntPack))
     } yield ()
   }.run
 
 
-  protected def jsonProcess(actionName: String, user: User, usersPackages: Set[Pack]): Future[Expect[Unit]]
+  protected def jsonProcess(actionName: String, user: User, usersPackages: Set[Pack], relEntPack: RelationEntityPackage): Future[Expect[Unit]]
 
   private def getPacks(actionName: String): Future[Expect[Set[Pack]]] =
     Future.successful(\/-(actionPackage.packages(actionName)))
 
-  private def hasAccessPackage(packs: Set[Pack], user: User): Future[Expect[Unit]] = {
+  private def hasAccessPackage(packs: Set[Pack], user: User): Future[Expect[RelationEntityPackage]] = {
     val userInfo = s"User ${user.firstName} ${user.lastName} <${user.email}>"
 
     def checkPack(packageId: Option[Long]): Future[Expect[Unit]] = {
@@ -51,9 +51,9 @@ trait PackageHandler {
     }
 
     for {
-      packageId <- EitherT(relationEntityPackageService.getUsersPackageId(user.id))
-      pack      <- EitherT(checkPack(packageId))
-    } yield pack
+      packOpt <- EitherT(relationEntityPackageService.getUsersActivePackage(user.id))
+      _       <- EitherT(checkPack(packOpt.map(_.packageId)))
+    } yield packOpt.get // safe thanks to `checkPack`
   }.run
 
 }
