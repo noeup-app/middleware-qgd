@@ -3,6 +3,7 @@ package com.noeupapp.middleware.entities.account
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
 import play.api.i18n.MessagesApi
 import play.api.libs.json.{JsObject, Json}
 import com.noeupapp.middleware.entities.account.Account._
@@ -19,9 +20,9 @@ import scalaz.{-\/, \/-}
   */
 class Accounts @Inject()(
                        val messagesApi: MessagesApi,
-                       val env: Environment[Account, BearerTokenAuthenticator],
+                       val env: Environment[Account, CookieBearerTokenAuthenticator],
                        accountService: AccountService)
-  extends Silhouette[Account, BearerTokenAuthenticator] {
+  extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
 
   def me = SecuredAction.async { implicit request =>
