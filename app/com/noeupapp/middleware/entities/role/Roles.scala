@@ -4,10 +4,10 @@ import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api._
-import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
 import com.noeupapp.middleware.authorizationClient.RoleAuthorization.WithRole
 import com.noeupapp.middleware.authorizationClient.ScopeAndRoleAuthorization
 import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScope
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
 import com.noeupapp.middleware.entities.account.Account
 import play.api.Logger
 import play.api.i18n.MessagesApi
@@ -24,10 +24,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 class Roles @Inject()(
                          val messagesApi: MessagesApi,
-                         val env: Environment[Account, BearerTokenAuthenticator],
+                         val env: Environment[Account, CookieBearerTokenAuthenticator],
                          scopeAndRoleAuthorization: ScopeAndRoleAuthorization,
                          roleService: RoleService)
-  extends Silhouette[Account, BearerTokenAuthenticator] {
+  extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
 
   def fetchByUserId(id: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
