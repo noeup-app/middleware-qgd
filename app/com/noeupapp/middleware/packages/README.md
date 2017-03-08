@@ -105,6 +105,7 @@ Note that you can use `mapPackageState` (defined in `PackageHandler`) to :
 - first, check if user has enough credit to do an action
 - then, to update the state of the package linked to the user
 
+Example of implementation : 
 ```
 class PackageHandlerImpl @Inject()(/* ... */) extends PackageHandler {
 
