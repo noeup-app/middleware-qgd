@@ -4,18 +4,14 @@ import java.util.UUID
 import javax.inject.Inject
 
 import com.mohiva.play.silhouette.api._
-import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator
-
-
 import com.noeupapp.middleware.authorizationClient.ScopeAndRoleAuthorization
 import com.noeupapp.middleware.authorizationClient.RoleAuthorization.WithRole
 import com.noeupapp.middleware.authorizationClient.ScopeAuthorization.WithScope
-
 import com.noeupapp.middleware.entities.account.Account
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
 import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
-
 import User._
 
 import scalaz.{-\/, \/-}
@@ -28,10 +24,10 @@ import scalaz.{-\/, \/-}
  */
 class Users @Inject()(
                          val messagesApi: MessagesApi,
-                         val env: Environment[Account, BearerTokenAuthenticator],
+                         val env: Environment[Account, CookieBearerTokenAuthenticator],
                          scopeAndRoleAuthorization: ScopeAndRoleAuthorization,
                          userService: UserService)
-  extends Silhouette[Account, BearerTokenAuthenticator] {
+  extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
 
   def me = SecuredAction.async { implicit request =>
