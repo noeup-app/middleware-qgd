@@ -23,6 +23,7 @@ import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.TypeCustom._
+import play.api.mvc.Results.BadRequest
 
 
 /**
@@ -46,9 +47,11 @@ class AccountService @Inject()(userService: UserService,
         for {
           authLoginInfoOpt <- EitherT(authLoginInfoService.find(loginInfo))
           authLoginInfo    <- EitherT(authLoginInfoOpt |> "authLoginInfoOpt is not defined")
-          user             <- EitherT(userService.findById(authLoginInfo.user))
-          organisation     <- EitherT(userService.findOrganisationByUserId(user.get.id))
-        } yield Account(loginInfo, user.get, organisation)
+          userOpt          <- EitherT(userService.findById(authLoginInfo.user))
+          user             <- EitherT(userOpt |> (s"User not found with the following UUID:<${authLoginInfo.user}>", BadRequest))
+          organisation     <- EitherT(userService.findOrganisationByUserId(user.id))
+          userRoles        <- EitherT(roleService.getRolesByUser(user.id))
+        } yield Account(loginInfo, user, userRoles, organisation)
       }.run map {
         case -\/(e) =>
           Logger.error(s"User not found $e")
@@ -66,7 +69,7 @@ class AccountService @Inject()(userService: UserService,
     val loginInfo = api.LoginInfo("credentials", email.getOrElse(""))
     for{
       accountOpt <- EitherT(retrieve(loginInfo).map[Expect[Option[Account]]](\/-(_)))
-      roles      <- EitherT(roleService.getRoleByUser(userId))
+      roles      <- EitherT(roleService.getRolesByUser(userId))
     } yield accountOpt.map((_, roles))
   }.run
 
@@ -88,6 +91,7 @@ class AccountService @Inject()(userService: UserService,
         val account = Account(
           loginInfo = profile.loginInfo,
           user = userIn.toUser,
+          List(),
           None
         )
 
@@ -133,9 +137,10 @@ class AccountService @Inject()(userService: UserService,
 
   def save(loginInfo: LoginInfo, userInput: User, organisation: Option[Organisation] = None): Future[Expect[Account]] = {
     for {
-      user <- EitherT(userService.add(userInput))
-      _    <- EitherT(authLoginInfoService.add(AuthLoginInfo.fromLoginInfo(loginInfo, user.id)))
-    } yield Account(loginInfo, user, organisation)
+      user      <- EitherT(userService.add(userInput))
+      _         <- EitherT(authLoginInfoService.add(AuthLoginInfo.fromLoginInfo(loginInfo, user.id)))
+      userRoles <- EitherT(roleService.getRolesByUser(user.id))
+    } yield Account(loginInfo, user, userRoles, organisation)
   }.run
 
 }

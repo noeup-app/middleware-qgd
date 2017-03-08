@@ -32,7 +32,7 @@ class Roles @Inject()(
 
   def fetchByUserId(id: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
     .async { implicit request =>
-      roleService.getRoleByUser(id) map {
+      roleService.getRolesByUser(id) map {
         case \/-(roles) if roles.isEmpty => NoContent
         case \/-(roles) => Ok(Json.toJson(roles))
         case e @ -\/(_) =>

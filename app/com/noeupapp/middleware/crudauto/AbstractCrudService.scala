@@ -43,7 +43,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
       Future.successful(-\/(FailError("Not authorized", errorType = Unauthorized)))
     case (sawr: SecuredAccessWithRole, Some(user)) =>
       {
-        for (userRoles <- EitherT(roleService.getRoleByUser(user.id)))
+        for (userRoles <- EitherT(roleService.getRolesByUser(user.id)))
           yield userRoles.intersect(sawr.roles).isEmpty
       }.run.map{
         case \/-(true) => -\/(FailError("Not authorized", errorType = Unauthorized))

@@ -12,6 +12,7 @@ import com.noeupapp.middleware.entities.organisation.Organisation._
 case class Account(
                     loginInfo: api.LoginInfo,
                     user: User,
+                    roles: List[String],
                     organisation: Option[Organisation]) extends api.Identity
 
 

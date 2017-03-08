@@ -14,8 +14,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
 
-class RoleService  @Inject() (relationUserRole: RelationUserRoleDAO,
-                              roleDAO: RoleDAO) {
+class RoleService @Inject()(relationUserRole: RelationUserRoleDAO,
+                            roleDAO: RoleDAO) {
 
   /*def addUserRoles(user: Account): Future[Expect[Boolean]] = Future {
 //    DB.withTransaction({ implicit c =>
@@ -26,27 +26,25 @@ class RoleService  @Inject() (relationUserRole: RelationUserRoleDAO,
   }*/
 
 
-
-  def getRoleByUser(userId: UUID): Future[Expect[List[String]]] =
-    TryBDCall{ implicit c =>
+  def getRolesByUser(userId: UUID) =
+    TryBDCall { implicit c =>
       \/-(roleDAO.getByUserId(userId))
     }
 
-
   def getIdByRoleName(name: String): Future[Expect[Option[UUID]]] =
-    TryBDCall{ implicit c =>
+    TryBDCall { implicit c =>
       \/-(roleDAO.getIdByRoleName(name))
     }
 
   def setRoleOptionToUser(idRole: Option[UUID], user: User): Future[Expect[Boolean]] = {
-    idRole match{
+    idRole match {
       case Some(id) => setRoleToUser(id, user)
       case None => Future.successful(-\/(FailError("superadmin role doesn't exist")))
     }
   }
 
   def setRoleToUser(idRole: UUID, user: User): Future[Expect[Boolean]] =
-    TryBDCall{ implicit c =>
+    TryBDCall { implicit c =>
       \/-(relationUserRole.addRoleToUser(idRole, user.id))
     }
 }
