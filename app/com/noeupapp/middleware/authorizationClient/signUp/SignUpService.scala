@@ -89,8 +89,8 @@ class SignUpService @Inject()(userService: UserService,
     for{
       userOpt <- EitherT(confirmEmailService.checkTokenValidity(token))
       user    <- EitherT(userOpt |> (s"Token [$token] is wrong or expired", BadRequest))
-      _       <- EitherT(grantToAdminFirstUser(user))
       _       <- EitherT(userService.changeActiveStatus(user.id, status = true))
+      _       <- EitherT(grantToAdminFirstUser(user))
     } yield user
   }.run
 
@@ -109,10 +109,10 @@ class SignUpService @Inject()(userService: UserService,
   }.run
 
   def updateFirstUserFlow(user: User, nbActiveUser: Int): Future[Expect[Boolean]] = {
-    var superadminRoleName : String  = "superadmin";
+    val superadminRoleName : String  = "superadmin"
     nbActiveUser match {
       case 1 => updateUserRoleFlow(user, superadminRoleName)
-      case _ => Future.successful(\/-(true))
+      case _ => Future.successful(-\/(FailError(s"User:: $user can't be superadmin. Active user number:: $nbActiveUser")))
     }
   }
 
