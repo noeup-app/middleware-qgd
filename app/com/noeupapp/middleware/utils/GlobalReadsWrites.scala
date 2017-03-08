@@ -40,6 +40,8 @@ trait GlobalReadsWrites {
 
 
   // Datetime
+  // MAY BE THE CAUSE OF A BUG WHEN PARSE DATE (TOO SHORT)
+//  val dateFormatGeneration: DateTimeFormatter = DateTimeFormat.forPattern("yyyyMMddHHmmss")
   val dateFormatGeneration: DateTimeFormatter = DateTimeFormat.forPattern("yyyyMMddHHmmssSS")
 
   implicit def rowToDateTime: Column[DateTime] = Column.nonNull1 { (value, meta) =>

@@ -17,6 +17,7 @@ class Evolution extends Controller {
     id match {
       case 0 => _init
       case 1 => _1
+      case 2 => _2
       case _ => Future.successful(NotFound)
     }
   }
@@ -271,7 +272,6 @@ class Evolution extends Controller {
         .stripMargin)
 
 
-
   def _1 =
     applyHelper(
       """
@@ -284,5 +284,41 @@ class Evolution extends Controller {
         |  CONSTRAINT auth_login_info_entity_users_id_fk FOREIGN KEY ("user") REFERENCES entity_users (id)
         |);
       """
+        .stripMargin)
+
+  def _2 =
+    applyHelper(
+      """
+        |CREATE TABLE public.package_packages (
+        |  id BIGSERIAL PRIMARY KEY NOT NULL,
+        |  name TEXT NOT NULL,
+        |  option_offer JSON
+        |);
+        |CREATE TABLE public.package_events (
+        |  id UUID PRIMARY KEY NOT NULL,
+        |  action_name TEXT NOT NULL,
+        |  triggered TIMESTAMP WITH TIME ZONE NOT NULL,
+        |  user_id UUID NOT NULL,
+        |  package_id BIGINT NOT NULL,
+        |  params JSON,
+        |  FOREIGN KEY (package_id) REFERENCES public.package_packages (id)
+        |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION,
+        |  FOREIGN KEY (user_id) REFERENCES public.entity_users (id)
+        |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION
+        |);
+        |CREATE TABLE public.package_relation_entity_package (
+        |  id UUID PRIMARY KEY NOT NULL,
+        |  package_id BIGINT NOT NULL,
+        |  entity_id UUID NOT NULL,
+        |  billed TIMESTAMP WITH TIME ZONE,
+        |  created TIMESTAMP WITH TIME ZONE NOT NULL,
+        |  option_state JSON,
+        |  FOREIGN KEY (package_id) REFERENCES public.package_packages (id)
+        |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION,
+        |  FOREIGN KEY (entity_id) REFERENCES public.entity_entities (id)
+        |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION
+        |);
+        |ALTER TABLE public.entity_entities ADD package_id INT NULL;
+        |"""
         .stripMargin)
 }

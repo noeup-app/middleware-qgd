@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   evolutions,
   "com.typesafe.play" %% "play-slick" % "1.1.1",
   "com.github.tototoshi" %% "slick-joda-mapper" % "2.2.0",
-  "joda-time" % "joda-time" % "2.8",
+  "joda-time" % "joda-time" % "2.9",
   "org.joda" % "joda-convert" % "1.7",
   "com.github.tminglei" %% "slick-pg" % "0.14.4",
   "com.github.tminglei" %% "slick-pg_play-json" % "0.14.4",
@@ -29,7 +29,8 @@ libraryDependencies ++= Seq(
   "io.underscore" %% "slickless" % "0.3.0",
   //"com.typesafe.play" %% "play-slick-evolutions" % "1.1.1",
   "com.typesafe.play.modules" %% "play-modules-redis" % "2.4.0",
-  "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
+//  "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
+  "org.postgresql" % "postgresql" % "9.4-1201-jdbc41",
   jdbc,
   //
   // S3
