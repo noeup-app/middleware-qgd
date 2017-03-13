@@ -48,7 +48,21 @@ Call `/evolution/2`.
 ### Binding in module (Guice)
 ```
     bind[PackageHandler].to[PackageHandlerImpl]
+    bind[ActionPackage].to[ActionPackageImpl]
 ```
+
+### Crud auto bindings
+```
+class Crud extends CrudClassName {
+
+  override def configure:  Map[String, CrudConfiguration[_, _, _]] = Map (
+      "packages"         -> configuration[Pack, Long, PackTableDef],
+      "relentpack"       -> configuration[RelationEntityPackage, UUID, RelationEntityPackageTableDef]
+    )
+
+}
+```
+
 
 ### PackageState
 PackageState define the credit the user can use. For instance, user can create 5 other users and sent 100 emails.
@@ -83,6 +97,17 @@ object Action {
 
 
 ### ActionPackageImpl
+Association between an action and it required packages.
+
+```
+class ActionPackageImpl extends ActionPackage {
+
+  override def packages(action: String): Set[Pack] = ???
+
+}
+```
+
+### ActionCostImpl
 Association between an action an it cost.
 
 ```
@@ -105,7 +130,7 @@ Note that you can use `mapPackageState` (defined in `PackageHandler`) to :
 - first, check if user has enough credit to do an action
 - then, to update the state of the package linked to the user
 
-Example of implementation : 
+Example of implementation :
 ```
 class PackageHandlerImpl @Inject()(/* ... */) extends PackageHandler {
 
