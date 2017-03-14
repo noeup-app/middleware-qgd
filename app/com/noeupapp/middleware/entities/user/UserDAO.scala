@@ -16,6 +16,7 @@ import scala.language.postfixOps
   */
 class UserDAO extends GlobalReadsWrites {
 
+
   /**
     * Finds all users in DB.
     *
@@ -179,6 +180,34 @@ class UserDAO extends GlobalReadsWrites {
     Logger.trace("UserDao.add OK")
     a
   }
+
+
+
+  def update(id: UUID, user: User)(implicit connection: Connection): Unit = {
+    SQL(
+      """UPDATE entity_users
+         SET
+          email = {email},
+          first_name = {first_name},
+          last_name = {last_name},
+          avatar_url = {avatar_url},
+          active = {active},
+          deleted = {deleted},
+          owned_by_client = {owned_by_client}
+      WHERE id = {id};
+      """)
+      .on(
+        'id -> id,
+        'email -> user.email,
+        'first_name -> user.firstName,
+        'last_name -> user.lastName,
+        'avatar_url -> user.avatarUrl,
+        'active -> user.active,
+        'deleted -> user.deleted,
+        'owned_by_client -> user.ownedByClient
+      ).execute()
+  }
+
 
   /**
     * Change user delete value to true

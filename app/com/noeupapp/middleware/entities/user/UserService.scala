@@ -265,6 +265,14 @@ class UserService @Inject()(userDAO: UserDAO,
 
 
 
+  def update(id: UUID, body: User): Future[Expect[Unit]] = {
+    TryBDCall{ implicit c =>
+      \/-(userDAO.update(id, body))
+    }
+  }
+
+
+
 
   /**
     * Set deleted field to true
@@ -285,10 +293,10 @@ class UserService @Inject()(userDAO: UserDAO,
   def delete(email: String): Future[Expect[Boolean]] = {
     for{
       user    <- EitherT(this.findByEmail(email))
-      _       <- EitherT(user |> "User is not defined")
+      _       <- EitherT(user |> s"User ($email) is not defined")
       getUser <- EitherT(this.getUserFromOpt(user))
       res     <- EitherT(this.deleteUserById(getUser.id))
-    } yield res
+    } yield true
   }.run
 
 }

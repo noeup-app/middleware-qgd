@@ -76,17 +76,29 @@ class Users @Inject()(
           Logger.error(error.toString)
           InternalServerError(Json.toJson("Error while fetching users"))
         case \/-(usersList) =>
-          Ok(Json.toJson(usersList.map(u => toUserOut(u))))
+          Ok(Json.toJson(usersList))
       }
     }
 
+
+  def update(id: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
+    .async(parse.json[User]) { implicit request =>
+      userService.update(id, request.body) map {
+        case \/-(_) => Ok("User updated")
+        case -\/(e) =>
+          Logger.error(e.toString)
+          InternalServerError(Json.toJson("Error while updating user"))
+      }
+    }
 
   def delete(email: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
     .async { implicit request =>
       userService.delete(email) map {
         case \/-(true) => Ok("User deleted")
         case \/-(false) => InternalServerError("User not deleted")
-        case -\/(e) => InternalServerError(Json.toJson("Error while deleting user"))
+        case -\/(e) =>
+          Logger.error(e.toString)
+          InternalServerError(Json.toJson("Error while deleting user"))
       }
     }
 }
