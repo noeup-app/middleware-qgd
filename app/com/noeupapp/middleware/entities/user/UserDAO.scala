@@ -27,7 +27,7 @@ class UserDAO extends GlobalReadsWrites {
       case None => ""
     }
     SQL(
-      s"""SELECT id, first_name, last_name, email, avatar_url, created, active, owned_by_client
+      s"""SELECT *
          FROM entity_users
          $condition
       """)

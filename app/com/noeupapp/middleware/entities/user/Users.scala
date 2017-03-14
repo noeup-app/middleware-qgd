@@ -13,6 +13,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import User._
+import play.api.Logger
 
 import scalaz.{-\/, \/-}
 
@@ -71,8 +72,11 @@ class Users @Inject()(
     .async { implicit request =>
       // TODO limit search to users I can admin
       userService.findAll(email) map {
-        case -\/(_) => InternalServerError(Json.toJson("Error while fetching users"))
-        case \/-(usersList) => Ok(Json.toJson(usersList.map(u => toUserOut(u))))
+        case -\/(error) =>
+          Logger.error(error.toString)
+          InternalServerError(Json.toJson("Error while fetching users"))
+        case \/-(usersList) =>
+          Ok(Json.toJson(usersList.map(u => toUserOut(u))))
       }
     }
 
