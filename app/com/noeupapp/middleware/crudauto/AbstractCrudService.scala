@@ -3,6 +3,7 @@ package com.noeupapp.middleware.crudauto
 import java.util.UUID
 import javax.inject.Inject
 
+import com.noeupapp.middleware.entities.account.Account
 import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.errorHandle.FailError
@@ -51,9 +52,32 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         case error @ -\/(_) => error
       }
     case _                     => Future.successful(\/-(()))
-  }
+  } 
+  
+  
+  
+  def checkIfAuthorizedWithDelete(model: String, accountOpt: Option[Account], withDeleteOpt: Option[Boolean]): Future[Expect[Boolean]] = {
 
-  def findByIdFlow(model:String, rawId: String, omits: List[String], includes: List[String], userOpt: Option[User]): Future[Expect[Option[JsValue]]] =
+    def userHasSufficientRoles(usersRoles: List[String]): Boolean =
+      (crudClassName.rolesRequiredToGetWithDeleted diff usersRoles).nonEmpty
+    
+    accountOpt -> withDeleteOpt match {
+      case (Some(account), Some(true)) if userHasSufficientRoles(account.roles) => Future.successful(\/-(true))
+      case (_, Some(true)) => Future.successful(-\/(FailError(s"You don't have sufficient right to get $model with deleted column")))
+      case _ => Future.successful(\/-(false))
+    }
+  }
+  
+  
+  
+  
+  
+  
+  def findByIdFlow(model:String, 
+                   rawId: String, 
+                   omits: List[String], 
+                   includes: List[String], 
+                   userOpt: Option[User]): Future[Expect[Option[JsValue]]] =
     {
       for {
         configuration <- EitherT(getConfiguration(model))
@@ -82,18 +106,30 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
 
   //def findAllFlow(model:String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean, p: Option[Int], pp: Option[Int]): Future[Expect[JsValue]] =
 
-  def findAllFlow(model:String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean, p: Option[Int], pp: Option[Int], userOpt: Option[User]): Future[Expect[JsValue]] =
+  def findAllFlow(model:String,
+                  omits: List[String],
+                  includes: List[String],
+                  search: Option[String],
+                  countOnly: Boolean,
+                  p: Option[Int],
+                  pp: Option[Int],
+                  accountOpt: Option[Account],
+                  withDeleteOpt: Option[Boolean]): Future[Expect[JsValue]] =
     {
+      val userOpt = accountOpt.map(_.user)
+
       for {
         configuration <- EitherT(getConfiguration(model))
 
         _             <- EitherT(checkIfAuthorized(configuration.authorisation.findAll, userOpt))
+        withDelete    <- EitherT(checkIfAuthorizedWithDelete(model, accountOpt, withDeleteOpt))
 
         entityClass   = configuration.entityClass
         tableDefClass = configuration.tableDef
 
         singleton     = Class.forName(configuration.entityClass.getName + "$")
 
+        bareEntity    = Class.forName(configuration.entityClass.getName)
         input         = Class.forName(configuration.entityClass.getName + "In")
         out           = Class.forName(configuration.entityClass.getName + "Out")
 
@@ -101,10 +137,13 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
 
         classInfo     <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
 
-        found         <- EitherT(crudAutoService.findAll(tableQuery, search, countOnly, p, pp)
+        found         <- EitherT(crudAutoService.findAll(tableQuery, search, countOnly, p, pp, withDelete)
                                                         (classInfo.jsonFormat.asInstanceOf[Format[Entity[Any]]]))
         count         = found.length
-        newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
+
+        outClass      = if (withDelete) bareEntity else out
+
+        newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, outClass, withDelete))
         filteredJson  <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
       } yield if (countOnly) Json.toJson(count) else filteredJson
     }.run
@@ -116,8 +155,20 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         .newInstance(tag)
         .asInstanceOf[Table[Entity[Any]] with PKTable])
 
-  def deepFetchAllFlow(model1: String, rawId: String, model2: String, omits: List[String], includes: List[String], search: Option[String], countOnly: Boolean, p: Option[Int], pp: Option[Int], userOpt: Option[User]): Future[Expect[Option[JsValue]]] =
+  def deepFetchAllFlow(model1: String, 
+                       rawId: String, 
+                       model2: String, 
+                       omits: List[String], 
+                       includes: List[String], 
+                       search: Option[String], 
+                       countOnly: Boolean, 
+                       p: Option[Int], 
+                       pp: Option[Int],
+                       accountOpt: Option[Account],
+                       withDeleteOpt: Option[Boolean]): Future[Expect[Option[JsValue]]] =
     {
+      val userOpt = accountOpt.map(_.user)
+      
       for {
 
         entity1Found  <- EitherT(this.findByIdFlow(model1, rawId, Nil, Nil, userOpt))
@@ -126,13 +177,16 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         configuration <- EitherT(getConfiguration(model2))
 
         _             <- EitherT(checkIfAuthorized(configuration.authorisation.deepFindAll, userOpt))
+        withDelete    <- EitherT(checkIfAuthorizedWithDelete(s"$model1/$rawId/$model2", accountOpt, withDeleteOpt))
 
-        id            <- EitherT(parseStringToType(configuration.pK, rawId))
+
+                                                                                                                                id            <- EitherT(parseStringToType(configuration.pK, rawId))
 
         entityClass   = configuration.entityClass
         tableDefClass = configuration.tableDef
         singleton     = Class.forName(configuration.entityClass.getName + "$")
 
+        bareEntity    = Class.forName(configuration.entityClass.getName)
         input         = Class.forName(configuration.entityClass.getName + "In")
         out           = Class.forName(configuration.entityClass.getName + "Out")
 
@@ -148,8 +202,12 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         found         <- EitherT(
                           crudAutoService.deepFindAll(tableQuery2, id, fk, search, p, pp)
                           (classInfo.jsonFormat.asInstanceOf[Format[Entity[Any]]]))
+
         count         = found.length
-        newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, out))
+
+        outClass      = if (withDelete) bareEntity else out
+
+        newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, outClass, false))
         filteredJson  <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
       } yield if (countOnly) Json.toJson(count) else filteredJson
     }.run map {
@@ -158,7 +216,13 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
       case \/-(res) => \/-(Some(res))
     }
 
-  def deepFetchByIdFlow(model1: String, rawId1: String, model2: String, rawId2: String, omits: List[String], includes: List[String], userOpt: Option[User]): Future[Expect[Option[JsValue]]] =
+  def deepFetchByIdFlow(model1: String, 
+                        rawId1: String, 
+                        model2: String, 
+                        rawId2: String, 
+                        omits: List[String], 
+                        includes: List[String], 
+                        userOpt: Option[User]): Future[Expect[Option[JsValue]]] =
     {
       for {
         entity1Found    <- EitherT(this.findByIdFlow(model1, rawId1, Nil, Nil, userOpt))

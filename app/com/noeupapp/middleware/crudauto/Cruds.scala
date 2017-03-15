@@ -21,7 +21,10 @@ class Cruds @Inject()(crudService: AbstractCrudService,
                       scopeAndRoleAuthorization: ScopeAndRoleAuthorization
                      ) extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
-  def fetchById(model: String, id: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+  def fetchById(model: String,
+                id: String,
+                omit: Option[String],
+                include: Option[String]) = UserAwareAction.async { implicit request =>
 
     val omits    = omit.map(_.split(",").toList).toList.flatten
     val includes = include.map(_.split(",").toList).toList.flatten
@@ -41,7 +44,14 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     }
   }
 
-  def fetchAll(model: String, omit: Option[String], include: Option[String], search: Option[String] = None, count: Option[Boolean] = Some(false), p: Option[Int] = None, pp: Option[Int] = None) = UserAwareAction.async { implicit request =>
+  def fetchAll(model: String,
+               omit: Option[String],
+               include: Option[String],
+               search: Option[String] = None,
+               count: Option[Boolean] = Some(false),
+               p: Option[Int] = None,
+               pp: Option[Int] = None,
+               withDelete: Option[Boolean]) = UserAwareAction.async { implicit request =>
 
 
     if (p.isDefined ^ pp.isDefined) {
@@ -51,7 +61,7 @@ class Cruds @Inject()(crudService: AbstractCrudService,
       val omits = omit.map(_.split(",").toList).toList.flatten
       val includes = include.map(_.split(",").toList).toList.flatten
 
-      crudService.findAllFlow(model, omits, includes, search, count.getOrElse(false), p, pp, request.identity.map(_.user)) map {
+      crudService.findAllFlow(model, omits, includes, search, count.getOrElse(false), p, pp, request.identity, withDelete) map {
         case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
           Logger.warn(s"Unauthorized GET /$model")
           Unauthorized(Json.toJson("Unauthorized"))
@@ -64,7 +74,16 @@ class Cruds @Inject()(crudService: AbstractCrudService,
   }
 
 
-  def deepFetchAll(model1: String, id: String, model2: String, omit: Option[String], include: Option[String], search: Option[String] = None, count: Option[Boolean] = Some(false), p: Option[Int] = None, pp: Option[Int] = None) = UserAwareAction.async { implicit request =>
+  def deepFetchAll(model1: String,
+                   id: String,
+                   model2: String,
+                   omit: Option[String],
+                   include: Option[String],
+                   search: Option[String] = None,
+                   count: Option[Boolean] = Some(false),
+                   p: Option[Int] = None,
+                   pp: Option[Int] = None,
+                   withDelete: Option[Boolean]) = UserAwareAction.async { implicit request =>
 
     if (p.isDefined ^ pp.isDefined) {
       Logger.error("One of query param `p` or `pp` is missing")
@@ -73,7 +92,7 @@ class Cruds @Inject()(crudService: AbstractCrudService,
       val omits = omit.map(_.split(",").toList).toList.flatten
       val includes = include.map(_.split(",").toList).toList.flatten
 
-      crudService.deepFetchAllFlow(model1, id, model2, omits, includes, search, count.getOrElse(false), p, pp, request.identity.map(_.user)) map {
+      crudService.deepFetchAllFlow(model1, id, model2, omits, includes, search, count.getOrElse(false), p, pp, request.identity, withDelete) map {
         case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
           Logger.warn(s"Unauthorized GET /$model1/$id/$model2")
           Unauthorized(Json.toJson("Unauthorized"))
@@ -87,7 +106,12 @@ class Cruds @Inject()(crudService: AbstractCrudService,
 
   }
 
-  def deepFetchById(model1: String, id1: String, model2: String, id2: String, omit: Option[String], include: Option[String]) = UserAwareAction.async { implicit request =>
+  def deepFetchById(model1: String,
+                    id1: String,
+                    model2: String,
+                    id2: String,
+                    omit: Option[String],
+                    include: Option[String]) = UserAwareAction.async { implicit request =>
 
     val omits    = omit.map(_.split(",").toList).toList.flatten
     val includes = include.map(_.split(",").toList).toList.flatten

@@ -26,6 +26,7 @@ trait CrudClassName {
 
   def getModel(modelName: String): Option[CrudConfiguration[_,_,_]] = configure.get(modelName)
 
+  val rolesRequiredToGetWithDeleted: List[String] = List("superadmin")
 
   // TODO : why cast is necessary here ?
   protected def configuration[E, PK, V <: Table[E]](implicit eClass: ClassTag[E], pkClass: ClassTag[PK], vClass: ClassTag[V], baseColumnType: BaseColumnType[PK]) =

@@ -32,10 +32,12 @@ class CrudAutoService @Inject()(dao: Dao)() {
 
   def findAll[E <: Entity[Any]](tableQuery: TableQuery[Table[E] with PKTable],
                                 search: Option[String],
-                                countOnly: Boolean, p: Option[Int], pp: Option[Int])
+                                countOnly: Boolean,
+                                p: Option[Int], pp: Option[Int],
+                                withDelete: Boolean)
                                (implicit formatE: Format[E]): Future[Expect[Seq[E]]] = {
 
-    if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted"))
+    if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted") && !withDelete)
       dao.runForAll(tableQuery.filter(row =>
         row.column[Boolean]("deleted") === false)) // TODO column("id") should be a generik pk
     else
@@ -385,26 +387,27 @@ class CrudAutoService @Inject()(dao: Dao)() {
     )
   }
 
-  def toJsValueList[T, A, C](newObject: List[T], model: Class[_], singleton: Class[A], out: Class[C]): Future[Expect[JsValue]] = {
+  def toJsValueList[T, A, C](newObject: List[T], model: Class[_], singleton: Class[A], out: Class[C], withDelete: Boolean): Future[Expect[JsValue]] = {
     val const = singleton.getDeclaredConstructors()(0)
     const.setAccessible(true)
     val obj = const.newInstance()
     val jsFormat = singleton.getDeclaredField(out.getName.split('.').last+"Format")
     jsFormat.setAccessible(true)
     implicit val format = jsFormat.get(obj).asInstanceOf[Format[C]]
-    val toOut: Method = singleton.getDeclaredMethod("to"+out.getName.split('.').last, model)
-    Future.successful(
-      \/-(
-        Json.toJson(
-          newObject
-            .map{ o =>
-              toOut
-                .invoke(obj, o.asInstanceOf[Object])
-                .asInstanceOf[C]
-            }
-        )
-      )
-    )
+
+    val toJson =
+      if(withDelete) newObject.map(_.asInstanceOf[C])
+      else {
+        val toOut: Method = singleton.getDeclaredMethod("to"+out.getName.split('.').last, model)
+        newObject
+          .map{ o =>
+            toOut
+              .invoke(obj, o.asInstanceOf[Object])
+              .asInstanceOf[C]
+          }
+      }
+
+    Future.successful(\/-(Json.toJson(toJson)))
   }
 
 
@@ -514,10 +517,10 @@ class CrudAutoFactory[E <: Entity[PK], PK] @Inject()( crudClassName: CrudClassNa
     runtimeMirror.classSymbol(clazz).toType
   }
 
-  def findAll(search: Option[String] = None, count: Option[Boolean] = Some(false))(implicit bct: BaseColumnType[PK], formatE: Format[E], p: Option[Int] = None, pp: Option[Int] = None): Future[Expect[Seq[E]]] =
+  def findAll(search: Option[String] = None, count: Option[Boolean] = Some(false), withDeleted: Boolean = false)(implicit bct: BaseColumnType[PK], formatE: Format[E], p: Option[Int] = None, pp: Option[Int] = None): Future[Expect[Seq[E]]] =
     // for deprecated findAllPlainSql
     // crudAutoService.findAll[Entity[Any]](tableQueryAny, search, count.getOrElse(false), p, pp)(formatE.asInstanceOf[Format[Entity[Any]]]).map(_.map(_.map(_.asInstanceOf[E])))
-    crudAutoService.findAll[Entity[Any]](tableQueryAny, search, count.getOrElse(false), p, pp)(formatE.asInstanceOf[Format[Entity[Any]]]).map(_.map(_.map(_.asInstanceOf[E])))
+    crudAutoService.findAll[Entity[Any]](tableQueryAny, search, count.getOrElse(false), p, pp, withDeleted)(formatE.asInstanceOf[Format[Entity[Any]]]).map(_.map(_.map(_.asInstanceOf[E])))
 //=======
 //  def findAll(search: Option[String] = None, count: Option[Boolean] = Some(false))(implicit bct: BaseColumnType[PK], formatE: Format[E]): Future[Expect[Seq[E]]] =
 //    crudAutoService.findAll[Entity[Any]](tableQueryAny, search, count.getOrElse(false))(formatE.asInstanceOf[Format[Entity[Any]]]).map(_.map(_.map(_.asInstanceOf[E])))
