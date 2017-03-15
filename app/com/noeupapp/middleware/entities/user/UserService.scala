@@ -62,6 +62,13 @@ class UserService @Inject()(userDAO: UserDAO,
     }
   }
 
+
+  def findDeletedOrNotByEmail(email: String): Future[Expect[Option[User]]] =
+    TryBDCall{ implicit c =>
+      val res = userDAO.findDeletedOrNot(email)
+      \/- (res)
+    }
+
   def findInactive(email: String): Future[Expect[Option[User]]] = {
     TryBDCall{ implicit c =>
       \/- (userDAO.findInactive(email))
@@ -285,17 +292,37 @@ class UserService @Inject()(userDAO: UserDAO,
     }
   }
 
+  def deletePurgeUserById(userId: UUID): Future[Expect[Boolean]] = {
+    TryBDCall{ implicit c =>
+      \/-(userDAO.deletePurge(userId))
+    }
+  }
+
   /**
     * Update contact's deleted field to true
     * @param email
     * @return
     */
-  def delete(email: String): Future[Expect[Boolean]] = {
+  def delete(email: String, purge: Boolean): Future[Expect[Boolean]] = {
+
+    def getUser =
+      if(purge)
+        EitherT(this.findDeletedOrNotByEmail(email))
+      else
+        EitherT(this.findByEmail(email))
+
+
+    def deleteUser(userId: UUID) =
+      if(purge)
+        EitherT(this.deletePurgeUserById(userId))
+      else
+        EitherT(this.deleteUserById(userId))
+
     for{
-      user    <- EitherT(this.findByEmail(email))
-      _       <- EitherT(user |> s"User ($email) is not defined")
-      getUser <- EitherT(this.getUserFromOpt(user))
-      res     <- EitherT(this.deleteUserById(getUser.id))
+      userOpt <- getUser
+      user    <- EitherT(userOpt |> s"User ($email) is not defined")
+      _       <- deleteUser(user.id)
+
     } yield true
   }.run
 

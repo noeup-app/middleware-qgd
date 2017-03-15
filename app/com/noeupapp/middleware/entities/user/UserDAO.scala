@@ -52,6 +52,16 @@ class UserDAO extends GlobalReadsWrites {
       ).as(User.parse *).headOption // One email corresponds to at most one user
   }
 
+  def findDeletedOrNot(email: String)(implicit connection: Connection): Option[User] = {
+    SQL(
+      """SELECT *
+         FROM entity_users
+         WHERE email = {email};""")
+      .on(
+      'email  -> email
+      ).as(User.parse *).headOption // One email corresponds to at most one user
+  }
+
   /**
     * Finds a user by its login info.
     *
@@ -220,6 +230,17 @@ class UserDAO extends GlobalReadsWrites {
       """
           UPDATE entity_users
           SET deleted = 'true'
+          WHERE id = {id}
+        """
+    ).on(
+      'id -> userId
+    ).execute()
+  }
+
+  def deletePurge(userId: UUID)(implicit connection: Connection): Boolean = {
+    SQL(
+      """
+          DELETE FROM entity_users
           WHERE id = {id}
         """
     ).on(

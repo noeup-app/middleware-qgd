@@ -91,9 +91,9 @@ class Users @Inject()(
       }
     }
 
-  def delete(email: String) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
+  def delete(email: String, purge: Option[Boolean]) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
     .async { implicit request =>
-      userService.delete(email) map {
+      userService.delete(email, purge.getOrElse(false)) map {
         case \/-(true) => Ok("User deleted")
         case \/-(false) => InternalServerError("User not deleted")
         case -\/(e) =>
