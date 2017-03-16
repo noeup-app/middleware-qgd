@@ -51,7 +51,7 @@ class GroupDAO extends GlobalReadsWrites {
     * @param connection
     * @return
     */
-  def getAll(userId: UUID, admin: Boolean, organisation: UUID)(implicit connection: Connection): List[Group] = {
+  def getAll(userId: UUID,/* admin: Boolean, */organisation: UUID)(implicit connection: Connection): List[Group] = {
     SQL(
       """
           SELECT DISTINCT grou.id, grou.name, owner, grou.deleted
@@ -59,13 +59,13 @@ class GroupDAO extends GlobalReadsWrites {
           INNER JOIN entity_entities ent ON ent.id = grou.id
           LEFT JOIN entity_hierarchy hi ON hi.parent = ent.id
           LEFT JOIN entity_hierarchy ho ON ho.entity = ent.id
-          WHERE owner = {user}::UUID OR hi.entity = {user}::UUID OR {admin} = 'true'
+          WHERE owner = {user}::UUID OR hi.entity = {user}::UUID
           AND ho.parent = {organisation}::UUID
           AND grou.deleted = false
       """
     ).on(
       'user -> userId,
-      'admin -> admin,
+      //'admin -> admin,
       'organisation -> organisation
     ).as(Group.parse *)
   }
@@ -193,7 +193,8 @@ class GroupDAO extends GlobalReadsWrites {
                   AND hi.parent = {organisation}::UUID
       """
     ).on(
-      'id -> groupId
+      'id -> groupId,
+      'organisation -> organisation
     ).execute()
   }
 }

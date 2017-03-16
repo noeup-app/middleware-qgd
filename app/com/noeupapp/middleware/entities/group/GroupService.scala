@@ -59,9 +59,9 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     for {
 
       org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
-      admin <- EitherT(isAdmin(userId, org.id))
+      //admin <- EitherT(isAdmin(userId, org.id))
 
-      groups <- EitherT(findAll(userId, admin, org.id))
+      groups <- EitherT(findAll(userId,/*¨ admin,*/ org.id))
     } yield groups
   }.run
 
@@ -72,10 +72,10 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param admin
     * @return
     */
-  def findAll(userId: UUID, admin: Boolean, organisation: UUID): Future[Expect[List[Group]]] = {
+  def findAll(userId: UUID,/* admin: Boolean, */organisation: UUID): Future[Expect[List[Group]]] = {
     TryBDCall { implicit c =>
-      Logger.debug(admin.toString)
-      \/-(groupDAO.getAll(userId, admin, organisation))
+      //Logger.debug(admin.toString)
+      \/-(groupDAO.getAll(userId,/* admin,*/ organisation))
     }
   }
 
@@ -89,9 +89,9 @@ class GroupService @Inject()(groupDAO: GroupDAO,
   def addGroupCheck(userId: UUID, groupIn: GroupIn, organisation: Option[Organisation]): Future[Expect[Group]] = {
     for {
       org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
-      admin <- EitherT(isAdmin(userId, org.id))
+      //admin <- EitherT(isAdmin(userId, org.id))
 
-      validUser <- EitherT(admin |> "You are not authorized to add groups")
+      //validUser <- EitherT(admin |> "You are not authorized to add groups")
       group <- EitherT(addGroup(Group(UUID.randomUUID(),
                                       groupIn.name,
                                       userId,
@@ -260,12 +260,12 @@ class GroupService @Inject()(groupDAO: GroupDAO,
       org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
       admin <- EitherT(isAdmin(userId, org.id))
 
-      validUser <- EitherT(admin |> "You are not authorized to delete groups")
+      //validUser <- EitherT(admin |> "You are not authorized to delete groups")
 
       findGroup <- EitherT(findById(groupId, userId, admin, org.id))
 
       groupToDelete <- EitherT(findGroup |> "Couldn't find this group")
-      adminGroup <- EitherT(!groupToDelete.name.equals("Admin") |> "You can't delete an admin group")
+      //adminGroup <- EitherT(!groupToDelete.name.equals("Admin") |> "You can't delete an admin group")
 
       group <- EitherT(deleteGroup(groupToDelete, org.id))
 

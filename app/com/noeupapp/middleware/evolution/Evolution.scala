@@ -19,6 +19,7 @@ class Evolution extends Controller {
       case 1 => _1
       case 2 => _2
       case 3 => _3
+      case 4 => _4
       case _ => Future.successful(NotFound)
     }
   }
@@ -333,4 +334,16 @@ class Evolution extends Controller {
         |ALTER TABLE public.entity_organisations ALTER COLUMN created TYPE TIMESTAMPTZ USING created::TIMESTAMPTZ;
         |"""
         .stripMargin)
+
+   def _4 =
+    applyHelper(
+      """
+        |CREATE TABLE entity_hierarchy (
+        |  entity       UUID          NOT NULL REFERENCES entity_entities (id),
+        |  parent       UUID          NOT NULL REFERENCES entity_entities (id),
+        |  PRIMARY KEY (entity, parent)
+        |);
+      """
+        .stripMargin)
+
 }
