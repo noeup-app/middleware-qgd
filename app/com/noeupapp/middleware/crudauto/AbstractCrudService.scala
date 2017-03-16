@@ -99,7 +99,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         found         <- EitherT(
                           crudAutoService.find(tableQuery, id.asInstanceOf[Any])
                           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]]))
-        newJson       <- EitherT(crudAutoService.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
+        newJson       <- EitherT(jsonConverter.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out, withDelete = false))
         filteredJson  <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
       } yield filteredJson
     }.run
@@ -143,7 +143,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
 
         outClass      = if (withDelete) bareEntity else out
 
-        newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, outClass, withDelete))
+        newJson       <- EitherT(jsonConverter.toJsValueList(found.toList, entityClass, singleton, outClass, withDelete))
         filteredJson  <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
       } yield if (countOnly) Json.toJson(count) else filteredJson
     }.run
@@ -207,7 +207,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
 
         outClass      = if (withDelete) bareEntity else out
 
-        newJson       <- EitherT(crudAutoService.toJsValueList(found.toList, entityClass, singleton, outClass, false))
+        newJson       <- EitherT(jsonConverter.toJsValueList(found.toList, entityClass, singleton, outClass, withDelete))
         filteredJson  <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
       } yield if (countOnly) Json.toJson(count) else filteredJson
     }.run map {
@@ -256,7 +256,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         found           <- EitherT(
                             crudAutoService.deepFindById(tableQuery2, id1, fk, id2)
                             (classInfo.jsonFormat.asInstanceOf[Format[Entity[Any]]]))
-        newJson      <- EitherT(crudAutoService.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
+        newJson      <- EitherT(jsonConverter.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out, withDelete = false))
         filteredJson <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
       } yield filteredJson
     }.run map {
@@ -290,11 +290,19 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         found           <- EitherT(
                             crudAutoService.add(tableQuery, entityToInsert.asInstanceOf[Entity[Any]])
                             (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]]))
-        newJson         <- EitherT(crudAutoService.toJsValue(found, entityClass.asInstanceOf[Class[Any]], singleton, out))
+        newJson         <- EitherT(jsonConverter.toJsValue(found, entityClass.asInstanceOf[Class[Any]], singleton, out, withDelete = false))
       } yield newJson
     }.run
 
-    def updateFlow(model: String, json: JsObject, rawId: String, userOpt: Option[User]): Future[Expect[Option[JsValue]]] = {
+
+
+
+    def updateFlow(model: String,
+                   json: JsObject,
+                   rawId: String,
+                   accountOpt: Option[Account],
+                   allowUpdateDeleted: Option[Boolean]): Future[Expect[Option[JsValue]]] = {
+      val userOpt = accountOpt.map(_.user)
       for {
 
         //entity1Found    <- EitherT(this.findByIdFlow(model, id, Nil, Nil))
