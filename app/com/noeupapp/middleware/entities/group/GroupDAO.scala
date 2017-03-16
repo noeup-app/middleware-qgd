@@ -181,20 +181,32 @@ class GroupDAO extends GlobalReadsWrites {
     * @param connection
     * @return
     */
-  def delete(groupId: UUID, organisation: UUID)(implicit connection: Connection): Boolean = {
-    SQL(
-      """
-         UPDATE entity_groups AS grou
-         SET deleted = 'true'
-         FROM entity_entities ent
-                  INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
-                  WHERE grou.id = {id}::UUID
-                  AND ent.id = grou.id
-                  AND hi.parent = {organisation}::UUID
-      """
-    ).on(
-      'id -> groupId,
-      'organisation -> organisation
-    ).execute()
+  def delete(groupId: UUID, organisation: UUID, force_delete: Boolean)(implicit connection: Connection): Boolean = {
+    force_delete match {
+      case false =>
+        SQL(
+          """
+               UPDATE entity_groups AS grou
+               SET deleted = 'true'
+               FROM entity_entities ent
+                        INNER JOIN entity_hierarchy hi ON hi.entity = ent.id
+                        WHERE grou.id = {id}::UUID
+                        AND ent.id = grou.id
+                        AND hi.parent = {organisation}::UUID
+            """
+          ).on(
+            'id -> groupId,
+            'organisation -> organisation
+          ).execute()
+      case true =>
+        SQL(
+          """
+               DELETE FROM entity_groups AS grou
+               WHERE grou.id = {id}::UUID
+          """
+        ).on(
+          'id -> groupId
+        ).execute()
+        }
   }
 }

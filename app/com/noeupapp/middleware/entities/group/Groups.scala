@@ -160,11 +160,11 @@ class Groups @Inject()(
     * @param groupId
     * @return
     */
-  def deleteGroup(groupId: UUID) = SecuredAction(WithScope(/*"builder.groups"*/))
+  def deleteGroup(groupId: UUID, force_delete:Option[Boolean]) = SecuredAction(WithScope(/*"builder.groups"*/))
     .async { implicit request =>
       val user = request.identity.user.id
       val organisation = request.identity.organisation
-      groupService.deleteGroupFlow(groupId, user, organisation) map {
+      groupService.deleteGroupFlow(groupId, user, organisation, force_delete) map {
         case -\/(error)          =>
           if (error.message.contains("authorized"))
             {Logger.error(error.message)

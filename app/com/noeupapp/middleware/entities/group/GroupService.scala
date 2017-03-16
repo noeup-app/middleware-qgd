@@ -255,19 +255,19 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param userId
     * @return
     */
-  def deleteGroupFlow(groupId: UUID, userId: UUID, organisation: Option[Organisation]): Future[Expect[Group]] = {
+  def deleteGroupFlow(groupId: UUID, userId: UUID, organisation: Option[Organisation], force_delete:Option[Boolean]): Future[Expect[UUID]] = {
     for {
       org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
-      admin <- EitherT(isAdmin(userId, org.id))
+      //admin <- EitherT(isAdmin(userId, org.id))
 
       //validUser <- EitherT(admin |> "You are not authorized to delete groups")
 
-      findGroup <- EitherT(findById(groupId, userId, admin, org.id))
+      //findGroup <- EitherT(findById(groupId, userId, admin, org.id))
 
-      groupToDelete <- EitherT(findGroup |> "Couldn't find this group")
+      //groupToDelete <- EitherT(findGroup |> "Couldn't find this group")
       //adminGroup <- EitherT(!groupToDelete.name.equals("Admin") |> "You can't delete an admin group")
 
-      group <- EitherT(deleteGroup(groupToDelete, org.id))
+      group <- EitherT(deleteGroup(groupId, org.id, force_delete:Option[Boolean]))
 
     } yield group
   }.run
@@ -278,11 +278,10 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param group
     * @return
     */
-  def deleteGroup(group: Group, organisation: UUID): Future[Expect[Group]] = {
+  def deleteGroup(group: UUID, organisation: UUID, force_delete:Option[Boolean]): Future[Expect[UUID]] = {
     TryBDCall { implicit c =>
-
-        groupDAO.delete(group.id, organisation)
-        \/-(group.copy(deleted = true))
+        groupDAO.delete(group, organisation, force_delete.getOrElse(false))
+        \/-(group)
     }
   }
 }
