@@ -7,4 +7,4 @@ GET    /:model1/:id1/:model2/:id2                                               
 
 POST   /:model                                                                              com.noeupapp.middleware.crudauto.Cruds.add(model: String)
 PUT    /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.update(model: String, id: String, allowUpdateDeleted: Option[Boolean])
-DELETE /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.delete(model: String, id: String, purge:Option[Boolean], force_delete: Option[Boolean], allowUpdateDeleted: Option[Boolean])
+DELETE /:model/:id                                                                          com.noeupapp.middleware.crudauto.Cruds.delete(model: String, id: String, forceDelete: Option[Boolean])

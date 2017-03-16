@@ -164,11 +164,9 @@ class Cruds @Inject()(crudService: AbstractCrudService,
 
   def delete(model: String,
              id: String,
-             purge:Option[Boolean],
-             force_delete: Option[Boolean] = None,
-             allowUpdateDeleted: Option[Boolean] = None) = UserAwareAction.async { implicit request =>
+             forceDelete: Option[Boolean] = None) = UserAwareAction.async { implicit request =>
 
-    crudService.deleteFlow(model, id, purge, force_delete.getOrElse(false), request.identity, allowUpdateDeleted) map {
+    crudService.deleteFlow(model, id, request.identity, forceDelete) map {
       case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
         Logger.warn(s"Unauthorized DELETE /$model")
         Unauthorized(Json.toJson("Unauthorized"))

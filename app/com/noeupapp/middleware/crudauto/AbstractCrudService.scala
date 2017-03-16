@@ -362,10 +362,8 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
 
     def deleteFlow(model:String,
                    rawId: String,
-                   purge:Option[Boolean],
-                   force_delete: Boolean,
                    accountOpt: Option[Account],
-                   allowDeleteDeleted: Option[Boolean]): Future[Expect[Option[String]]] = {
+                   forceDeleteOpt: Option[Boolean]): Future[Expect[Option[String]]] = {
 
       val userOpt = accountOpt.map(_.user)
 
@@ -373,7 +371,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         configuration   <- EitherT(getConfiguration(model))
 
         _               <- EitherT(checkIfAuthorized(configuration.authorisation.delete, userOpt))
-        withDelete      <- EitherT(checkIfAuthorizedWithDelete(model, accountOpt, allowDeleteDeleted))
+        withForceDelete      <- EitherT(checkIfAuthorizedWithDelete(model, accountOpt, forceDeleteOpt))
 
         tableDefClass   = configuration.tableDef
         id              <- EitherT(parseStringToType(configuration.pK, rawId.toString))
@@ -384,11 +382,11 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
                               .asInstanceOf[Table[Entity[Any]] with PKTable])
 
         foundOpt        <- EitherT(
-                              crudAutoService.find(tableQuery, id.asInstanceOf[Any], withDelete)
+                              crudAutoService.find(tableQuery, id.asInstanceOf[Any], withForceDelete)
                               (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]]))
         _               <- EitherT(foundOpt |> ("couldn't find this entity", NotFound))
         _               <- EitherT(
-                            crudAutoService.delete(tableQuery, id, force_delete)
+                            crudAutoService.delete(tableQuery, id, withForceDelete)
                             (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]]))
       } yield Some(rawId)
     }.run map {
