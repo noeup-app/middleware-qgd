@@ -15,15 +15,16 @@ import slick.ast.Type
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
-import scalaz.{-\/, \/-}
+import scalaz._
+import Scalaz._
 import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
 import slick.lifted.{ForeignKey, TableQuery}
 import play.api.mvc.Results._
 import slick.profile.SqlStreamingAction
 import slick.jdbc._
-
 import com.noeupapp.middleware.utils.StringUtils.snakeToCamel
 
+import scala.language.higherKinds
 import scala.reflect.runtime.{universe => ru}
 
 class CrudAutoService @Inject()(dao: Dao)() {
@@ -184,13 +185,18 @@ class CrudAutoService @Inject()(dao: Dao)() {
   }.map(_.map(_.headOption))
 
 
-  def find[E <: Entity[PK], PK](tableQuery: TableQuery[Table[E] with PKTable], id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] = {
-    if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted"))
+  def find[E <: Entity[PK], PK](tableQuery: TableQuery[Table[E] with PKTable],
+                                id: PK,
+                                withDelete: Boolean)
+                               (implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] = {
+
+    if (tableQuery.baseTableRow.create_*.map(_.name).toSeq.contains("deleted") && !withDelete)
 //      dao.runForAll(tableQuery.filter(_.column[Boolean]("deleted") === false))
       dao.runForHeadOption(tableQuery.filter(row =>
         row.column[PK]("id") === id && row.column[Boolean]("deleted") === false)) // TODO column("id") should be a generik pk
     else
       dao.runForHeadOption(tableQuery.filter(_.column[PK]("id") === id)) // TODO column("id") should be a generik pk
+
   }
 
 
@@ -462,8 +468,12 @@ class CrudAutoFactory[E <: Entity[PK], PK] @Inject()( crudClassName: CrudClassNa
 //                                               id2: PKE
 //                                              )(implicit formatF: Format[F]): Future[Expect[Option[F]]] = ???
 
-  def find(id: PK)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] =
-    crudAutoService.find[Entity[PK], PK](tableQuery.asInstanceOf[TableQuery[Table[Entity[PK]] with PKTable]]/*Any*/, id)(bct.asInstanceOf[BaseColumnType[PK]])
+  def find(id: PK, withDeleted: Boolean = false)(implicit bct: BaseColumnType[PK]): Future[Expect[Option[E]]] =
+    crudAutoService.find[Entity[PK], PK](
+      tableQuery.asInstanceOf[TableQuery[Table[Entity[PK]] with PKTable]]/*Any*/,
+      id,
+      withDeleted
+    )(bct.asInstanceOf[BaseColumnType[PK]])
       .map(_.map(_.map(_.asInstanceOf[E])))
 
 

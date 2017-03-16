@@ -22,7 +22,8 @@ import play.api.mvc.Results._
 
 class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
                                      crudClassName: CrudClassName,
-                                     roleService: RoleService){
+                                     roleService: RoleService,
+                                     jsonConverter: JsonConverter){
 
 
   def parseStringToType[T](strClass: Class[T], str: String): Future[Expect[T]] = Future {
@@ -97,7 +98,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
                             .asInstanceOf[Table[Entity[Any]] with PKTable])
 
         found         <- EitherT(
-                          crudAutoService.find(tableQuery, id.asInstanceOf[Any])
+                          crudAutoService.find(tableQuery, id.asInstanceOf[Any], withDelete = false)
                           (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]]))
         newJson       <- EitherT(jsonConverter.toJsValueOpt(found, entityClass.asInstanceOf[Class[Any]], singleton, out, withDelete = false))
         filteredJson  <- EitherT(crudAutoService.filterOmitsAndRequiredFieldsOfJsValue(newJson, omits, includes))
@@ -265,6 +266,9 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
       case \/-(res) => \/-(res)
     }
 
+
+
+
     def addFlow(model: String, json: JsObject, userOpt: Option[User]): Future[Expect[JsValue]] = {
       for {
         configuration   <- EitherT(getConfiguration(model))
@@ -310,12 +314,14 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
         configuration   <- EitherT(getConfiguration(model))
 
         _               <- EitherT(checkIfAuthorized(configuration.authorisation.update, userOpt))
+        withDelete      <- EitherT(checkIfAuthorizedWithDelete(model, accountOpt, allowUpdateDeleted))
 
         id              <- EitherT(parseStringToType(configuration.pK, rawId))
 
         entityClass     = configuration.entityClass
         tableDefClass   = configuration.tableDef
 
+        bareEntity      = Class.forName(configuration.entityClass.getName)
         singleton       = Class.forName(configuration.entityClass.getName + "$")
         input           = Class.forName(configuration.entityClass.getName + "In")
         out             = Class.forName(configuration.entityClass.getName + "Out")
@@ -326,18 +332,25 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
                               .asInstanceOf[Table[Entity[Any]] with PKTable])
 
         foundOpt        <- EitherT(
-                            crudAutoService.find(tableQuery, id.asInstanceOf[Any])
+                            crudAutoService.find(tableQuery, id.asInstanceOf[Any], withDelete)
                             (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]]))
         found           <- EitherT(foundOpt |> (s"`/$model/$id` is not found", NotFound))
 
         classInfo       <- EitherT(crudAutoService.getClassInfo(entityClass, singleton, entityClass.getName, input))
-        entityIn        <- EitherT(crudAutoService.jsonUpdateValidate(json, input, classInfo.jsonInFormat))
+
+        jsonToValidateFormat = if (withDelete) classInfo.jsonFormat else classInfo.jsonInFormat
+        inputType            = if (withDelete) bareEntity else input
+
+        entityIn        <- EitherT(crudAutoService.jsonUpdateValidate(json, inputType.asInstanceOf[Class[Any]], jsonToValidateFormat.asInstanceOf[Format[Any]]))
 
         entityToUpdate  <- EitherT(crudAutoService.completeUpdate(found, entityIn, classInfo.jsonFormat.asInstanceOf[Format[Any]]))
         updated         <- EitherT(
                             crudAutoService.update(tableQuery, id.asInstanceOf[Object], entityToUpdate.asInstanceOf[Entity[Any]])
                             (configuration.baseColumnType.asInstanceOf[BaseColumnType[Object]]))
-        newJson         <- EitherT(crudAutoService.toJsValue(updated, entityClass.asInstanceOf[Class[Any]], singleton, out))
+
+        outClass      = if (withDelete) bareEntity else out
+
+        newJson         <- EitherT(jsonConverter.toJsValue(updated, entityClass.asInstanceOf[Class[Any]], singleton, outClass, withDelete))
       } yield newJson
     }.run map {
       case -\/(error) if error.errorType == NotFound => \/-(None)
@@ -345,11 +358,22 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
       case \/-(res) => \/-(Some(res))
     }
 
-    def deleteFlow(model:String, rawId: String, purge:Option[Boolean], force_delete: Boolean, userOpt: Option[User]): Future[Expect[Option[String]]] = {
+
+
+    def deleteFlow(model:String,
+                   rawId: String,
+                   purge:Option[Boolean],
+                   force_delete: Boolean,
+                   accountOpt: Option[Account],
+                   allowDeleteDeleted: Option[Boolean]): Future[Expect[Option[String]]] = {
+
+      val userOpt = accountOpt.map(_.user)
+
       for {
         configuration   <- EitherT(getConfiguration(model))
 
         _               <- EitherT(checkIfAuthorized(configuration.authorisation.delete, userOpt))
+        withDelete      <- EitherT(checkIfAuthorizedWithDelete(model, accountOpt, allowDeleteDeleted))
 
         tableDefClass   = configuration.tableDef
         id              <- EitherT(parseStringToType(configuration.pK, rawId.toString))
@@ -360,7 +384,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
                               .asInstanceOf[Table[Entity[Any]] with PKTable])
 
         foundOpt        <- EitherT(
-                              crudAutoService.find(tableQuery, id.asInstanceOf[Any])
+                              crudAutoService.find(tableQuery, id.asInstanceOf[Any], withDelete)
                               (configuration.baseColumnType.asInstanceOf[BaseColumnType[Any]]))
         _               <- EitherT(foundOpt |> ("couldn't find this entity", NotFound))
         _               <- EitherT(

@@ -145,10 +145,10 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     }
   }
 
-  def update(model: String, id: String) = UserAwareAction.async(parse.json) { implicit request =>
+  def update(model: String, id: String, allowUpdateDeleted: Option[Boolean] = None) = UserAwareAction.async(parse.json) { implicit request =>
 
     val json = request.body.as[JsObject]
-    crudService.updateFlow(model, json, id, request.identity.map(_.user)) map {
+    crudService.updateFlow(model, json, id, request.identity, allowUpdateDeleted) map {
       case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
         Logger.warn(s"Unauthorized PUT /$model")
         Unauthorized(Json.toJson("Unauthorized"))
@@ -162,9 +162,13 @@ class Cruds @Inject()(crudService: AbstractCrudService,
     }
   }
 
-  def delete(model: String, id: String, purge:Option[Boolean], force_delete: Option[Boolean] = None) = UserAwareAction.async { implicit request =>
+  def delete(model: String,
+             id: String,
+             purge:Option[Boolean],
+             force_delete: Option[Boolean] = None,
+             allowUpdateDeleted: Option[Boolean] = None) = UserAwareAction.async { implicit request =>
 
-    crudService.deleteFlow(model, id, purge, force_delete.getOrElse(false), request.identity.map(_.user)) map {
+    crudService.deleteFlow(model, id, purge, force_delete.getOrElse(false), request.identity, allowUpdateDeleted) map {
       case -\/(error) if error.errorType.header.status == Unauthorized.header.status =>
         Logger.warn(s"Unauthorized DELETE /$model")
         Unauthorized(Json.toJson("Unauthorized"))
