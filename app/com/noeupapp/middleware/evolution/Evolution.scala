@@ -18,6 +18,7 @@ class Evolution extends Controller {
       case 0 => _init
       case 1 => _1
       case 2 => _2
+      case 3 => _3
       case _ => Future.successful(NotFound)
     }
   }
@@ -319,6 +320,17 @@ class Evolution extends Controller {
         |  MATCH SIMPLE ON UPDATE NO ACTION ON DELETE NO ACTION
         |);
         |ALTER TABLE public.entity_entities ADD package_id INT NULL;
+        |"""
+        .stripMargin)
+
+  def _3 =
+    applyHelper(
+      """
+        |UPDATE entity_organisations
+        |SET deleted = FALSE
+        |WHERE deleted IS NULL;
+        |ALTER TABLE public.entity_organisations ALTER COLUMN deleted SET NOT NULL;
+        |ALTER TABLE public.entity_organisations ALTER COLUMN created TYPE TIMESTAMPTZ USING created::TIMESTAMPTZ;
         |"""
         .stripMargin)
 }
