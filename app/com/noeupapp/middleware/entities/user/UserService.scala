@@ -6,6 +6,7 @@ import javax.inject.Inject
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.noeupapp.middleware.authorizationClient.authInfo.PasswordInfoDAO
+import com.noeupapp.middleware.authorizationClient.loginInfo.AuthLoginInfoService
 import com.noeupapp.middleware.entities.entity.EntityService
 import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
@@ -31,7 +32,8 @@ class UserService @Inject()(userDAO: UserDAO,
                             passwordHasher: PasswordHasher,
                             entityService: EntityService,
                             organisationService: OrganisationService,
-                            tierAccessTokenConfig: TierAccessTokenConfig) {
+                            tierAccessTokenConfig: TierAccessTokenConfig,
+                            authLoginInfoService: AuthLoginInfoService) {
 
 
   type ValidationFuture[A] = EitherT[Future, FailError, A]
@@ -303,18 +305,26 @@ class UserService @Inject()(userDAO: UserDAO,
     * @param email
     * @return
     */
-  def delete(email: String, purge: Boolean): Future[Expect[Boolean]] = {
+  def delete(email: String, purge: Boolean, cascade: Boolean): Future[Expect[Boolean]] = {
 
-    def getUser =
+    def getUser: EitherT[Future, FailError, Option[User]] =
       if(purge)
         EitherT(this.findDeletedOrNotByEmail(email))
       else
         EitherT(this.findByEmail(email))
 
+    def deleteCascade(userId: UUID) =
+      EitherT({
+        for {
+          _ <- EitherT(authLoginInfoService.delete(userId))
+          _ <- EitherT(this.deletePurgeUserById(userId))
+        } yield true
+      }.run)
 
-    def deleteUser(userId: UUID) =
+    def deleteUser(userId: UUID): EitherT[Future, FailError, Boolean] =
       if(purge)
-        EitherT(this.deletePurgeUserById(userId))
+        if(cascade) deleteCascade(userId)
+        else EitherT(this.deletePurgeUserById(userId))
       else
         EitherT(this.deleteUserById(userId))
 
@@ -322,7 +332,6 @@ class UserService @Inject()(userDAO: UserDAO,
       userOpt <- getUser
       user    <- EitherT(userOpt |> s"User ($email) is not defined")
       _       <- deleteUser(user.id)
-
     } yield true
   }.run
 

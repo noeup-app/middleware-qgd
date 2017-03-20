@@ -41,4 +41,17 @@ class AuthLoginInfoDao {
     ).execute()
 
 
+  def delete(userId: UUID)(implicit connection: Connection) = {
+    SQL(
+      """
+          DELETE FROM auth_login_info
+          WHERE "user" = {user}::UUID
+      """
+    ).on(
+      'user -> userId
+    ).executeUpdate()
+  }
+
+
+
 }

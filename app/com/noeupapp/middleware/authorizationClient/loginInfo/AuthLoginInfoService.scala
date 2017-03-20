@@ -1,6 +1,7 @@
 package com.noeupapp.middleware.authorizationClient.loginInfo
 
 import java.sql.Connection
+import java.util.UUID
 
 import anorm.SQL
 import com.google.inject.Inject
@@ -24,6 +25,7 @@ class AuthLoginInfoService @Inject() (authLoginInfoDao: AuthLoginInfoDao){
       \/-(authLoginInfoDao.find(providerId, providerKey))
     }
 
+
   def find(loginInfo: api.LoginInfo): Future[Expect[Option[AuthLoginInfo]]] =
     find(loginInfo.providerID, loginInfo.providerKey)
 
@@ -34,5 +36,11 @@ class AuthLoginInfoService @Inject() (authLoginInfoDao: AuthLoginInfoDao){
       \/-(authLoginInfo)
     }
 
+
+  def delete(userId: UUID): Future[Expect[Unit]] =
+    TryBDCall{ implicit connection =>
+      authLoginInfoDao.delete(userId)
+      \/-(())
+    }
 
 }
