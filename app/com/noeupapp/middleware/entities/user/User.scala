@@ -4,8 +4,12 @@ import java.util.UUID
 
 import anorm.SqlParser._
 import anorm.~
+import com.noeupapp.middleware.crudauto.PKTable
+import com.noeupapp.middleware.utils.GlobalReadsWrites
 import org.joda.time.DateTime
 import play.api.libs.json.Json
+import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
+
 import scala.language.implicitConversions
 
 case class User(
@@ -67,11 +71,30 @@ case class UserOut(
                   )
 
 
-object User {
+class UserTableDef(tag: Tag) extends Table[User](tag, "entity_users") with PKTable {
+  def id            = column[UUID]("id")
+  def firstName     = column[Option[String]]("first_name")
+  def lastName      = column[Option[String]]("last_name")
+  def email         = column[Option[String]]("email")
+  def avatarUrl     = column[Option[String]]("avatar_url")
+  def created       = column[DateTime]("created")
+  def active        = column[Boolean]("active")
+  def ownedByClient = column[Option[String]]("owned_by_client")
+  def deleted       = column[Boolean]("deleted")
+  override def *    = (id, firstName, lastName, email, avatarUrl, created, active, deleted, ownedByClient) <> ((User.apply _).tupled, User.unapply)
+
+
+  def pk = primaryKey("entity_users_pkey", id)
+
+}
+
+object User extends GlobalReadsWrites {
 
   implicit val UserFormat = Json.format[User]
   implicit val UserInFormat = Json.format[UserIn]
   implicit val UserOutFormat = Json.format[UserOut]
+
+  val userDef = TableQuery[UserTableDef]
 
   val parse = {
     get[UUID]("id") ~
@@ -90,12 +113,9 @@ object User {
     // TODO Need to parse roles and scopes
   }
 
-  implicit def toUserOut(u:User):UserOut = UserOut(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created, u.active, u.ownedByClient)
+  implicit def toUserOut(e: User): UserOut = UserOut(e.id, e.firstName, e.lastName, e.email, e.avatarUrl, e.created, e.active, e.ownedByClient)
 
   implicit def toUser(u:UserOut):User = User(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created, u.active, deleted = false, u.ownedByClient)
-
-
-
 
 
   // Bypass because of nulab/scala-oauth2-provider lib (
@@ -105,6 +125,4 @@ object User {
 
   def getDefault = defaultUser
   def isDefault(u: User) = defaultUser.equals(u)
-
-
 }
