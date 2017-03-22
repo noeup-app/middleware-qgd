@@ -117,7 +117,6 @@ object User extends GlobalReadsWrites {
 
   implicit def toUser(u:UserOut):User = User(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created, u.active, deleted = false, u.ownedByClient)
 
-
   // Bypass because of nulab/scala-oauth2-provider lib (
   // when using client credential flow, nulab lib need to link client with user which is not the RFC requirement
   // An issue is pending on github and Damien is requesting a MR
