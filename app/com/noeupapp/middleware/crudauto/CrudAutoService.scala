@@ -363,13 +363,13 @@ class CrudAutoService @Inject()(dao: Dao)() {
               case v: Int => JsNumber(v.asInstanceOf[Int])
               case v: Long => JsNumber(v.asInstanceOf[Long])
               case v: DateTime => JsString(v.toString)
+              case v: java.sql.Timestamp => JsNumber(v.getTime)
               case v: Boolean => JsBoolean(v)
               case None => JsNull
               case _ => JsString(v.toString)
             })
         }.toSeq
 
-        Logger.debug("VALIDATE : " + els + "e : " + e)
 
         JsObject(toSeq).validate[A] match {
           case JsSuccess(el, path) => JsSuccess(el :: els, path)
