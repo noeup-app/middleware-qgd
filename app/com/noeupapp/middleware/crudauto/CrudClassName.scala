@@ -24,7 +24,9 @@ trait CrudClassName {
   def configure: Map[String,CrudConfiguration[_,_,_]]
 
 
-  def getModel(modelName: String): Option[CrudConfiguration[_,_,_]] = configure.get(modelName)
+
+  def getModel(modelName: String): Option[CrudConfiguration[_,_,_]] =
+    (configure ++ MiddleCrudAutoConfiguration.configure).get(modelName)
 
   val rolesRequiredToGetWithDeleted: List[String] = List("superadmin")
 
