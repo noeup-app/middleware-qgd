@@ -77,4 +77,7 @@ DELETE      /entity/groups/:groupId             com.noeupapp.middleware.entities
 POST        /organisations                      com.noeupapp.middleware.entities.organisation.Organisations.addOrganisation
 
 
+POST        /prepareUpload                      com.noeupapp.middleware.files.Files.prepareUpload
+POST        /upload/:fileId                     com.noeupapp.middleware.files.Files.upload(fileId: java.util.UUID)
+
 GET         /ws                                 com.noeupapp.middleware.webSockets.WebSocketEndPoint.socket

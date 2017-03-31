@@ -426,7 +426,7 @@ class CrudAutoFactory[E <: Entity[PK], PK] @Inject()( crudClassName: CrudClassNa
                                                        val pkeTypeLit: TypeLiteral[PK]) {
 
 
-  private val configurationOpt = crudClassName.configure.values.find(_.entityClass.getName equals eTypeLit.getRawType.getName)
+  private val configurationOpt = crudClassName.getConfiguration.values.find(_.entityClass.getName equals eTypeLit.getRawType.getName)
 
   assert(configurationOpt.isDefined, s"CrudAutoFactory - Unable to find ${eTypeLit.getType.getTypeName} key in configuration")
 

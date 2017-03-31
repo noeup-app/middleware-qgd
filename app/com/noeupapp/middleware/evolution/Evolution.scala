@@ -21,6 +21,7 @@ class Evolution extends Controller {
       case 3 => _3
       case 4 => _4
       case 5 => _5
+      case 6 => _6
       case _ => Future.successful(NotFound)
     }
   }
@@ -351,6 +352,24 @@ class Evolution extends Controller {
     applyHelper(
       """
         |ALTER TABLE public.entity_users ALTER COLUMN created TYPE TIMESTAMPTZ USING created::TIMESTAMPTZ;
+      """
+        .stripMargin)
+
+
+   def _6 =
+    applyHelper(
+      """
+        |CREATE TABLE public.files
+        |(
+        |    id UUID PRIMARY KEY NOT NULL,
+        |    url TEXT NOT NULL,
+        |    updated TIMESTAMPTZ NOT NULL,
+        |    created TIMESTAMPTZ NOT NULL,
+        |    extension TEXT,
+        |    name TEXT NOT NULL,
+        |    size_bytes BIGINT,
+        |    mime TEXT
+        |);
       """
         .stripMargin)
 

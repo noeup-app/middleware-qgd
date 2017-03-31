@@ -39,6 +39,15 @@ class Dao @Inject()(dbConfigProvider: DatabaseConfigProvider) {
       }
   }
 
+  def runMap[R, S <: NoStream, F <: Effect, T](query: BasicAction[R, S, F])(transformer: (R) => T): Future[Expect[T]] = {
+    db.run(query)
+      .map(transformer)
+      .map(\/-(_))
+      .recover{
+        case e: Exception => -\/(FailError(e))
+      }
+  }
+
   def runSqlStreamingAction[R, S <: NoStream, F <: Effect](query: SqlStreamingAction[R, S, F]): Future[Expect[R]] = {
     db.run(query)
       .map(\/-(_))

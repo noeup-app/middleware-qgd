@@ -33,6 +33,7 @@ import com.noeupapp.middleware.authorizationClient.forgotPassword.ForgotPassword
 import com.noeupapp.middleware.authorizationClient.authenticator.BearerAuthenticatorDAO
 import com.noeupapp.middleware.authorizationClient.authInfo.{OAuth1InfoDAO, OAuth2InfoDAO, OpenIDInfoDAO, PasswordInfoDAO}
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenService
+import com.noeupapp.middleware.config.AppConfig
 import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.oauth2.TierAccessTokenConfig
 import com.noeupapp.middleware.utils.{Html2PdfConfig, SendinBlueConfig}
@@ -435,5 +436,14 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
   @Provides
   def provideSendinBlueConfig(configuration: Configuration): SendinBlueConfig = {
     configuration.underlying.as[SendinBlueConfig]("sendinblue")
+  }
+
+  @Provides
+  def provideAppConfig(configuration: Configuration): AppConfig = {
+    val conf = configuration.underlying.as[AppConfig]("appconfig")
+    if(conf.appUrl.endsWith("/"))
+      conf.copy(appUrl = conf.appUrl.dropRight(1))
+    else
+      conf
   }
 }

@@ -4,8 +4,8 @@ import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.annotation.tailrec
+import scala.collection.IterableLike
 import scala.concurrent.Future
 import scalaz.{-\/, \/, \/-}
 
@@ -78,4 +78,24 @@ object MonadTransformers {
         .foldLeft(List.empty[A])((acc, e) => acc ++ List(e.right.get))
       (left, right)
     }
+
+
+  implicit class MyTraversableOnce[+A](it: TraversableOnce[A]){
+
+    private val l: List[A] = it.toList
+
+    def foldLeftFutureExpect[B, C](z: B)(op: (B, A) => Future[Expect[C]])(op2: (B, C) => B): Future[Expect[B]] = {
+      def f(xs:  List[A], acc: B): Future[Expect[B]] = xs match {
+        case Nil => Future.successful(\/-(acc))
+        case x :: xss =>
+          op(acc, x).flatMap{
+            case \/-(success) => f(xss, op2(acc, success))
+            case error @ -\/(_) => Future.successful(error)
+          }
+      }
+      f(l, z)
+    }
+
+  }
+
 }
