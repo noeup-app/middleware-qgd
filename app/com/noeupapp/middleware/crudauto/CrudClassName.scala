@@ -21,12 +21,20 @@ trait CrudClassName {
   )
 
 
-  def configure: Map[String,CrudConfiguration[_,_,_]]
+  protected def configure: Map[String,CrudConfiguration[_,_,_]]
 
+
+  def getConfiguration: Map[String,CrudConfiguration[_,_,_]] = {
+    val duplicateKeys: Set[String] =
+      configure.keys.toSet
+        .intersect(MiddleCrudAutoConfiguration.configure.keys.toSet)
+    assert(duplicateKeys.isEmpty, s"Crud auto config : Some keys ($duplicateKeys) are duplicated! This is probably going to cause trouble hard to debug (Trust me :) )!")
+    configure ++ MiddleCrudAutoConfiguration.configure
+  }
 
 
   def getModel(modelName: String): Option[CrudConfiguration[_,_,_]] =
-    (configure ++ MiddleCrudAutoConfiguration.configure).get(modelName)
+    getConfiguration.get(modelName)
 
   val rolesRequiredToGetWithDeleted: List[String] = List("superadmin")
 
