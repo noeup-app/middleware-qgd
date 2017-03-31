@@ -4,8 +4,8 @@ import java.io.{FileInputStream, FileOutputStream}
 
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
 

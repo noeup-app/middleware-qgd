@@ -137,6 +137,7 @@ class S3 @Inject() (s3: AmazonS3Client,
 
   def getSignedUrlToPutAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
     getSignedUrlToPutAFile(bucketName, fileName, None)
+
   def getSignedUrlToPutAFile(bucketName: String, fileName: String, documentInstanceId: Option[UUID]): Future[Expect[UrlS3]] =
     getSignedUrl(HttpMethod.PUT, bucketName, fileName, documentInstanceId) // TODO set uploadable only once
 

@@ -19,22 +19,30 @@ case class File(id: UUID,
                 created: DateTime,
                 extension: Option[String],
                 name: String,
-                sizeBytes: Option[Int],
+                sizeBytes: Option[Long],
                 mime: Option[String]) extends Entity[UUID] {
 
-  def this(e: FileIn) = this(UUID.randomUUID(), e.url, e.updated, e.created, e.extension, e.name, e.sizeBytes, e.mime)
+  def this(e: FileIn) = this(UUID.randomUUID(), e.url, DateTime.now, DateTime.now, e.extension, e.name, e.sizeBytes, e.mime)
 
   override def withNewId(id: UUID): Entity[UUID] = copy(id = id)
+
+
+  lazy val directory: String = {
+    val parts = url.split("/").toList
+    if(parts.length > 1)
+      parts.init
+    else
+      parts
+  }.mkString("/")
+
 
 }
 
 
 case class FileIn(url: String,
-                  updated: DateTime,
-                  created: DateTime,
                   extension: Option[String],
                   name: String,
-                  sizeBytes: Option[Int],
+                  sizeBytes: Option[Long],
                   mime: Option[String])
 
 case class FileOut(id: UUID,
@@ -43,7 +51,7 @@ case class FileOut(id: UUID,
                    created: DateTime,
                    extension: Option[String],
                    name: String,
-                   sizeBytes: Option[Int],
+                   sizeBytes: Option[Long],
                    mime: Option[String])
 
 object File extends GlobalReadsWrites {
@@ -56,6 +64,9 @@ object File extends GlobalReadsWrites {
 
   implicit def toFileOut(e: File): FileOut = FileOut(e.id, e.url, e.updated, e.created, e.extension, e.name, e.sizeBytes, e.mime)
 
+
+  def fromIn(e: FileIn) = File(UUID.randomUUID(), e.url, DateTime.now, DateTime.now, e.extension, e.name, e.sizeBytes, e.mime)
+
 }
 
 
@@ -67,7 +78,7 @@ class FileTableDef(tag: Tag) extends Table[File](tag, "files") with PKTable {
   def created = column[DateTime]("created")
   def extension = column[Option[String]]("extension")
   def name = column[String]("name")
-  def sizeBytes = column[Option[Int]]("size_bytes")
+  def sizeBytes = column[Option[Long]]("size_bytes")
   def mime = column[Option[String]]("mime")
 
   override def * = (id, url, updated, created, extension, name, sizeBytes, mime) <> ((File.apply _).tupled, File.unapply)
