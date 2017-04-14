@@ -97,7 +97,9 @@ class SignUpService @Inject()(userService: UserService,
   def grantToAdminFirstUser(user: User): Future[Expect[Boolean]] = {
     for{
       nbActiveUser  <- EitherT(userService.getNumberActiveUser())
-      updated       <- EitherT(updateFirstUserFlow(user,nbActiveUser))
+      if (nbActiveUser == 1)
+      updated       <- EitherT(updateUserRoleFlow(user, "superadmin"))
+      //updated       <- EitherT(updateFirstUserFlow(user,nbActiveUser))
     } yield true
   }.run
 
