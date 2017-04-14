@@ -28,7 +28,8 @@ class S3FileUploader @Inject()(s3: S3) extends FileUploader {
   override def prepareFileUrl(fileId: UUID, prepareUploadData: Data): Future[Expect[String]] =
     s3.getSignedUrlToPutAFile(
       prepareUploadData.directory,
-      prepareUploadData.filename
+      prepareUploadData.filename,
+      true // isPublic TODO pass it as a parameter
     ).map(_.map(_.url))
 
   override def prepareFile(fileId: UUID, url: String, prepareUploadData: Data): Future[Expect[File]] = {

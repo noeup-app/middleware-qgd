@@ -5,7 +5,7 @@ import java.util.{Date, UUID}
 
 import com.amazonaws._
 import com.amazonaws.auth.AWSCredentials
-import com.amazonaws.services.s3.AmazonS3Client
+import com.amazonaws.services.s3.{Headers, AmazonS3Client}
 import com.amazonaws.services.s3.model._
 import com.google.inject.Inject
 import com.noeupapp.middleware.errorHandle.FailError
@@ -135,13 +135,19 @@ class S3 @Inject() (s3: AmazonS3Client,
   def getSignedUrlToGetAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
     getSignedUrl(HttpMethod.GET, bucketName, fileName)
 
-  def getSignedUrlToPutAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
-    getSignedUrlToPutAFile(bucketName, fileName, None)
 
-  def getSignedUrlToPutAFile(bucketName: String, fileName: String, documentInstanceId: Option[UUID]): Future[Expect[UrlS3]] =
-    getSignedUrl(HttpMethod.PUT, bucketName, fileName, documentInstanceId) // TODO set uploadable only once
+//  def getSignedUrlToPutAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
+//    getSignedUrlToPutAFile(bucketName, fileName, None)
+//
+//  def getSignedUrlToPutAFile(bucketName: String, fileName: String, documentInstanceId: Option[UUID]): Future[Expect[UrlS3]] =
+//    getSignedUrl(HttpMethod.PUT, bucketName, fileName, documentInstanceId) // TODO set uploadable only once
 
-  def getSignedUrl(httpMethod: HttpMethod, bucketName: String, fileName: String, documentInstanceId: Option[UUID] = None): Future[Expect[UrlS3]] = {
+  def getSignedUrlToPutAFile(bucketName: String, fileName: String, isPublicResource: Boolean): Future[Expect[UrlS3]] =
+    getSignedUrlToPutAFile(bucketName, fileName, None, isPublicResource)
+  def getSignedUrlToPutAFile(bucketName: String, fileName: String, documentInstanceId: Option[UUID], isPublicResource: Boolean): Future[Expect[UrlS3]] =
+    getSignedUrl(HttpMethod.PUT, bucketName, fileName, documentInstanceId, isPublicResource) // TODO set uploadable only once
+
+  def getSignedUrl(httpMethod: HttpMethod, bucketName: String, fileName: String, documentInstanceId: Option[UUID] = None, isPublicResource: Boolean = false): Future[Expect[UrlS3]] = {
     manageS3Error {
       val expiration = new Date()
       val msec = expiration.getTime
@@ -151,6 +157,15 @@ class S3 @Inject() (s3: AmazonS3Client,
 
       val generatePreSignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, fileName, httpMethod)
       generatePreSignedUrlRequest.setExpiration(expiration)
+
+      if(isPublicResource) {
+        // setting http request header:
+        // x-amx-canned-acl: 'public-read'
+        generatePreSignedUrlRequest.addRequestParameter(
+          Headers.S3_CANNED_ACL,
+          CannedAccessControlList.PublicRead.toString()
+        )
+      }
 
       Logger.debug("key = " + generatePreSignedUrlRequest.getKey())
 
