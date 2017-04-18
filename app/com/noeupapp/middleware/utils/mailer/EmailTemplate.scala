@@ -24,6 +24,7 @@ trait EmailTemplate {
 
   def getForgotPwdSubject: String
 
+  def getForgotPwdContent(link :String): String
 
   //Email confirmation data
 

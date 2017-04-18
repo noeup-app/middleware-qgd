@@ -75,16 +75,16 @@ class ForgotPasswordService @Inject() (messageEmail: MessageEmail,
       email   <- EitherT{
         val correctDomain = if (domain.endsWith("/")) domain else domain + "/"
         val link = correctDomain + prefix + "forgotPassword/" + token
-        val content =
-           s"""
-            |<p>Hello,<p>
-            |
-            |<p>You asked a new password, click on this link to change your password <a href="$link">$link</a>.</p>
-            |
-            |<p>This link could be used only during few minutes and once.</p>
-            |
-            |<p>If you have not requested a new password, just ignore this mail.</p>
-          """.stripMargin
+//        val content =
+//           s"""
+//            |<p>Hello,<p>
+//            |
+//            |<p>You asked a new password, click on this link to change your password <a href="$link">$link</a>.</p>
+//            |
+//            |<p>This link could be used only during few minutes and once.</p>
+//            |
+//            |<p>If you have not requested a new password, just ignore this mail.</p>
+//          """.stripMargin
 
         messageEmail.sendEmail(
           senderName = Some(emailTemplateConf.getSenderName),
@@ -92,7 +92,7 @@ class ForgotPasswordService @Inject() (messageEmail: MessageEmail,
           receiverName = email,
           receiverEmail = email,
           subject = emailTemplateConf.getForgotPwdSubject,
-          text = content,
+          text = emailTemplateConf.getForgotPwdContent(link),
           appName = emailTemplateConf.getAppName
         )
       }
