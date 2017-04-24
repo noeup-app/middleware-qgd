@@ -5,6 +5,7 @@ import java.io.{FileInputStream, FileOutputStream}
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 
+import play.api.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
@@ -61,8 +62,12 @@ class FileSplitter {
   }
 
   private def writeFile(bytes: Array[Byte], fileName: String, directory: String): java.io.File = {
+    Logger.debug("start writeFile")
     createIntermedateDirectories(directory)
     val file = new java.io.File(directory + "/" + fileName)
+    if (file.exists) Logger.debug("Full file path" + file.getAbsolutePath)
+    if (file.canWrite) Logger.debug("Writeable Ok")
+    if (file.canRead) Logger.debug("Readable Ok")
     val fos = new FileOutputStream(file)
     fos.write(bytes)
     fos.flush()
@@ -71,7 +76,12 @@ class FileSplitter {
   }
 
 
-  private def createIntermedateDirectories(directoryPath: String) =
-    new java.io.File(directoryPath).mkdirs()
-
+  private def createIntermedateDirectories(directoryPath: String) = {
+    Logger.debug("createIntermediateDirectories : " + directoryPath)
+    val dir = new java.io.File(directoryPath)
+      if (dir.exists) Logger.debug("Full file path" + dir.getAbsolutePath)
+      if (dir.canWrite) Logger.debug("Writeable Ok")
+      if (dir.canRead) Logger.debug("Readable Ok")
+  dir.mkdirs()
+  }
 }
