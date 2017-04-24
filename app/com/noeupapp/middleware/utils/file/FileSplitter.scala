@@ -64,7 +64,7 @@ class FileSplitter {
   private def writeFile(bytes: Array[Byte], fileName: String, directory: String): java.io.File = {
     Logger.error("start writeFile : " + fileName)
     createIntermedateDirectories(directory)
-    val file = new java.io.File(directory + "/" + fileName + "ytt")
+    val file = new java.io.File(directory + "/" + fileName)
     if (file.exists) Logger.error("Full file path" + file.getAbsolutePath)
     if (file.canWrite) Logger.error("Writeable Ok")
     if (file.canRead) Logger.error("Readable Ok")
