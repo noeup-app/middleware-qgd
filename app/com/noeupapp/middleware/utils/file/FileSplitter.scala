@@ -62,12 +62,12 @@ class FileSplitter {
   }
 
   private def writeFile(bytes: Array[Byte], fileName: String, directory: String): java.io.File = {
-    Logger.debug("start writeFile")
+    Logger.error("start writeFile : " + fileName)
     createIntermedateDirectories(directory)
-    val file = new java.io.File(directory + "/" + fileName)
-    if (file.exists) Logger.debug("Full file path" + file.getAbsolutePath)
-    if (file.canWrite) Logger.debug("Writeable Ok")
-    if (file.canRead) Logger.debug("Readable Ok")
+    val file = new java.io.File(directory + "/" + fileName + "ytt")
+    if (file.exists) Logger.error("Full file path" + file.getAbsolutePath)
+    if (file.canWrite) Logger.error("Writeable Ok")
+    if (file.canRead) Logger.error("Readable Ok")
     val fos = new FileOutputStream(file)
     fos.write(bytes)
     fos.flush()
@@ -77,11 +77,11 @@ class FileSplitter {
 
 
   private def createIntermedateDirectories(directoryPath: String) = {
-    Logger.debug("createIntermediateDirectories : " + directoryPath)
+    Logger.error("createIntermediateDirectories : " + directoryPath)
     val dir = new java.io.File(directoryPath)
-      if (dir.exists) Logger.debug("Full file path" + dir.getAbsolutePath)
-      if (dir.canWrite) Logger.debug("Writeable Ok")
-      if (dir.canRead) Logger.debug("Readable Ok")
+      if (dir.exists) Logger.error("Full file path" + dir.getAbsolutePath)
+      if (dir.canWrite) Logger.error("Writeable Ok")
+      if (dir.canRead) Logger.error("Readable Ok")
   dir.mkdirs()
   }
 }
