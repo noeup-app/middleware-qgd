@@ -5,7 +5,7 @@
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                        com.noeupapp.middleware.controllers.Assets.versioned(path="/public/lib/middleware-noeupapp", file)
 GET         /webjars/*file                       controllers.WebJarAssets.at(file)
-
+GET         /uploads/*file                       com.noeupapp.middleware.files.Files.directDownload(file: String)
 
 # Home page
 GET         /                                    com.noeupapp.middleware.application.Applications.index
