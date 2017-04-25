@@ -58,10 +58,10 @@ class GroupService @Inject()(groupDAO: GroupDAO,
   def findAllFlow(userId: UUID, organisation: Option[Organisation]): Future[Expect[List[Group]]] = {
     for {
 
-      org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
+      //org <- EitherT(organisation |> "You need to be part of an organisation to access groups")
       //admin <- EitherT(isAdmin(userId, org.id))
 
-      groups <- EitherT(findAll(userId,/*¨ admin,*/ org.id))
+      groups <- EitherT(findAll(userId,/*¨ admin, org.id*/))
     } yield groups
   }.run
 
@@ -72,10 +72,10 @@ class GroupService @Inject()(groupDAO: GroupDAO,
     * @param admin
     * @return
     */
-  def findAll(userId: UUID,/* admin: Boolean, */organisation: UUID): Future[Expect[List[Group]]] = {
+  def findAll(userId: UUID,/* admin: Boolean, organisation: UUID*/): Future[Expect[List[Group]]] = {
     TryBDCall { implicit c =>
       //Logger.debug(admin.toString)
-      \/-(groupDAO.getAll(userId,/* admin,*/ organisation))
+      \/-(groupDAO.getAll(userId,/* admin, organisation*/))
     }
   }
 
