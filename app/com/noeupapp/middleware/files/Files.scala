@@ -68,4 +68,20 @@ class Files @Inject()(val messagesApi: MessagesApi,
 
   }
 
+  def directDownload(file: String) = SecuredAction { request =>
+
+      val user = request.identity.user
+      val url = "/home/git/uploads"
+
+
+      Ok.sendFile(new java.io.File(url + "/" + file), inline=true)
+        .withHeaders( CACHE_CONTROL->"max-age=3600",
+                      CONTENT_DISPOSITION->"attachment; filename=download.file",
+                      CONTENT_TYPE->"application/x-download");
+    // TODO
+    //.getOrElse {
+    //  Future.successful(BadRequest("File is missing"))
+    //}
+  }
+
 }
