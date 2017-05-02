@@ -5,6 +5,7 @@ import java.util.UUID
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
+import com.noeupapp.middleware.config.AppConfig
 import com.noeupapp.middleware.entities.account.Account
 import com.noeupapp.middleware.utils.file.fileUploader.FileUploader
 import play.api.Logger
@@ -20,7 +21,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
   */
 class Files @Inject()(val messagesApi: MessagesApi,
                       val env: Environment[Account, CookieBearerTokenAuthenticator],
-                      fileService: FileService)
+                      fileService: FileService,
+                      appConfig: AppConfig)
   extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
 
@@ -66,6 +68,22 @@ class Files @Inject()(val messagesApi: MessagesApi,
       Future.successful(BadRequest("File is missing"))
     }
 
+  }
+
+  def directDownload(file: String) = SecuredAction { request =>
+
+      val user = request.identity.user
+      //val url = "/home/git/uploads"
+      val url = appConfig.uploadPath
+
+      Ok.sendFile(new java.io.File(url + "/" + file), inline=true)
+        .withHeaders( CACHE_CONTROL->"max-age=3600",
+                      CONTENT_DISPOSITION->"attachment; filename=download.file",
+                      CONTENT_TYPE->"application/x-download");
+    // TODO
+    //.getOrElse {
+    //  Future.successful(BadRequest("File is missing"))
+    //}
   }
 
 }
