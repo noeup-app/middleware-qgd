@@ -1,6 +1,9 @@
 package com.noeupapp.middleware.utils
 
 import anorm.ToStatement
+
+import scala.reflect.ClassTag
+
 //import org.postgresql.jdbc4.Jdbc4Array
 import play.api.libs.json._
 import scala.language.implicitConversions
@@ -75,5 +78,19 @@ object EnumUtils {
   }
 
   def toCamelCase(name: String) = name.split("-").toList.map(_.capitalize).mkString
+
+  def javaEnumFormat[E <: Enum[E] : ClassTag] = new Format[E] {
+    override def reads(json: JsValue): JsResult[E] = json.validate[String] match {
+      case JsSuccess(value, _) => try {
+        val clazz = implicitly[ClassTag[E]].runtimeClass.asInstanceOf[Class[E]]
+        JsSuccess(Enum.valueOf(clazz, value))
+      } catch {
+        case _: IllegalArgumentException => JsError("enumeration.unknown.value")
+      }
+      case JsError(_) => JsError("enumeration.expected.string")
+    }
+
+    override def writes(o: E): JsValue = JsString(o.toString)
+  }
 
 }
