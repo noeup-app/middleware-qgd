@@ -115,7 +115,7 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
 
       case \/-(Some(user)) =>
         Logger.debug(s"Sign up, user ${data.firstName} ${data.lastName} <${data.email}> found in database, abording")
-        Future.successful(authorizationResult.userAlreadyExists())
+        Future.successful(authorizationResult.userAlreadyExists(user))
 
       case -\/(error) =>
         Logger.error(s"An exception occurred $error")

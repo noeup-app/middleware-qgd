@@ -10,13 +10,14 @@ import play.api.i18n.{Messages, MessagesApi}
 import play.api.mvc.{AnyContent, Request, Result}
 import SignUpForm.Data
 import com.noeupapp.middleware.entities.account.Account
+import com.noeupapp.middleware.entities.user.User
 
 /**
   * Define all HTTP results (Json/Html)
   */
 trait SignUpsResult extends AuthorizationResult {
   def badRequest(form: Form[SignUpForm.Data])(implicit request: Request[Any]): Result
-  def userAlreadyExists(): Result
+  def userAlreadyExists(user: User): Result
   def userSuccessfullyCreated(): Result
   def manageError(): Result
   def userIsConnected(): Result
@@ -46,7 +47,7 @@ class HtmlSignUpsResult @Inject() (
     Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.subscribe())
       .flashing("error" -> Messages("internal.server.error"))
 
-  override def userAlreadyExists(): Result =
+  override def userAlreadyExists(user: User): Result =
     Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.subscribe())
       .flashing("error" -> Messages("user.exists"))
 
@@ -78,8 +79,9 @@ class AjaxSignUpsResult @Inject() (
   override def manageError(): Result =
     InternalServerError(Messages("internal.server.error"))
 
-  override def userAlreadyExists(): Result =
+  override def userAlreadyExists(user: User): Result =
     BadRequest("User already exists")
+      .withHeaders("Location" -> com.noeupapp.middleware.entities.user.routes.Users.fetchById(user.id).toString)
 
   override def userIsConnected(): Result = Ok("User is connected")
 
