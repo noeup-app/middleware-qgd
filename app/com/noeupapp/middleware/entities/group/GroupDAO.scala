@@ -42,6 +42,18 @@ class GroupDAO extends GlobalReadsWrites {
     ).as(Group.parse *).headOption
   }
 
+  def getByIdLight(groupId: UUID)(implicit connection: Connection): Option[Group] = {
+    SQL(
+      """
+          SELECT *
+          FROM entity_groups grou
+          WHERE grou.id = {id}::UUID
+      """
+    ).on(
+      'id -> groupId
+    ).as(Group.parse *).headOption
+  }
+
   /**
     * Get all groups if user is admin
     * Otherwise, get only groups where user is a member or the owner

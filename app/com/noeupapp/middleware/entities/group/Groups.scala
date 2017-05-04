@@ -115,13 +115,28 @@ class Groups @Inject()(
       val entities = request.request.body
       val user = request.identity.user.id
       val organisation = request.identity.organisation
-      groupService.addEntitiesFlow(groupId, user, entities, organisation) map {
+      groupService.addEntitiesFlow(groupId, user, entities,organisation) map {
         case -\/(error) =>
           if (error.message.contains("authorized"))
-            {Logger.error(error.message)
+          {Logger.error(error.message)
             Forbidden(Json.toJson("Error, only an admin can add members to group"))}
           else
-            {Logger.error(error.toString)
+          {Logger.error(error.toString)
+            InternalServerError(Json.toJson("Error while adding members"))}
+
+        case \/-(group) => Ok(Json.toJson(group))
+      }
+    }
+  def addEntitiesLight(groupId: UUID)= SecuredAction(scopeAndRoleAuthorization(WithScope(/*builder.groups*/), WithRole("admin")))
+    .async(parse.json[Array[UUID]]) { implicit request =>
+      val entities = request.request.body
+      groupService.addEntitiesFlowLight(groupId, entities) map {
+        case -\/(error) =>
+          if (error.message.contains("authorized"))
+          {Logger.error(error.message)
+            Forbidden(Json.toJson("Error, only an admin can add members to group"))}
+          else
+          {Logger.error(error.toString)
             InternalServerError(Json.toJson("Error while adding members"))}
 
         case \/-(group) => Ok(Json.toJson(group))

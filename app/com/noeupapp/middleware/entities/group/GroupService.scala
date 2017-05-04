@@ -48,6 +48,11 @@ class GroupService @Inject()(groupDAO: GroupDAO,
       \/-(groupDAO.getById(groupId, userId, admin, organisation))
     }
   }
+  def findByIdLight(groupId: UUID): Future[Expect[Option[Group]]] = {
+    TryBDCall { implicit c =>
+      \/-(groupDAO.getByIdLight(groupId))
+    }
+  }
 
   /**
     * Check if user is admin and call findAll
@@ -163,6 +168,18 @@ class GroupService @Inject()(groupDAO: GroupDAO,
       validUser <- EitherT(admin |> "You are not authorized to add members to group")
 
       findGroup <- EitherT(findById(groupId, userId, admin, org.id))
+
+      group <- EitherT(findGroup |> "Couldn't find this group")
+
+      members <- EitherT(addEntities(groupId, entities))
+
+    } yield group
+  }.run
+
+  def addEntitiesFlowLight(groupId: UUID, entities: Array[UUID]): Future[Expect[Group]] = {
+    for {
+
+      findGroup <- EitherT(findByIdLight(groupId))
 
       group <- EitherT(findGroup |> "Couldn't find this group")
 
