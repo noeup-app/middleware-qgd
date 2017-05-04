@@ -18,7 +18,7 @@ import com.noeupapp.middleware.entities.user.User
 trait SignUpsResult extends AuthorizationResult {
   def badRequest(form: Form[SignUpForm.Data])(implicit request: Request[Any]): Result
   def userAlreadyExists(user: User): Result
-  def userSuccessfullyCreated(): Result
+  def userSuccessfullyCreated(user: User): Result
   def manageError(): Result
   def userIsConnected(): Result
   def userIsNotRegistered(implicit request: UserAwareRequest[AnyContent]): Result
@@ -39,7 +39,7 @@ class HtmlSignUpsResult @Inject() (
   override def badRequest(form: Form[Data])(implicit request: Request[Any]): Result =
     BadRequest(com.noeupapp.middleware.authorizationClient.signUp.html.signUp(form))
 
-  override def userSuccessfullyCreated(): Result =
+  override def userSuccessfullyCreated(user: User): Result =
     Redirect(com.noeupapp.middleware.authorizationClient.signUp.routes.SignUps.signUpActionGet())
       .flashing("info" -> Messages("user.successfully.created"))
 
@@ -73,8 +73,9 @@ class AjaxSignUpsResult @Inject() (
   override def badRequest(form: Form[Data])(implicit request: Request[Any]): Result =
     BadRequest("Incorrect or incomplete login information provided")
 
-  override def userSuccessfullyCreated(): Result =
-    Ok("User successfully created") // TODO Should return User Json
+  override def userSuccessfullyCreated(user: User): Result =
+    Created("User successfully created")
+      .withHeaders("Location" -> com.noeupapp.middleware.entities.user.routes.Users.fetchById(user.id).toString)
 
   override def manageError(): Result =
     InternalServerError(Messages("internal.server.error"))

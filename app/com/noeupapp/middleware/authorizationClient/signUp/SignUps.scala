@@ -134,7 +134,7 @@ class SignUps @Inject()( val messagesApi: MessagesApi,
           for {
             authenticator <- env.authenticatorService.create(loginInfo)
             value         <- env.authenticatorService.init(authenticator)
-            result        <- env.authenticatorService.embed(value, authorizationResult.userSuccessfullyCreated())
+            result        <- env.authenticatorService.embed(value, authorizationResult.userSuccessfullyCreated(account.user))
           } yield {
             Logger.info("User successfully added")
             env.eventBus.publish(SignUpEvent(account, request, request2Messages))
