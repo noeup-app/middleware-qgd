@@ -76,7 +76,7 @@ class EntityDAO {
     SQL(
       """SELECT entg.*
          FROM entity_hierarchy AS enth
-         INNER JOIN entity_groups AS entg ON enth.entity = entg.id
+         INNER JOIN entity_groups AS entg ON enth.parent = entg.id
          WHERE enth.entity = {id}::UUID;""")
       .on(
         'id -> entityId
