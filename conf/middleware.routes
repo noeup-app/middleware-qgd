@@ -63,6 +63,9 @@ GET         /entity/users                       com.noeupapp.middleware.entities
 POST        /entity/users                       com.noeupapp.middleware.entities.user.Users.add(orGet: Option[String])
 PUT         /entity/users/:id                   com.noeupapp.middleware.entities.user.Users.update(id: java.util.UUID)
 DELETE      /entity/users/:email                com.noeupapp.middleware.entities.user.Users.delete(email: String, purge: Option[Boolean], cascade: Option[Boolean])
+DELETE      /entity/users/:id/parents/:idP      com.noeupapp.middleware.entities.user.Users.deleteUserParent(id: java.util.UUID, idP: java.util.UUID)
+DELETE      /entity/users/:id/parents           com.noeupapp.middleware.entities.user.Users.deleteAllUserParents(id: java.util.UUID)
+GET         /entity/users/:id/parents           com.noeupapp.middleware.entities.user.Users.getAllUserParents(id: java.util.UUID)
 
 GET         /evolution/:n                       com.noeupapp.middleware.evolution.Evolution.apply(n: Int)
 

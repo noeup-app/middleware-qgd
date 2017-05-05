@@ -3,6 +3,7 @@ package com.noeupapp.middleware.entities.entity
 import java.util.UUID
 
 import com.google.inject.Inject
+import com.noeupapp.middleware.entities.group.Group
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 
 import scala.concurrent.Future
@@ -33,6 +34,24 @@ class EntityService @Inject() (entityDAO: EntityDAO) {
     TryBDCall { implicit c =>
       entityDAO.addHierarchy(parentId, entityId)
       \/-(entityId)
+    }
+  }
+
+  /**
+    *
+    */
+  def getHierarchy(entityId: UUID): Future[Expect[List[Group]]] = {
+    TryBDCall { implicit c =>
+      \/-(entityDAO.getHierarchy(entityId))
+    }
+  }
+
+  /**
+    *
+    */
+  def removeHierarchy(entityId: UUID, parentId: Option[UUID]): Future[Expect[Boolean]] = {
+    TryBDCall { implicit c =>
+      \/-(entityDAO.removeHierarchy(entityId, parentId))
     }
   }
 }
