@@ -107,8 +107,8 @@ class Users @Inject()(
   def deleteUserParent(userId: UUID, parentId: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
     .async { implicit request =>
       entityService.removeHierarchy(userId, Some(parentId)) map {
-        case \/-(true) => Ok("parent deleted")
-        case \/-(false) => InternalServerError("parent not deleted")
+        case \/-(false) => Ok("parent deleted")
+        case \/-(true) => InternalServerError("parent not deleted")
         case -\/(e) =>
           Logger.error(e.toString)
           InternalServerError(Json.toJson("Error while deleting parent"))
@@ -118,8 +118,8 @@ class Users @Inject()(
   def deleteAllUserParents(userId: UUID) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
     .async { implicit request =>
       entityService.removeHierarchy(userId, None) map {
-        case \/-(true) => Ok("all parents deleted")
-        case \/-(false) => InternalServerError("parents not deleted")
+        case \/-(false) => Ok("all parents deleted")
+        case \/-(true) => InternalServerError("parents not deleted")
         case -\/(e) =>
           Logger.error(e.toString)
           InternalServerError(Json.toJson("Error while deleting parents"))
