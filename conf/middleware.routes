@@ -87,3 +87,6 @@ POST        /upload/:fileId                     com.noeupapp.middleware.files.Fi
 GET         /ws                                 com.noeupapp.middleware.webSockets.WebSocketEndPoint.socket
 
 GET         /ws/test/:msg                            com.noeupapp.middleware.webSockets.WebSocketEndPoint.test(msg: String)
+
+
+GET         /notif/test                            com.noeupapp.middleware.notifications.NotificationTest.test

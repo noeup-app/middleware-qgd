@@ -3,13 +3,13 @@ package com.noeupapp.middleware.webSockets
 import java.util.UUID
 
 import akka.actor.{ActorRef, ActorSystem}
+import com.noeupapp.middleware.Global._
 
 /**
   * Created by damien on 17/11/2016.
   */
 object WebSocketAction {
 
-  implicit val actorSystem = ActorSystem("websocketsystem")
 
   val webSocketManagerActor = actorSystem.actorOf(WebSocketManagerActor.props, "webSocketManagerActor")
 
@@ -22,4 +22,8 @@ object WebSocketAction {
   case object Clients extends WebSocketAction
 
   case class UnknownClient(out: ActorRef)
+
+
+
+
 }

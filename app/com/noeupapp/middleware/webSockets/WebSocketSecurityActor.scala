@@ -14,8 +14,7 @@ import com.noeupapp.middleware.entities.user.UserService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
-import webSockets.WebSocketAction.actorSystem
-
+import com.noeupapp.middleware.Global._
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
