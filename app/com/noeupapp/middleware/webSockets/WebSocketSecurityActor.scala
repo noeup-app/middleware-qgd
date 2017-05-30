@@ -15,6 +15,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
 import com.noeupapp.middleware.Global._
+import com.noeupapp.middleware.notifications.NotificationCommandHandler
+
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
@@ -43,8 +45,9 @@ class WebSocketSecurityActor (out: ActorRef, manager: ActorRef, userService: Use
 
     userService.findUserByToken(rawToken) map {
       case \/-(Some(user)) =>
-        val props: Props = PingPongActor.props(user.id, out, manager)
-        messageManagerActor = Some(actorSystem.actorOf(props, "webSocketSecurityActor"))
+        // Todo decoupler : NotificationCommandHandler
+        val props: Props = NotificationCommandHandler.props(user.id, out, manager)
+        messageManagerActor = Some(actorSystem.actorOf(props, s"notificationCommandHandler-${user.id}"))
         manager ! Join(user.id, out)
 
       case \/-(None) =>
