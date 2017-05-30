@@ -21,11 +21,15 @@ import scala.language.postfixOps
 
 class WebSocketSecurityActor (out: ActorRef, manager: ActorRef, userService: UserService) extends Actor{
 
+  val forbidden = WebSocketMessage[String]("Forbidden", "Forbidden")
+  val tokenNotFound = WebSocketMessage[String]("Unauthorized", "The token is not found")
+
+
   var messageManagerActor: Option[ActorRef] = Option.empty
 
   val scheduler =
     actorSystem.scheduler.scheduleOnce(1 minute) {
-      out ! "Error : token not sent"
+      out ! tokenNotFound
       self ! PoisonPill
     }
 
@@ -34,7 +38,7 @@ class WebSocketSecurityActor (out: ActorRef, manager: ActorRef, userService: Use
 
     if(! BearerTokenGenerator.isToken(rawToken)) {
       Logger.error(s"BearerTokenGenerator.isToken($rawToken) -> false")
-      out ! "Forbidden"
+      out ! forbidden
       return Future.successful(self ! PoisonPill)
     }
 
@@ -46,12 +50,12 @@ class WebSocketSecurityActor (out: ActorRef, manager: ActorRef, userService: Use
 
       case \/-(None) =>
         Logger.error("token.userId is not defined")
-        out ! WebSocketMessage.forbidden
+        out ! forbidden
         self ! PoisonPill
 
       case e @ -\/(_)  =>
         Logger.error(s"WS error $e")
-        out ! WebSocketMessage.forbidden
+        out ! forbidden
         self ! PoisonPill
 
     }

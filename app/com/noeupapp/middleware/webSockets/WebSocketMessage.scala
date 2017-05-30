@@ -12,9 +12,6 @@ case class WebSocketMessage[T](message_type: String, message_data: T)
 
 object WebSocketMessage {
 
-  val forbidden = WebSocketMessage[String]("Forbidden", "Forbidden")
-
-
   implicit def webSocketMessageFormatToJson[T](webSocketMessage: WebSocketMessage[T])(implicit w: Writes[T]): String =
     Json.stringify(Json.obj(
       "message_type" -> webSocketMessage.message_type,
