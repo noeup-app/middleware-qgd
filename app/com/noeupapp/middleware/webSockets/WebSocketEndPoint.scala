@@ -13,6 +13,7 @@ import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessT
 import com.noeupapp.middleware.entities.account.Account
 import com.noeupapp.middleware.entities.user.UserService
 import com.noeupapp.middleware.webSockets.WebSocketAction._
+import org.sedis.Pool
 import play.api.Logger
 import play.api.i18n.MessagesApi
 
@@ -22,7 +23,8 @@ import play.api.i18n.MessagesApi
 
 class WebSocketEndPoint @Inject()(val messagesApi: MessagesApi,
                                   val env: Environment[Account, BearerTokenAuthenticator],
-                                  userService: UserService)
+                                  userService: UserService,
+                                 pool: Pool)
   extends Silhouette[Account, BearerTokenAuthenticator] {
 
 
@@ -36,7 +38,7 @@ class WebSocketEndPoint @Inject()(val messagesApi: MessagesApi,
 
     Logger.info(s"WEB_SOCKET - $request")
 
-    WebSocketSecurityActor.props(out, webSocketManagerActor, userService)
+    WebSocketSecurityActor.props(out, webSocketManagerActor, userService, pool)
 
   }
 
