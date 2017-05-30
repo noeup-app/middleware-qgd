@@ -28,6 +28,7 @@ class RedisStorageNotificationActor(pool: Pool) extends Actor {
       )
   }
 
+  //TODO duplication
   private def createKey(user: User): String = Json.stringify(Json.obj(
     "notification" -> user.id
   ))

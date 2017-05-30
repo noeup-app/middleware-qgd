@@ -70,10 +70,7 @@ class WebSocketSecurityActor (out: ActorRef, manager: ActorRef, userService: Use
       Logger.info(s"[${hashCode()}]WebSocketSecurityActor : $msg")
       scheduler.isCancelled match {
         case true => messageManagerActor.foreach(_ ! msg)
-        case false =>
-          checkToken(msg) map { _ =>
-            messageManagerActor.foreach(_ ! msg)
-          }
+        case false => checkToken(msg)
       }
   }
 

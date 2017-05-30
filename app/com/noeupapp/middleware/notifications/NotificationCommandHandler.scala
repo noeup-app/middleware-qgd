@@ -44,7 +44,10 @@ class NotificationCommandHandler(userId: UUID, out: ActorRef, manager: ActorRef,
 
   def handleCommand(command: Command): Future[Expect[String]] = {
     command match {
-      case Command(COMMAND_SET_READ, Some(notifId)) => Future.successful(\/-("OK"))
+      case Command(COMMAND_SET_READ, Some(notifId)) =>
+        Future.successful(\/-(setDeleted(userId, notifId)))
+      case Command(COMMAND_LIST_ALL, _) =>
+        Future.successful(\/-(retrieveInRedis(userId)))
       case error => Future.successful(\/-(returnError(error)))
     }
   }
@@ -56,8 +59,41 @@ class NotificationCommandHandler(userId: UUID, out: ActorRef, manager: ActorRef,
     Json.stringify(Json.obj("message_type" -> "error", "message_data" -> s"Command ($command) not found"))
 
 
-  def retrieveInRedis(userId: UUID, notifId: UUID) = {
+  // TODO duplication
+  private def createKey(userId: UUID): String = Json.stringify(Json.obj(
+    "notification" -> userId
+  ))
 
+  def setDeleted(userId: UUID, notifId: String): String = {
+
+    Try(pool.withClient(_.lrange(createKey(userId), 0, -1))) match {
+      case \/-(notifs: List[String]) =>
+
+        val elementDeleted = notifs.filter(_.contains(notifId))
+
+        Try(pool.withClient(_.rpush(createKey(userId), elementDeleted: _*))) match {
+          case -\/(e) =>
+            Logger.error("Unable to set deleted in Redis")
+            "Ko"
+          case \/-(_) => "Ok"
+        }
+
+      case _ =>
+        Logger.error("Unable to set deleted in Redis")
+        "Ko"
+    }
+
+  }
+
+  def retrieveInRedis(userId: UUID): String = {
+
+    Try(pool.withClient(_.lrange(createKey(userId), 0, -1))) match {
+      case \/-(notifs: List[String]) =>
+        s"[${notifs.mkString(",")}]"
+      case _ =>
+        Logger.error("Unable to retreive in Redis")
+        "Ko"
+    }
   }
 
 
@@ -74,6 +110,7 @@ object NotificationCommandHandler {
 
 
   val COMMAND_SET_READ = "SET_READ"
+  val COMMAND_LIST_ALL = "LIST_ALL"
 
 
   def props(userId: UUID, out: ActorRef, manager: ActorRef, pool: Pool) = Props(new NotificationCommandHandler(userId, out, manager, pool))
