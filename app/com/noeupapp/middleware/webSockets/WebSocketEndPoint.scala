@@ -41,6 +41,11 @@ class WebSocketEndPoint @Inject()(val messagesApi: MessagesApi,
   }
 
 
+  def test(msg: String) = Action {
+    webSocketManagerActor !
+      Send(UUID.fromString("49ca594b-7f48-4616-879f-87050b7c730b"),
+        WebSocketMessage[String]("test", msg))
+    Ok("")
   }
 
 }
