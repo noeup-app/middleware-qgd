@@ -1,5 +1,7 @@
 package com.noeupapp.middleware.notifications.notifiers
 
+import java.util.UUID
+
 import akka.actor.{Actor, Props}
 import com.noeupapp.middleware.entities.user.User
 import com.noeupapp.middleware.notifications.NotificationMessage
@@ -16,21 +18,36 @@ import scala.concurrent.ExecutionContext.Implicits.global
   */
 class RedisStorageNotificationActor(pool: Pool) extends Actor {
 
+  import RedisStorageNotificationActor._
+
   override def receive: Receive = {
     case notif @ NotificationMessage(user, message_type, message_data) =>
-      val key = createKey(user)
-      val value: String = notif.asInstanceOf[NotificationMessage[String]]
-      FTry(pool.withClient(_.rpush(key, value))) collect {
-        case -\/(error) => Logger.error(s"Error while adding notification - $error")
-      }
+      addNotification(
+        createKey(user),
+        NotificationRedis(UUID.randomUUID(), message_type, message_data.toString)
+      )
   }
 
-  def createKey(user: User): String = Json.stringify(Json.obj(
+  private def createKey(user: User): String = Json.stringify(Json.obj(
     "notification" -> user.id
   ))
+
+  private def addNotification(notifKey: String, notifValue: NotificationRedis) = {
+
+    val valueToString = Json.stringify(Json.toJson(notifValue)(notificationRedisFormat))
+
+    FTry(pool.withClient(_.rpush(notifKey, valueToString))) collect {
+      case -\/(error) => Logger.error(s"Error while adding notification - $error")
+    }
+  }
 }
 
 object RedisStorageNotificationActor {
+
+  case class NotificationRedis(id: UUID, message_type: String, message_data: String)
+
+  implicit val notificationRedisFormat = Json.format[NotificationRedis]
+
   def props(pool: Pool) = Props(new RedisStorageNotificationActor(pool))
 }
 
