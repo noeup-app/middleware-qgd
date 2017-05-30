@@ -69,13 +69,19 @@ class NotificationCommandHandler(userId: UUID, out: ActorRef, manager: ActorRef,
     Try(pool.withClient(_.lrange(createKey(userId), 0, -1))) match {
       case \/-(notifs: List[String]) =>
 
-        val elementDeleted = notifs.filter(_.contains(notifId))
+        val elementDeleted = notifs.filterNot(_.contains(notifId))
 
-        Try(pool.withClient(_.rpush(createKey(userId), elementDeleted: _*))) match {
+        Try(pool.withClient(_.del(createKey(userId)))) match {
           case -\/(e) =>
             Logger.error("Unable to set deleted in Redis")
             "Ko"
-          case \/-(_) => "Ok"
+          case \/-(_) =>
+            Try(pool.withClient(_.rpush(createKey(userId), elementDeleted: _*))) match {
+              case -\/(e) =>
+                Logger.error("Unable to set deleted in Redis")
+                "Ko"
+              case \/-(_) => "Ok"
+            }
         }
 
       case _ =>

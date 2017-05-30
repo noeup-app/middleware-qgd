@@ -19,7 +19,7 @@ class NotificationTest @Inject()(notification: Notification,
 
   def test = SecuredAction { implicit request =>
     notification.send(request.identity.user, "etst", UUID.randomUUID().toString)
-    Ok("")
+    Ok("OK")
   }
 
 }
