@@ -50,6 +50,7 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
    * Configures the module.
    */
   def configure() {
+    bind[OnStart].asEagerSingleton()
     bind[DelegableAuthInfoDAO[PasswordInfo]].to[PasswordInfoDAO]
     bind[DelegableAuthInfoDAO[OAuth1Info]].to[OAuth1InfoDAO]
     bind[DelegableAuthInfoDAO[OAuth2Info]].to[OAuth2InfoDAO]
