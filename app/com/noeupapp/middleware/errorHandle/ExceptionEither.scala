@@ -61,8 +61,18 @@ object ExceptionEither {
     case e: Exception => -\/(FailError(e))
   }
 
+
   def FRTry[T](t: => T): Future[Result \/ T] = try{Future(\/-(t))} catch {case e: Exception => Future{-\/(InternalServerError(e.getMessage))}}
 
   def RTry[T](t: => T): (Result \/ T) = try{\/-(t)} catch {case e: Exception => -\/(InternalServerError(e.getMessage))}
+
+
+  def tryFutures[T](fut: Future[T]): Future[Expect[T]] = {
+    fut
+      .map(\/-(_))
+      .recover{
+        case e: Exception => -\/(FailError(e))
+      }
+  }
 
 }

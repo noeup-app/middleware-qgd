@@ -3,10 +3,14 @@ package com.noeupapp.middleware.entities.user
 import java.util.UUID
 import javax.inject.Inject
 
+import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.noeupapp.middleware.authorizationClient.authInfo.PasswordInfoDAO
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.{CookieBearerTokenAuthenticator, CookieBearerTokenAuthenticatorDAO}
 import com.noeupapp.middleware.authorizationClient.loginInfo.AuthLoginInfoService
+import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenService
+import com.noeupapp.middleware.entities.account.AccountService
 import com.noeupapp.middleware.entities.entity.EntityService
 import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
@@ -33,8 +37,13 @@ class UserService @Inject()(userDAO: UserDAO,
                             entityService: EntityService,
                             organisationService: OrganisationService,
                             tierAccessTokenConfig: TierAccessTokenConfig,
-                            authLoginInfoService: AuthLoginInfoService) {
+                            authLoginInfoService: AuthLoginInfoService,
+                            cookieBearerTokenAuthenticatorDAOProvider: Provider[CookieBearerTokenAuthenticatorDAO],
+                            accountServiceProvider: Provider[AccountService]
+                           ) {
 
+  private lazy val accountService = accountServiceProvider.get()
+  private lazy val cookieBearerTokenAuthenticatorDAO = cookieBearerTokenAuthenticatorDAOProvider.get()
 
   type ValidationFuture[A] = EitherT[Future, FailError, A]
 
@@ -123,6 +132,16 @@ class UserService @Inject()(userDAO: UserDAO,
       case None => Future(-\/(FailError("User doesn't exist")))
     }
   }
+
+
+  def findUserByToken(token: String): Future[Expect[Option[User]]] = {
+    for{
+      cookieBearerAuthOpt <- EitherT(tryFutures(cookieBearerTokenAuthenticatorDAO.find(token)))
+      cookieBearerAuth    <- EitherT(cookieBearerAuthOpt |> "Token is not found")
+      _                   <- EitherT(cookieBearerAuth.isValid |> "Token is not valid anymore")
+      accountOpt          <- EitherT(tryFutures(accountService.retrieve(cookieBearerAuth.loginInfo)))
+    } yield accountOpt.map(_.user)
+  }.run
 
 
   /**
