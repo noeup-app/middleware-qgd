@@ -15,7 +15,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
 import com.noeupapp.middleware.Global._
-import com.noeupapp.middleware.notifications.NotificationCommandHandler
 import org.sedis.Pool
 
 import scala.concurrent.duration._
@@ -23,11 +22,8 @@ import scala.language.postfixOps
 
 class WebSocketSecurityActor (out: ActorRef, manager: ActorRef, userService: UserService, pool: Pool) extends Actor{
 
-  val forbidden = WebSocketMessage[String]("Forbidden", "Forbidden")
-  val tokenNotFound = WebSocketMessage[String]("Unauthorized", "The token is not found")
-
-
-  var messageManagerActor: Option[ActorRef] = Option.empty
+  val forbidden: String = WebSocketMessage[String]("error", "Forbidden")
+  val tokenNotFound: String = WebSocketMessage[String]("error", "The token is not found")
 
   val scheduler =
     actorSystem.scheduler.scheduleOnce(1 minute) {
@@ -46,9 +42,6 @@ class WebSocketSecurityActor (out: ActorRef, manager: ActorRef, userService: Use
 
     userService.findUserByToken(rawToken) map {
       case \/-(Some(user)) =>
-        // Todo decoupler : NotificationCommandHandler
-        val props: Props = NotificationCommandHandler.props(user.id, out, manager, pool)
-        messageManagerActor = Some(actorSystem.actorOf(props, s"notificationCommandHandler-${user.id}"))
         manager ! Join(user.id, out)
 
       case \/-(None) =>
@@ -67,16 +60,10 @@ class WebSocketSecurityActor (out: ActorRef, manager: ActorRef, userService: Use
 
   def receive = {
     case msg: String =>
-      Logger.info(s"[${hashCode()}]WebSocketSecurityActor : $msg")
-      scheduler.isCancelled match {
-        case true => messageManagerActor.foreach(_ ! msg)
-        case false => checkToken(msg)
+      if (! scheduler.isCancelled) {
+        checkToken(msg)
       }
   }
-
-  override def postStop() =
-    messageManagerActor.foreach(_ ! PoisonPill)
-
 
 }
 
