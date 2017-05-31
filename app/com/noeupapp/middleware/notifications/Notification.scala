@@ -45,6 +45,12 @@ class NotificationActor extends Actor {
       Logger.warn("No listener registered !")
     }
 
+    val listeners: ActorRef = createOrRetrieveBroadcastActor
+
+    listeners ! NotificationMessage(user, messageType, messageData)
+  }
+
+  private def createOrRetrieveBroadcastActor = {
     val observersName = s"observers-${actors.mkString("-").hashCode}"
 
     val listeners =
@@ -55,10 +61,8 @@ class NotificationActor extends Actor {
           observersMap = observersMap + (observersName -> observers)
           observers
       }
-
-    listeners ! NotificationMessage(user, messageType, messageData)
+    listeners
   }
-
 }
 
 object NotificationActor {
