@@ -41,7 +41,7 @@ class NotificationActor extends Actor {
   private def registerListener(actor: ActorRef) = { actors = actors ++ List(actor.path.toString) }
 
 
-  private def send(notificationId: UUID, user: User, messageType: String, messageData: String) = {
+  private def send(notificationId: UUID, userId: UUID, messageType: String, messageData: String) = {
 
     if(actors.isEmpty){
       // TODO send a mail ?
@@ -51,7 +51,7 @@ class NotificationActor extends Actor {
     val listeners: ActorRef = createOrRetrieveBroadcastActor
 
 
-    listeners ! NotificationMessage(notificationId, user, messageType, messageData)
+    listeners ! NotificationMessage(notificationId, userId, messageType, messageData)
 
   }
 
@@ -72,7 +72,7 @@ class NotificationActor extends Actor {
 
 object NotificationActor {
   case class RegisterListener(actor: ActorRef)
-  case class Send(notificationId: UUID, user: User, messageType: String, messageData: String)
+  case class Send(notificationId: UUID, userId: UUID, messageType: String, messageData: String)
 
 
   def props = Props[NotificationActor]
