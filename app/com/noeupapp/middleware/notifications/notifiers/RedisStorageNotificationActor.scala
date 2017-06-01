@@ -21,16 +21,16 @@ class RedisStorageNotificationActor(pool: Pool) extends Actor {
   import RedisStorageNotificationActor._
 
   override def receive: Receive = {
-    case notif @ NotificationMessage(user, message_type, message_data) =>
+    case notif @ NotificationMessage(userId, message_type, message_data) =>
       addNotification(
-        createKey(user),
+        createKey(userId),
         NotificationRedis(UUID.randomUUID(), message_type, message_data.toString)
       )
   }
 
   //TODO duplication
-  private def createKey(user: User): String = Json.stringify(Json.obj(
-    "notification" -> user.id
+  private def createKey(userId: UUID): String = Json.stringify(Json.obj(
+    "notification" -> userId
   ))
 
   private def addNotification(notifKey: String, notifValue: NotificationRedis) = {

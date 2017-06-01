@@ -68,7 +68,7 @@ class Dao @Inject()(dbConfigProvider: DatabaseConfigProvider) {
       }
   }
 
-  def runForAll[U <: Entity[Any], V <: Table[U], C[_]](query: Query[V, U, C]): Future[Expect[C[U]]] = {
+  def runForAll[U, V, C[_]](query: Query[V, U, C]): Future[Expect[C[U]]] = {
     db.run(query.result)
       .map(\/-(_))
       .recover{

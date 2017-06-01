@@ -1,5 +1,7 @@
 package com.noeupapp.middleware.notifications
 
+import java.util.UUID
+
 import com.noeupapp.middleware.entities.user.User
 import play.api.libs.json.{Json, Writes}
 
@@ -9,7 +11,7 @@ import scala.language.implicitConversions
   * Created by damien on 30/05/2017.
   */
 
-case class NotificationMessage[T](user: User, message_type: String, message_data: T)
+case class NotificationMessage[T](userId: UUID, message_type: String, message_data: T)
 
 
 object NotificationMessage {

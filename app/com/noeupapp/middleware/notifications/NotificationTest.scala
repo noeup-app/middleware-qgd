@@ -18,7 +18,7 @@ class NotificationTest @Inject()(notification: Notification,
   extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
   def test = SecuredAction { implicit request =>
-    notification.send(request.identity.user, "etst", UUID.randomUUID().toString)
+    notification.send(request.identity.user.id, "etst", UUID.randomUUID().toString)
     Ok("OK")
   }
 
