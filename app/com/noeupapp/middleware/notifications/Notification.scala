@@ -1,5 +1,7 @@
 package com.noeupapp.middleware.notifications
 
+import java.util.UUID
+
 import akka.actor.{Actor, ActorRef, Props}
 import akka.routing.BroadcastGroup
 import com.noeupapp.middleware.entities.user.User
@@ -18,7 +20,7 @@ class Notification {
   def registerListener(actor: ActorRef) = notificationActor ! RegisterListener(actor)
 
   def send(user: User, messageType: String, messageData: String) =
-    notificationActor ! Send(user, messageType, messageData)
+    notificationActor ! Send(UUID.randomUUID(), user, messageType, messageData)
 
 }
 
@@ -33,12 +35,12 @@ class NotificationActor extends Actor {
 
   override def receive: Receive = {
     case RegisterListener(actor) => registerListener(actor)
-    case Send(user, messageType, messageData) => send(user, messageType, messageData)
+    case Send(notificationId, user, messageType, messageData) => send(notificationId, user, messageType, messageData)
   }
 
   private def registerListener(actor: ActorRef) = { actors = actors ++ List(actor.path.toString) }
 
-  private def send(user: User, messageType: String, messageData: String) = {
+  private def send(notificationId: UUID, user: User, messageType: String, messageData: String) = {
 
     if(actors.isEmpty){
       // TODO send a mail ?
@@ -47,7 +49,7 @@ class NotificationActor extends Actor {
 
     val listeners: ActorRef = createOrRetrieveBroadcastActor
 
-    listeners ! NotificationMessage(user, messageType, messageData)
+    listeners ! NotificationMessage(notificationId, user, messageType, messageData)
   }
 
   private def createOrRetrieveBroadcastActor = {
@@ -67,7 +69,7 @@ class NotificationActor extends Actor {
 
 object NotificationActor {
   case class RegisterListener(actor: ActorRef)
-  case class Send(user: User, messageType: String, messageData: String)
+  case class Send(notificationId: UUID, user: User, messageType: String, messageData: String)
 
 
   def props = Props[NotificationActor]

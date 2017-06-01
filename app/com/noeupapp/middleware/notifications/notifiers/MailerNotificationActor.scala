@@ -10,7 +10,8 @@ import play.api.Logger
   */
 class MailerNotificationActor extends Actor {
   override def receive: Receive = {
-    case NotificationMessage(user, message_type, message_data) => Logger.error(s"TODO mail : $user -  $message_type - $message_data")
+    case NotificationMessage(notificationId, user, message_type, message_data) =>
+      Logger.error(s"TODO mail : $user -  $message_type - $message_data")
   }
 }
 
