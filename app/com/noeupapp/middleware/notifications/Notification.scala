@@ -19,8 +19,8 @@ class Notification {
 
   def registerListener(actor: ActorRef) = notificationActor ! RegisterListener(actor)
 
-  def send(user: User, messageType: String, messageData: String) =
-    notificationActor ! Send(UUID.randomUUID(), user, messageType, messageData)
+  def send(userId: UUID, messageType: String, messageData: String) =
+    notificationActor ! Send(UUID.randomUUID(), userId, messageType, messageData)
 
 }
 
@@ -35,10 +35,11 @@ class NotificationActor extends Actor {
 
   override def receive: Receive = {
     case RegisterListener(actor) => registerListener(actor)
-    case Send(notificationId, user, messageType, messageData) => send(notificationId, user, messageType, messageData)
+    case Send(notificationId, userId, messageType, messageData) => send(notificationId, userId, messageType, messageData)
   }
 
   private def registerListener(actor: ActorRef) = { actors = actors ++ List(actor.path.toString) }
+
 
   private def send(notificationId: UUID, user: User, messageType: String, messageData: String) = {
 
@@ -49,7 +50,9 @@ class NotificationActor extends Actor {
 
     val listeners: ActorRef = createOrRetrieveBroadcastActor
 
+
     listeners ! NotificationMessage(notificationId, user, messageType, messageData)
+
   }
 
   private def createOrRetrieveBroadcastActor = {
