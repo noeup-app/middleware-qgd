@@ -11,6 +11,10 @@ import RoleAuthorization.WithRole
 import ScopeAuthorization.WithScope
 import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticator
 import com.noeupapp.middleware.entities.account.Account
+import com.noeupapp.middleware.notifications.Notification
+import com.noeupapp.middleware.notifications.notifiers.WebSocketNotificationActor
+import com.noeupapp.middleware.packages.action.CheckPackageAction
+
 
 
 /**
@@ -24,17 +28,17 @@ class Applications @Inject()(
                               val messagesApi: MessagesApi,
                               val env: Environment[Account, CookieBearerTokenAuthenticator],
                               socialProviderRegistry: SocialProviderRegistry,
-                              scopeAndRoleAuthorization: ScopeAndRoleAuthorization)
+                              scopeAndRoleAuthorization: ScopeAndRoleAuthorization,
+                              checkPackageAction: CheckPackageAction)
   extends Silhouette[Account, CookieBearerTokenAuthenticator] {
+
 
   /**
    * Handles the index action.
    *
    * @return The result to display.
    */
-//  def index = SecuredAction.async { implicit request =>
-//  def index = SecuredAction(scopeAndRoleAuthorization(WithScope(), WithRole("all"))) { implicit request =>
-  def index = SecuredAction { implicit request =>
+  def index = (SecuredAction andThen checkPackageAction.checkSecured(this)) { implicit request =>
     Ok("Nothing here")
   }
 }

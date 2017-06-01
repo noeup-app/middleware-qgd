@@ -85,3 +85,11 @@ POST        /prepareUpload                      com.noeupapp.middleware.files.Fi
 POST        /upload/:fileId                     com.noeupapp.middleware.files.Files.upload(fileId: java.util.UUID)
 
 GET         /ws                                 com.noeupapp.middleware.webSockets.WebSocketEndPoint.socket
+
+GET         /ws/test/:msg                            com.noeupapp.middleware.webSockets.WebSocketEndPoint.test(msg: String)
+
+
+GET         /notifications                         com.noeupapp.middleware.notifications.Notifications.getAllNotifications
+GET         /notifications/:id/read                com.noeupapp.middleware.notifications.Notifications.setRead(id: java.util.UUID)
+
+GET         /notif/test                            com.noeupapp.middleware.notifications.NotificationTest.test

@@ -50,6 +50,7 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
    * Configures the module.
    */
   def configure() {
+    bind[OnStart].asEagerSingleton()
     bind[DelegableAuthInfoDAO[PasswordInfo]].to[PasswordInfoDAO]
     bind[DelegableAuthInfoDAO[OAuth1Info]].to[OAuth1InfoDAO]
     bind[DelegableAuthInfoDAO[OAuth2Info]].to[OAuth2InfoDAO]
@@ -135,13 +136,12 @@ class MiddlewareGuiceModule extends AbstractModule with ScalaModule {
                                                     fingerprintGenerator: FingerprintGenerator,
                                                     //                                 dao: BearerAuthenticatorDAO,
                                                     accessTokenService: OAuthAccessTokenService,
-                                                    userService: UserService,
                                                     configuration: Configuration,
                                                     clock: Clock): AuthenticatorService[CookieBearerTokenAuthenticator] = {
 
 
     val config = configuration.underlying.as[CookieBearerTokenAuthenticatorSettings]("silhouette.authenticator")
-    val dao = new CookieBearerTokenAuthenticatorDAO(config, accessTokenService, userService, pool)
+    val dao = new CookieBearerTokenAuthenticatorDAO(config, accessTokenService, pool)
     //    val config: BearerTokenAuthenticatorSettings = BearerTokenAuthenticatorSettings()
     new CookieBearerTokenAuthenticatorService(config, dao, fingerprintGenerator, idGenerator, clock)
   }

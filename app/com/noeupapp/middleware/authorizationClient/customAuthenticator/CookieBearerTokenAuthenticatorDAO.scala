@@ -15,7 +15,6 @@ import scala.language.implicitConversions
 
 class CookieBearerTokenAuthenticatorDAO @Inject() (settings: CookieBearerTokenAuthenticatorSettings,
                                         authAccessTokenService: OAuthAccessTokenService,
-                                        userService: UserService,
                                         pool: Pool
                             ) extends AuthenticatorDAO[CookieBearerTokenAuthenticator]{
 

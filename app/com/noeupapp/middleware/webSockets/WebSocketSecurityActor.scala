@@ -7,76 +7,67 @@ import com.noeupapp.middleware.utils.BearerTokenGenerator
 import com.noeupapp.middleware.webSockets.WebSocketAction.Join
 import play.api.Logger
 import akka.actor._
+import com.noeupapp.middleware.authorizationClient.customAuthenticator.CookieBearerTokenAuthenticatorDAO
+import com.noeupapp.middleware.authorizationServer.oauth2.AuthorizationHandler
+import com.noeupapp.middleware.entities.user.UserService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{-\/, \/-}
-import webSockets.WebSocketAction.actorSystem
+import com.noeupapp.middleware.Global._
+import org.sedis.Pool
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
-class WebSocketSecurityActor (out: ActorRef, manager: ActorRef, oAuthAccessTokenService: OAuthAccessTokenService) extends Actor{
+class WebSocketSecurityActor (out: ActorRef, manager: ActorRef, userService: UserService, pool: Pool) extends Actor{
 
-  var messageManagerActor: Option[ActorRef] = Option.empty
+  val forbidden: String = WebSocketMessage[String]("error", "Forbidden")
+  val tokenNotFound: String = WebSocketMessage[String]("error", "The token is not found")
 
   val scheduler =
     actorSystem.scheduler.scheduleOnce(1 minute) {
-      out ! "Error : token not sent"
+      out ! tokenNotFound
       self ! PoisonPill
     }
 
   def checkToken(rawToken: String): Future[_] = {
     scheduler.cancel()
-    BearerTokenGenerator.isToken(rawToken) match {
-      case true =>
-        oAuthAccessTokenService.find(rawToken) map {
-          case \/-(token) if ! token.isExpired =>
-            token.userId match {
-              case None =>
-                Logger.error("token.userId is not defined")
-                out ! "Forbidden"
-                self ! PoisonPill
-              case Some(userIdFound) =>
-                val props: Props = PingPongActor.props(userIdFound, out, manager)
-                messageManagerActor = Some(actorSystem.actorOf(props, "webSocketSecurityActor"))
-                manager ! Join(userIdFound, out)
-            }
-          case \/-(token)  =>
-            Logger.info(s"WS expired token")
-            out ! "Forbidden"
-            self ! PoisonPill
-          case e @ -\/(_)  =>
-            Logger.error(s"WS error $e")
-            out ! "Forbidden"
-            self ! PoisonPill
-        }
-      case false =>
-        Logger.error(s"BearerTokenGenerator.isToken($rawToken) -> false")
-        out ! "Forbidden"
-        Future.successful(self ! PoisonPill)
+
+    if(! BearerTokenGenerator.isToken(rawToken)) {
+      Logger.error(s"BearerTokenGenerator.isToken($rawToken) -> false")
+      out ! forbidden
+      return Future.successful(self ! PoisonPill)
+    }
+
+    userService.findUserByToken(rawToken) map {
+      case \/-(Some(user)) =>
+        manager ! Join(user.id, out)
+
+      case \/-(None) =>
+        Logger.error("token.userId is not defined")
+        out ! forbidden
+        self ! PoisonPill
+
+      case e @ -\/(_)  =>
+        Logger.error(s"WS error $e")
+        out ! forbidden
+        self ! PoisonPill
+
     }
   }
 
 
   def receive = {
     case msg: String =>
-      scheduler.isCancelled match {
-        case true => messageManagerActor.foreach(_ ! msg)
-        case false =>
-          checkToken(msg) map { _ =>
-            messageManagerActor.foreach(_ ! msg)
-          }
+      if (! scheduler.isCancelled) {
+        checkToken(msg)
       }
   }
-
-  override def postStop() =
-    messageManagerActor.foreach(_ ! PoisonPill)
-
 
 }
 
 object WebSocketSecurityActor {
-  def props(out: ActorRef, manager: ActorRef, oAuthAccessTokenService: OAuthAccessTokenService) = Props(new WebSocketSecurityActor(out, manager, oAuthAccessTokenService))
+  def props(out: ActorRef, manager: ActorRef, userService: UserService, pool: Pool) = Props(new WebSocketSecurityActor(out, manager, userService, pool))
 }
 
