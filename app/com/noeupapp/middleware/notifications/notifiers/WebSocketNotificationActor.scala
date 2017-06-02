@@ -14,7 +14,7 @@ import play.api.Logger
 class WebSocketNotificationActor(webSocketManagerActor: ActorRef) extends Actor {
   override def receive: Receive = {
     case notif @ NotificationMessage(_, userId, _, _) =>
-      webSocketManagerActor ! Send(userId, notif.asInstanceOf[NotificationMessage[String]])
+      webSocketManagerActor ! Send(userId, notif)
   }
 }
 

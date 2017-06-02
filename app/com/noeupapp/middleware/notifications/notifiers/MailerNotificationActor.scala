@@ -20,7 +20,7 @@ import scalaz.{EitherT, \/-}
   * Created by damien on 30/05/2017.
   */
 class MailerNotificationActor(mailerNotificationService: MailerNotificationService) extends Actor {
-  override def receive: Receive = {
+  override def receive = {
     case NotificationMessage(notificationId, userId, message_type, message_data) =>
 
       mailerNotificationService.sendMail(userId, message_type, message_data)
@@ -32,7 +32,8 @@ class MailerNotificationActor(mailerNotificationService: MailerNotificationServi
 }
 
 object MailerNotificationActor {
-  def props = Props[MailerNotificationActor]
+  def props(mailerNotificationService: MailerNotificationService) =
+    Props(new MailerNotificationActor(mailerNotificationService))
 }
 
 
