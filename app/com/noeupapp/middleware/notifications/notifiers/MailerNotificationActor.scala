@@ -50,17 +50,20 @@ class MailerNotificationService @Inject()(emailTemplate: EmailTemplate,
 
   private def sendMail(targetEmail: String, messageType: String, messageData: Any): Future[Expect[String]] = {
 
-    val (subject, emailContent) = mailerNotificationConfiguration.content(messageType, messageData.toString)
+    mailerNotificationConfiguration.content(messageType, messageData.toString) match {
+      case Some((subject, emailContent)) =>
+        messageEmail.sendEmail(
+          senderName = Some(emailTemplate.getSenderName),
+          senderEmail = emailTemplate.getSenderEmail,
+          receiverName = targetEmail,
+          receiverEmail = targetEmail,
+          subject = s"${emailTemplate.getAppName} - $subject",
+          text = emailContent,
+          appName = emailTemplate.getAppName
+        )
+      case _ =>
+    }
 
-    messageEmail.sendEmail(
-      senderName = Some(emailTemplate.getSenderName),
-      senderEmail = emailTemplate.getSenderEmail,
-      receiverName = targetEmail,
-      receiverEmail = targetEmail,
-      subject = s"${emailTemplate.getAppName} - $subject",
-      text = emailContent,
-      appName = emailTemplate.getAppName
-    )
   }
 
 

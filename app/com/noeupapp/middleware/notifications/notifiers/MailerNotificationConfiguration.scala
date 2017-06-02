@@ -5,6 +5,6 @@ package com.noeupapp.middleware.notifications.notifiers
   */
 trait MailerNotificationConfiguration {
 
-  def content(messageType: String, messageData: String): (String, String)
+  def content(messageType: String, messageData: String): Option[(String, String)]
 
 }
