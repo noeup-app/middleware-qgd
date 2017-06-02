@@ -5,6 +5,7 @@ import java.util.UUID
 import akka.actor.{Actor, Props}
 import com.google.inject.Inject
 import com.noeupapp.middleware.entities.user.UserService
+import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
 import com.noeupapp.middleware.notifications.NotificationMessage
 import com.noeupapp.middleware.utils.mailer.{EmailTemplate, MessageEmail}
@@ -13,7 +14,7 @@ import play.api.Logger
 import com.noeupapp.middleware.utils.FutureFunctor._
 
 import scala.concurrent.Future
-import scalaz.EitherT
+import scalaz.{EitherT, \/-}
 
 /**
   * Created by damien on 30/05/2017.
@@ -22,8 +23,11 @@ class MailerNotificationActor(mailerNotificationService: MailerNotificationServi
   override def receive: Receive = {
     case NotificationMessage(notificationId, userId, message_type, message_data) =>
 
-
       mailerNotificationService.sendMail(userId, message_type, message_data)
+        .recover{
+          case e: Exception =>
+            Logger.error(s"MailerNotificationActor error : ${FailError(e)}")
+        }
   }
 }
 
@@ -61,7 +65,7 @@ class MailerNotificationService @Inject()(emailTemplate: EmailTemplate,
           text = emailContent,
           appName = emailTemplate.getAppName
         )
-      case _ =>
+      case _ => Future.successful(\/-("Mail"))
     }
 
   }
