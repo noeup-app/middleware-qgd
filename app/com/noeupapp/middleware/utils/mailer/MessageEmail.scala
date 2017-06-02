@@ -51,4 +51,6 @@ class MessageEmail @Inject()(mailerClient: MailerClient,
         Future.successful(\/-(res))
     }
   }
+
+
 }
