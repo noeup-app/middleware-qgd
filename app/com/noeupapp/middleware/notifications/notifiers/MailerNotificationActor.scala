@@ -12,7 +12,7 @@ import com.noeupapp.middleware.utils.mailer.{EmailTemplate, MessageEmail}
 import com.noeupapp.middleware.utils.TypeCustom._
 import play.api.Logger
 import com.noeupapp.middleware.utils.FutureFunctor._
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz.{EitherT, \/-}
 
