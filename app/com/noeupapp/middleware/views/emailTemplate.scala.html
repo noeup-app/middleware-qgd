@@ -170,7 +170,7 @@
                                         <img src="@emailConfig.getLogoUrl" alt="" style="border-width: 0;
                                             width: auto;
                                             max-width: 600px;
-                                            height: 30px;
+                                            height: 40px;
                                             display: block !important;
                                             float: right;
                                             margin-right: 10px;"><div style="
@@ -191,7 +191,7 @@
                             padding-left: 0;
                             border-bottom: 1px solid #ececec;
                             background-color: #ECECEC;">
-                            <table width="100%" style="border-spacing: 0;
+                            @*<table width="100%" style="border-spacing: 0;
                                 font-family: sans-serif;
                                 color: #333333;">
                                 <tbody><tr>
@@ -209,7 +209,7 @@
                                         </p>
                                     </td>
                                 </tr>
-                                </tbody></table>
+                                </tbody></table>*@
                         </td>
                     </tr>
                         <tr>
@@ -265,7 +265,7 @@
                                             text-align: left;">
                                             <p class="mail" style="
                                                 font-size: 10px;
-                                            ">Your're receiving this email because you subscribed to @emailConfig.getAppLink.
+                                            ">Your're receiving this email because you subscribed with email @Html(senderName.map("from " + _).getOrElse("")) to @receiverName @* @emailConfig.getAppLink. *@
                                                 <br><br>@emailConfig.getCompanyName
                                                 <br>@emailConfig.getCompanyEmail
                                                 <br>2017 ©
