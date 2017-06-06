@@ -97,7 +97,7 @@ class SignUpService @Inject()(userService: UserService,
   def grantToAdminFirstUser(user: User): Future[Expect[Boolean]] = {
 
     def updateIfNeeded(nbActiveUser: Int): Future[Expect[Unit]] = {
-      if (nbActiveUser == 1) return Future.successful(\/-(()))
+      if (nbActiveUser > 1) return Future.successful(\/-(()))
       updateUserRoleFlow(user, "superadmin").map(_.map(_ => ()))
     }
 
