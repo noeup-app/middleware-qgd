@@ -43,7 +43,7 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     * @return A future to wait for the process to be completed.
     */
   override def remove(loginInfo: api.LoginInfo): Future[Unit] = Future {
-    Logger.error(s"AuthInfoDAOImpl.remove($loginInfo)")
+    Logger.debug(s"AuthInfoDAOImpl.remove($loginInfo)")
     val serializedLoginInfo: String = loginInfo
     Try {
       pool.withClient(_.del(serializedLoginInfo))
@@ -67,7 +67,7 @@ abstract class AuthInfoDAOImpl[T <: AuthInfo](implicit writes: Writes[T], reads:
     * @return The saved auth info.
     */
   override def save(loginInfo: api.LoginInfo, authInfo: T): Future[T] = {
-    Logger.error(s"AuthInfoDAOImpl.save($loginInfo)")
+    Logger.debug(s"AuthInfoDAOImpl.save($loginInfo)")
     find(loginInfo).flatMap { // TODO manage errors
       case Some(_) => update(loginInfo, authInfo)
       case None => add(loginInfo, authInfo)
