@@ -177,6 +177,9 @@ class AuthorizationHandler @Inject() (passwordInfoDAO: PasswordInfoDAO,
       case request: PasswordRequest =>
         Logger.debug(s"AuthorizationHandler.findUser -> PasswordRequest -> ${request.username}")
         userService.validateUser(request.username, request.password) map {
+          case \/-(Some(user)) if ! user.active =>
+            Logger.debug(s"User <${user.email}> is not active")
+            None
           case \/-(user) => user
           case _ => None
         }

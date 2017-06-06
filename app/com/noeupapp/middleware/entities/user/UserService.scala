@@ -2,15 +2,17 @@ package com.noeupapp.middleware.entities.user
 
 import java.util.UUID
 import javax.inject.Inject
+import play.api.mvc.Results._
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.noeupapp.middleware.authorizationClient.authInfo.PasswordInfoDAO
+import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailService
 import com.noeupapp.middleware.authorizationClient.customAuthenticator.{CookieBearerTokenAuthenticator, CookieBearerTokenAuthenticatorDAO}
 import com.noeupapp.middleware.authorizationClient.loginInfo.AuthLoginInfoService
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenService
-import com.noeupapp.middleware.entities.account.AccountService
+import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.entities.entity.EntityService
 import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
@@ -39,8 +41,7 @@ class UserService @Inject()(userDAO: UserDAO,
                             tierAccessTokenConfig: TierAccessTokenConfig,
                             authLoginInfoService: AuthLoginInfoService,
                             cookieBearerTokenAuthenticatorDAOProvider: Provider[CookieBearerTokenAuthenticatorDAO],
-                            accountServiceProvider: Provider[AccountService]
-                           ) {
+                            accountServiceProvider: Provider[AccountService]) {
 
   private lazy val accountService = accountServiceProvider.get()
   private lazy val cookieBearerTokenAuthenticatorDAO = cookieBearerTokenAuthenticatorDAOProvider.get()
@@ -298,7 +299,6 @@ class UserService @Inject()(userDAO: UserDAO,
       \/-(userDAO.update(id, body))
     }
   }
-
 
 
 

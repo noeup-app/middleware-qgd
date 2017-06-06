@@ -36,6 +36,14 @@ class AuthLoginInfoService @Inject() (authLoginInfoDao: AuthLoginInfoDao){
       \/-(authLoginInfo)
     }
 
+  def update(providerId: String, providerKey: String, authLoginInfo: AuthLoginInfo): Future[Expect[AuthLoginInfo]] =
+    TryBDCall{ implicit connection =>
+      authLoginInfoDao.update(providerId, providerKey, authLoginInfo)
+      \/-(authLoginInfo)
+    }
+
+  def update(loginInfo: api.LoginInfo, authLoginInfo: AuthLoginInfo): Future[Expect[AuthLoginInfo]] =
+    this.update(loginInfo.providerID, loginInfo.providerKey, authLoginInfo)
 
   def delete(userId: UUID): Future[Expect[Unit]] =
     TryBDCall{ implicit connection =>

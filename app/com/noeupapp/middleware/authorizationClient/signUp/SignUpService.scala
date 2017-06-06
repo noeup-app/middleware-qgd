@@ -95,11 +95,15 @@ class SignUpService @Inject()(userService: UserService,
   }.run
 
   def grantToAdminFirstUser(user: User): Future[Expect[Boolean]] = {
+
+    def updateIfNeeded(nbActiveUser: Int): Future[Expect[Unit]] = {
+      if (nbActiveUser > 1) return Future.successful(\/-(()))
+      updateUserRoleFlow(user, "superadmin").map(_.map(_ => ()))
+    }
+
     for{
       nbActiveUser  <- EitherT(userService.getNumberActiveUser())
-      if (nbActiveUser == 1)
-      updated       <- EitherT(updateUserRoleFlow(user, "superadmin"))
-      //updated       <- EitherT(updateFirstUserFlow(user,nbActiveUser))
+      _             <- EitherT(updateIfNeeded(nbActiveUser))
     } yield true
   }.run
 

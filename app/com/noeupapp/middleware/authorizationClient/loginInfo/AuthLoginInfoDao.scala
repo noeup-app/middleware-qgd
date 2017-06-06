@@ -41,6 +41,24 @@ class AuthLoginInfoDao {
     ).execute()
 
 
+  def update(providerId: String, providerKey: String, authLoginInfo: AuthLoginInfo)(implicit connection: Connection) =
+    SQL(
+      """
+          UPDATE auth_login_info
+          SET provider_id = {new_provider_id},
+              provider_key = {new_provider_key},
+              "user" = {new_user}::UUID
+          WHERE provider_id = {provider_id} AND provider_key = {provider_key};
+      """
+    ).on(
+      'provider_id -> providerId,
+      'provider_key -> providerKey,
+      'new_provider_id -> authLoginInfo.providerId,
+      'new_provider_key -> authLoginInfo.providerKey,
+      'new_user -> authLoginInfo.user
+    ).execute()
+
+
   def delete(userId: UUID)(implicit connection: Connection) = {
     SQL(
       """

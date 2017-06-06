@@ -29,7 +29,8 @@ class Users @Inject()(
                          val env: Environment[Account, CookieBearerTokenAuthenticator],
                          scopeAndRoleAuthorization: ScopeAndRoleAuthorization,
                          userService: UserService,
-                         entityService: EntityService )
+                         entityService: EntityService,
+                        updateEmailService: UpdateEmailService)
   extends Silhouette[Account, CookieBearerTokenAuthenticator] {
 
 
@@ -87,6 +88,23 @@ class Users @Inject()(
     .async(parse.json[User]) { implicit request =>
       userService.update(id, request.body) map {
         case \/-(_) => Ok("User updated")
+        case -\/(e) =>
+          Logger.error(e.toString)
+          InternalServerError(Json.toJson("Error while updating user"))
+      }
+    }
+
+  def updateEmail(id: UUID) = SecuredAction
+    .async(parse.json[UserEmail]) { implicit request =>
+      updateEmailService.updateEmail(id, request.identity, request.body.email) map {
+        case \/-(None) => NoContent
+        case \/-(Some(_)) => NoContent
+        case -\/(e) if e.errorType.header.status == Forbidden.header.status =>
+          Logger.error(e.toString)
+          Forbidden("")
+        case -\/(e) if e.errorType.header.status == BadRequest.header.status =>
+          Logger.error(e.toString)
+          BadRequest(Json.toJson("Email is already used"))
         case -\/(e) =>
           Logger.error(e.toString)
           InternalServerError(Json.toJson("Error while updating user"))
