@@ -2,15 +2,17 @@ package com.noeupapp.middleware.entities.user
 
 import java.util.UUID
 import javax.inject.Inject
+import play.api.mvc.Results._
 
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordHasher
 import com.noeupapp.middleware.authorizationClient.authInfo.PasswordInfoDAO
+import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailService
 import com.noeupapp.middleware.authorizationClient.customAuthenticator.{CookieBearerTokenAuthenticator, CookieBearerTokenAuthenticatorDAO}
 import com.noeupapp.middleware.authorizationClient.loginInfo.AuthLoginInfoService
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenService
-import com.noeupapp.middleware.entities.account.AccountService
+import com.noeupapp.middleware.entities.account.{Account, AccountService}
 import com.noeupapp.middleware.entities.entity.EntityService
 import com.noeupapp.middleware.entities.organisation.{Organisation, OrganisationService}
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
@@ -39,11 +41,13 @@ class UserService @Inject()(userDAO: UserDAO,
                             tierAccessTokenConfig: TierAccessTokenConfig,
                             authLoginInfoService: AuthLoginInfoService,
                             cookieBearerTokenAuthenticatorDAOProvider: Provider[CookieBearerTokenAuthenticatorDAO],
-                            accountServiceProvider: Provider[AccountService]
+                            accountServiceProvider: Provider[AccountService],
+                            confirmEmailServiceProvider: Provider[ConfirmEmailService]
                            ) {
 
   private lazy val accountService = accountServiceProvider.get()
   private lazy val cookieBearerTokenAuthenticatorDAO = cookieBearerTokenAuthenticatorDAOProvider.get()
+  private lazy val confirmEmailService = confirmEmailServiceProvider.get()
 
   type ValidationFuture[A] = EitherT[Future, FailError, A]
 
@@ -298,6 +302,45 @@ class UserService @Inject()(userDAO: UserDAO,
       \/-(userDAO.update(id, body))
     }
   }
+
+
+  def updateEmail(id: UUID, account: Account, newEmail: String): Future[Expect[Option[Unit]]] = {
+
+    if (account.user.email.contains(newEmail)) {
+      Logger.debug(s"Trying to update user with the same email (${account.user.email} == $newEmail). Useless, aborting...")
+      return Future.successful(\/-(None))
+    }
+
+    if (id != account.user.id && ! account.roles.contains("admin")){
+      return Future.successful(-\/(FailError("Not allowed", errorType = Forbidden)))
+    }
+
+    for {
+      // USERS
+      userOpt <- EitherT(findById(id))
+      user    <- EitherT(userOpt |> "User not found")
+      _       <- EitherT(update(id, user.copy(email = Some(newEmail))))
+
+      userEmail: String = account.user.email.getOrElse("")
+      loginInfo = LoginInfo("credentials", userEmail)
+
+      // AuthLoginInfo
+      authLoginInfoOpt <- EitherT(authLoginInfoService.find(loginInfo))
+      authLoginInfo    <- EitherT(authLoginInfoOpt |> s"AuthLoginInfo (credentials, $userEmail) is not found")
+      _                <- EitherT(authLoginInfoService.update(loginInfo, authLoginInfo.copy(providerKey = newEmail)))
+
+      // PasswordInfo
+      passwordInfoOpt <- EitherT(tryFutures(passwordInfoDAO.find(loginInfo)))
+      passwordInfo    <- EitherT(passwordInfoOpt |> "Password info is not found")
+      _ <- EitherT(tryFutures(passwordInfoDAO.add(loginInfo.copy(providerKey = userEmail), passwordInfo)))
+      _ <- EitherT(tryFutures(passwordInfoDAO.remove(loginInfo)))
+
+
+      _ <- EitherT(changeActiveStatus(id, status = false))
+
+      _ <- EitherT(confirmEmailService.sendEmailConfirmation(newEmail))
+    } yield Some(())
+  }.run
 
 
 

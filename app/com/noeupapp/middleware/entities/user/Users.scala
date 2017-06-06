@@ -93,6 +93,20 @@ class Users @Inject()(
       }
     }
 
+  def updateEmail(id: UUID) = SecuredAction
+    .async(parse.json[UserEmail]) { implicit request =>
+      userService.updateEmail(id, request.identity, request.body.email) map {
+        case \/-(None) => NoContent
+        case \/-(Some(_)) => NoContent
+        case -\/(e) if e.errorType.header.status == Forbidden.header.status =>
+          Logger.error(e.toString)
+          Forbidden("")
+        case -\/(e) =>
+          Logger.error(e.toString)
+          InternalServerError(Json.toJson("Error while updating user"))
+      }
+    }
+
   def delete(email: String, purge: Option[Boolean], cascade: Option[Boolean]) = SecuredAction(scopeAndRoleAuthorization(WithScope(/*/*"builder.steps"*/*/), WithRole("admin")))
     .async { implicit request =>
       userService.delete(email, purge.getOrElse(false), cascade.getOrElse(false)) map {
