@@ -332,7 +332,7 @@ class UserService @Inject()(userDAO: UserDAO,
       // PasswordInfo
       passwordInfoOpt <- EitherT(tryFutures(passwordInfoDAO.find(loginInfo)))
       passwordInfo    <- EitherT(passwordInfoOpt |> "Password info is not found")
-      _ <- EitherT(tryFutures(passwordInfoDAO.add(loginInfo.copy(providerKey = userEmail), passwordInfo)))
+      _ <- EitherT(tryFutures(passwordInfoDAO.add(loginInfo.copy(providerKey = newEmail), passwordInfo)))
       _ <- EitherT(tryFutures(passwordInfoDAO.remove(loginInfo)))
 
 
