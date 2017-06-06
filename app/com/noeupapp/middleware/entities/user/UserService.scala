@@ -41,13 +41,10 @@ class UserService @Inject()(userDAO: UserDAO,
                             tierAccessTokenConfig: TierAccessTokenConfig,
                             authLoginInfoService: AuthLoginInfoService,
                             cookieBearerTokenAuthenticatorDAOProvider: Provider[CookieBearerTokenAuthenticatorDAO],
-                            accountServiceProvider: Provider[AccountService],
-                            confirmEmailServiceProvider: Provider[ConfirmEmailService]
-                           ) {
+                            accountServiceProvider: Provider[AccountService]) {
 
   private lazy val accountService = accountServiceProvider.get()
   private lazy val cookieBearerTokenAuthenticatorDAO = cookieBearerTokenAuthenticatorDAOProvider.get()
-  private lazy val confirmEmailService = confirmEmailServiceProvider.get()
 
   type ValidationFuture[A] = EitherT[Future, FailError, A]
 
@@ -302,46 +299,6 @@ class UserService @Inject()(userDAO: UserDAO,
       \/-(userDAO.update(id, body))
     }
   }
-
-
-  def updateEmail(id: UUID, account: Account, newEmail: String): Future[Expect[Option[Unit]]] = {
-
-    if (account.user.email.contains(newEmail)) {
-      Logger.debug(s"Trying to update user with the same email (${account.user.email} == $newEmail). Useless, aborting...")
-      return Future.successful(\/-(None))
-    }
-
-    if (id != account.user.id && ! account.roles.contains("admin")){
-      return Future.successful(-\/(FailError("Not allowed", errorType = Forbidden)))
-    }
-
-    for {
-      // USERS
-      userOpt <- EitherT(findById(id))
-      user    <- EitherT(userOpt |> "User not found")
-      _       <- EitherT(update(id, user.copy(email = Some(newEmail))))
-
-      userEmail: String = account.user.email.getOrElse("")
-      loginInfo = LoginInfo("credentials", userEmail)
-
-      // AuthLoginInfo
-      authLoginInfoOpt <- EitherT(authLoginInfoService.find(loginInfo))
-      authLoginInfo    <- EitherT(authLoginInfoOpt |> s"AuthLoginInfo (credentials, $userEmail) is not found")
-      _                <- EitherT(authLoginInfoService.update(loginInfo, authLoginInfo.copy(providerKey = newEmail)))
-
-      // PasswordInfo
-      passwordInfoOpt <- EitherT(tryFutures(passwordInfoDAO.find(loginInfo)))
-      passwordInfo    <- EitherT(passwordInfoOpt |> "Password info is not found")
-      _ <- EitherT(tryFutures(passwordInfoDAO.add(loginInfo.copy(providerKey = newEmail), passwordInfo)))
-      _ <- EitherT(tryFutures(passwordInfoDAO.remove(loginInfo)))
-
-
-      _ <- EitherT(changeActiveStatus(id, status = false))
-
-      _ <- EitherT(confirmEmailService.sendEmailConfirmation(newEmail))
-    } yield Some(())
-  }.run
-
 
 
 
