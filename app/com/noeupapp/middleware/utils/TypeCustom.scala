@@ -32,11 +32,11 @@ class BooleanCustom(boolean: Boolean) {
     * @param message message returned if boolean is false
     * @return
     */
-  def |>(message: => String): Future[Expect[Unit]] = {
+  def |>(message: => String, errorType: Status = InternalServerError): Future[Expect[Unit]] = {
     if(boolean){
       Future.successful(\/-(()))
     }else{
-      Future.successful(-\/(FailError(message)))
+      Future.successful(-\/(FailError(message, errorType = errorType)))
     }
   }
 }
@@ -83,10 +83,10 @@ class ListCustom[T](list: List[T]) {
     * @param message message returned if List is Nil
     * @return
     */
-  def |>(message: String): Future[Expect[List[T]]] = {
+  def |>(message: String, errorType: Status = InternalServerError): Future[Expect[List[T]]] = {
     list match {
       case (l @ (h::t)) => Future.successful(\/-(l))
-      case Nil    => Future.successful(-\/(FailError(message)))
+      case Nil    => Future.successful(-\/(FailError(message, errorType = errorType)))
     }
   }
 }
