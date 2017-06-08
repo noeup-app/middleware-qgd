@@ -16,6 +16,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scalaz._
 import com.noeupapp.middleware.utils.slick.MyPostgresDriver.api._
+import play.api.Logger
 import slick.lifted.TableQuery
 import play.api.mvc.Results._
 
@@ -60,7 +61,7 @@ class AbstractCrudService @Inject() (crudAutoService: CrudAutoService,
   def checkIfAuthorizedWithDelete(model: String, accountOpt: Option[Account], withDeleteOpt: Option[Boolean]): Future[Expect[Boolean]] = {
 
     def userHasSufficientRoles(usersRoles: List[String]): Boolean =
-      (crudClassName.rolesRequiredToGetWithDeleted diff usersRoles).nonEmpty
+      (crudClassName.rolesRequiredToGetWithDeleted intersect usersRoles).nonEmpty
     
     accountOpt -> withDeleteOpt match {
       case (Some(account), Some(true)) if userHasSufficientRoles(account.roles) => Future.successful(\/-(true))
