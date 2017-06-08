@@ -36,7 +36,7 @@ class BooleanCustom(boolean: Boolean) {
     if(boolean){
       Future.successful(\/-(()))
     }else{
-      Future.successful(-\/(FailError(message, errorType = errorType)))
+      Future.successful(-\/(FailError(message, errorType = errorType, clientReadableErrorMessage = Some(message))))
     }
   }
 }
@@ -61,7 +61,7 @@ class OptionCustom[T](option: Option[T]) {
   def |>(message: String, errorType: Status = InternalServerError): Future[Expect[T]] = {
     option match {
       case Some(e) => Future.successful(\/-(e))
-      case None    => Future.successful(-\/(FailError(message, errorType = errorType)))
+      case None    => Future.successful(-\/(FailError(message, errorType = errorType, clientReadableErrorMessage = Some(message))))
     }
   }
 }
@@ -86,7 +86,7 @@ class ListCustom[T](list: List[T]) {
   def |>(message: String, errorType: Status = InternalServerError): Future[Expect[List[T]]] = {
     list match {
       case (l @ (h::t)) => Future.successful(\/-(l))
-      case Nil    => Future.successful(-\/(FailError(message, errorType = errorType)))
+      case Nil    => Future.successful(-\/(FailError(message, errorType = errorType, clientReadableErrorMessage = Some(message))))
     }
   }
 }

@@ -1,11 +1,25 @@
 package com.noeupapp.middleware.errorHandle
 
+import play.api.mvc.Result
 import play.api.mvc.Results._
 
 import scala.concurrent.Future
 import scalaz._
 
-final case class FailError(message: String, cause: Option[\/[Throwable, Error]] = None, errorType: Status = InternalServerError, prevError: Option[FailError] = None) {
+/**
+  *
+  * @param message
+  * @param cause
+  * @param errorType
+  * @param prevError
+  * @param clientReadableErrorMessage represents a message that could be returned to client
+  *                                   MUST NOT CONTAIN ANY INFORMATION ABOUT THE APP !
+  */
+final case class FailError(message: String,
+                           cause: Option[\/[Throwable, Error]] = None,
+                           errorType: Status = InternalServerError,
+                           prevError: Option[FailError] = None,
+                           clientReadableErrorMessage: Option[String] = None) {
 
   def getException = {
     cause match {
@@ -38,7 +52,7 @@ final case class FailError(message: String, cause: Option[\/[Throwable, Error]] 
     /*FTry(MailerPlugin.send(mail)).map(_.map(r => Json.parse("{\"messageId\": \"" + r + "\"}")))*/ // TODO uncomment and use injection and actor
   }
 
-  def toResult(message: Option[String] = None) = errorType(message.getOrElse(this.message))
+  def toResult: Result = errorType(clientReadableErrorMessage.getOrElse("En error occurred!"))
 
   override def toString: String = s"Error($message, ${
     cause.map{
