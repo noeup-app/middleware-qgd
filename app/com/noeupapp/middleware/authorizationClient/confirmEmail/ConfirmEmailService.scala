@@ -70,6 +70,7 @@ class ConfirmEmailService @Inject() (pool: Pool,
     */
   def sendEmailConfirmation(email: String): Future[Expect[String]] = {
     val domain = confirmEmailConfig.url
+
     for {
       userOpt <- EitherT(userService.findByEmail(email))
       user    <- EitherT(userOpt |> s"Couldn't find user with this email: $email")
@@ -79,17 +80,17 @@ class ConfirmEmailService @Inject() (pool: Pool,
         val link = correctDomain + "signUp/confirmation/" + token
         val content =
           s"""
-             |<p>Bonjour ${{user.firstName}},<p>
-             |
-             |<p>Bienvenue sur ${{emailTemplateConf.getAppName}}!.</p>
-             |
+             |<p>Bonjour ${{user.firstName.getOrElse("")}},<p>
+             |<br>
+             |<p>Bienvenue sur ${{emailTemplateConf.getCompanyName}}!.</p>
+             |<br>
              |<p>Pour commencer, vous devez confirmer votre adresse e-mail.</p>
-             |
+             |<br>
              |<p><a href="$link">$link</a></p>
              |<br>
              |<p>Merci,</p>
              |<br>
-             |<p>L'équipe ${{emailTemplateConf.getAppName}}</p>
+             |<p>L'équipe ${{emailTemplateConf.getCompanyName}}</p>
           """.stripMargin
 
         messageEmail.sendEmail(
