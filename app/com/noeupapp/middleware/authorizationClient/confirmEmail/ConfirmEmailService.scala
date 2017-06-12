@@ -79,11 +79,17 @@ class ConfirmEmailService @Inject() (pool: Pool,
         val link = correctDomain + "signUp/confirmation/" + token
         val content =
           s"""
-             |<p>Hello,<p>
+             |<p>Bonjour ${{user.firstName}},<p>
              |
-             |<p>Please click the link below to activate your account. <a href="$link">$link</a>.</p>
+             |<p>Bienvenue sur ${{emailTemplateConf.getAppName}}!.</p>
              |
-             |<p>This link could be used only during few minutes and once.</p>
+             |<p>Pour commencer, vous devez confirmer votre adresse e-mail.</p>
+             |
+             |<p><a href="$link">$link</a></p>
+             |<br>
+             |<p>Merci,</p>
+             |<br>
+             |<p>L'équipe ${{emailTemplateConf.getAppName}}</p>
           """.stripMargin
 
         messageEmail.sendEmail(
