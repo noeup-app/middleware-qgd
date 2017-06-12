@@ -13,9 +13,11 @@ import com.noeupapp.middleware.entities.role.RoleService
 import com.noeupapp.middleware.entities.user.{User, UserIn, UserService}
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
+import com.noeupapp.middleware.notifications.Notification
 import com.noeupapp.middleware.utils.TypeCustom._
 import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.mailer.MessageEmail
+import play.api.libs.json.Json
 import play.api.mvc.Results._
 
 import scala.concurrent.Future
@@ -37,7 +39,8 @@ class SignUpService @Inject()(userService: UserService,
                               forgotPasswordConfig: ForgotPasswordConfig,
                               authInfoRepository: AuthInfoRepository,
                               passwordHasher: PasswordHasher,
-                              messageEmail: MessageEmail
+                              messageEmail: MessageEmail,
+                              notification: Notification
                              ) {
 
   /**
@@ -91,6 +94,13 @@ class SignUpService @Inject()(userService: UserService,
       user    <- EitherT(userOpt |> (s"Token [$token] is wrong or expired", BadRequest))
       _       <- EitherT(userService.changeActiveStatus(user.id, status = true))
       _       <- EitherT(grantToAdminFirstUser(user))
+
+
+      data = Json.obj(
+        "username" -> user.firstName
+      )
+
+      notif = notification.send(user.id, "notification.signup.confirmed", Json.stringify(data))
     } yield user
   }.run
 
