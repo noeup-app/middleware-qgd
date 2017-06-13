@@ -73,8 +73,8 @@ class ForgotPasswordService @Inject() (messageEmail: MessageEmail,
       user    <- EitherT(userOpt |> "This is not user with this email")
       token   <- EitherT(this.generateAndSaveToken(user))
       email   <- EitherT{
-        val correctDomain = if (domain.endsWith("/")) domain else domain + "/"
-        val link = correctDomain + prefix + "forgotPassword/" + token
+        //val correctDomain = if (domain.endsWith("/")) domain else domain + "/"
+        //val link = correctDomain + prefix + "forgotPassword/" + token
 //        val content =
 //           s"""
 //            |<p>Hello,<p>
@@ -92,7 +92,7 @@ class ForgotPasswordService @Inject() (messageEmail: MessageEmail,
           receiverName = email,
           receiverEmail = email,
           subject = emailTemplateConf.getForgotPwdSubject,
-          text = emailTemplateConf.getForgotPwdContent(link),
+          text = emailTemplateConf.getForgotPwdContent(token),
           appName = emailTemplateConf.getAppName
         )
       }
