@@ -14,6 +14,7 @@ import play.api.i18n.MessagesApi
 import play.api.libs.concurrent.Execution.Implicits._
 import play.api.libs.json.Json
 import User._
+import com.noeupapp.middleware.entities.user.email.{UpdateEmailService, UserEmail}
 import play.api.Logger
 
 import scalaz.{-\/, \/-}
@@ -94,20 +95,24 @@ class Users @Inject()(
       }
     }
 
-  def updateEmail(id: UUID) = SecuredAction
+  def updateEmailRequest(id: UUID) = SecuredAction
     .async(parse.json[UserEmail]) { implicit request =>
-      updateEmailService.updateEmail(id, request.identity, request.body.email) map {
-        case \/-(None) => NoContent
-        case \/-(Some(_)) => NoContent
-        case -\/(e) if e.errorType.header.status == Forbidden.header.status =>
-          Logger.error(e.toString)
-          Forbidden("")
-        case -\/(e) if e.errorType.header.status == BadRequest.header.status =>
-          Logger.error(e.toString)
-          BadRequest(Json.toJson("Email is already used"))
+      updateEmailService.updateEmailRequest(id, request.identity, request.body.email) map {
+        case \/-(_) => NoContent
         case -\/(e) =>
           Logger.error(e.toString)
-          InternalServerError(Json.toJson("Error while updating user"))
+          e.toResult
+      }
+    }
+
+  def updateEmail(id: UUID, token: String) = SecuredAction
+    .async { implicit request =>
+      updateEmailService.updateEmail(id, request.identity, token) map {
+        case \/-(None) => NoContent
+        case \/-(Some(_)) => NoContent
+        case -\/(e) =>
+          Logger.error(e.toString)
+          e.toResult
       }
     }
 

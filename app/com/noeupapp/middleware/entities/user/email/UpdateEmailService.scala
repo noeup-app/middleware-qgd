@@ -1,4 +1,4 @@
-package com.noeupapp.middleware.entities.user
+package com.noeupapp.middleware.entities.user.email
 
 import java.util.UUID
 
@@ -8,17 +8,20 @@ import com.noeupapp.middleware.authorizationClient.authInfo.PasswordInfoDAO
 import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailService
 import com.noeupapp.middleware.authorizationClient.loginInfo.AuthLoginInfoService
 import com.noeupapp.middleware.entities.account.Account
-import com.noeupapp.middleware.errorHandle.ExceptionEither.tryFutures
+import com.noeupapp.middleware.entities.user.{User, UserService}
+import com.noeupapp.middleware.errorHandle.ExceptionEither.{tryFutures, _}
 import com.noeupapp.middleware.errorHandle.FailError
 import com.noeupapp.middleware.errorHandle.FailError.Expect
-import play.api.Logger
-import play.api.mvc.Results.{BadRequest, Forbidden}
+import com.noeupapp.middleware.utils.BearerTokenGenerator
+import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.utils.TypeCustom._
+import com.noeupapp.middleware.utils.mailer.{EmailTemplate, MessageEmail}
+import org.sedis.Pool
+import play.api.Logger
+import play.api.mvc.Results._
 
 import scala.concurrent.Future
 import scalaz.{-\/, EitherT, \/-}
-
-import com.noeupapp.middleware.utils.FutureFunctor._
 
 /**
   * Created by damien on 06/06/2017.
@@ -26,23 +29,68 @@ import com.noeupapp.middleware.utils.FutureFunctor._
 class UpdateEmailService @Inject()(userService: UserService,
                                    authLoginInfoService: AuthLoginInfoService,
                                    passwordInfoDAO: PasswordInfoDAO,
-                                   confirmEmailService: ConfirmEmailService){
+                                   updateEmailTokenStorageService: UpdateEmailTokenStorageService,
+                                   updateEmailEmailSender: UpdateEmailEmailSender){
 
-  def updateEmail(id: UUID, account: Account, newEmail: String): Future[Expect[Option[Unit]]] = {
+
+  def updateEmailRequest(id: UUID, account: Account, newEmail: String): Future[Expect[Unit]] = {
+
 
     if (isUpdatingSameEmail(account, newEmail)) {
       Logger.debug(s"Trying to update user with the same email (${account.user.email} == $newEmail). Useless, aborting...")
       return Future.successful(\/-(None))
     }
 
+
     if (isUserAllowedToUpdateEmail(id, account)){
       return Future.successful(-\/(FailError("Not allowed", errorType = Forbidden)))
     }
 
     for {
-      // Check if email is already used
+      _ <- checkIfEmailIsAlreadyUsed(newEmail)
+
+      userOpt <- EitherT(userService.findById(id))
+      user    <- EitherT(userOpt |> ("User is not found", NotFound))
+
+      token   <- EitherT(updateEmailTokenStorageService.createAndSaveToken(id, newEmail))
+
+      _       <- EitherT(updateEmailEmailSender.sendUpdateMailRequest(user, token, newEmail))
+
+    } yield ()
+  }.run
+
+
+
+
+
+  private def checkIfEmailIsAlreadyUsed(newEmail: String): EitherT[Future, FailError, Unit] =
+    for {
       userFromEmail <- EitherT(userService.findByEmail(newEmail))
       _             <- EitherT(userFromEmail.isEmpty |> ("Email is already used", BadRequest))
+    } yield ()
+
+
+  def updateEmail(id: UUID, account: Account, token: String): Future[Expect[Option[Unit]]] = {
+
+    if (isUserAllowedToUpdateEmail(id, account)){
+      return Future.successful(-\/(FailError("Not allowed", errorType = Forbidden)))
+    }
+
+    for {
+
+      updateEmailTokenValueOpt <- EitherT(updateEmailTokenStorageService.retrieveToken(token))
+      updateEmailTokenValue <- EitherT(updateEmailTokenValueOpt |> ("Unable to find token", NotFound))
+
+      newEmail = updateEmailTokenValue.newEmail
+      userId = updateEmailTokenValue.userId
+
+      // Is the connected person, the person that has asked to change his/her pwd
+      _ <- EitherT(userId == id |> ("You are not allowed", Forbidden))
+
+      _ <- checkIfEmailIsAlreadyUsed(newEmail)
+
+      userOpt <- EitherT(userService.findById(id))
+      user    <- EitherT(userOpt |> ("User is not found", NotFound))
 
       // USERS
       _       <- EitherT(updateUser(id, newEmail))
@@ -56,9 +104,10 @@ class UpdateEmailService @Inject()(userService: UserService,
       // PasswordInfo
       _ <- EitherT(updatePasswordInfo(loginInfo, newEmail))
 
-      _ <- EitherT(userService.changeActiveStatus(id, status = false))
+      _ <- EitherT(updateEmailTokenStorageService.deleteToken(token))
 
-      _ <- EitherT(confirmEmailService.sendEmailConfirmation(newEmail))
+      _ <- EitherT(updateEmailEmailSender.sendConfirmChangedEmail(user, newEmail))
+
     } yield Some(())
   }.run
 
