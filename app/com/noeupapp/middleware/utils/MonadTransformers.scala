@@ -48,6 +48,20 @@ object MonadTransformers {
   }
 
 
+
+  def mapEitherList[Input, Output](list: List[Input], f: Input => Future[Expect[Output]]): Future[Expect[List[Output]]] = {
+    Future.sequence{
+      list
+        .map(e => f(e))
+    }.map{ l =>
+      l.find(_.isLeft) match {
+        case Some(error) => -\/(error.toEither.left.get)
+        case None => \/-(l.map(_.toEither.right.get))
+      }
+    }
+  }
+
+
   /**
     * Map functions over a list of element and return errors and successes
     */
