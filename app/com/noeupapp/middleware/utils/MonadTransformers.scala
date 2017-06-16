@@ -5,9 +5,9 @@ import com.noeupapp.middleware.errorHandle.FailError._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.annotation.tailrec
-import scala.collection.IterableLike
+import scala.collection.{IterableLike, immutable}
 import scala.concurrent.Future
-import scalaz.{-\/, \/, \/-}
+import scalaz.{-\/, EitherT, \/, \/-}
 
 object MonadTransformers {
   @tailrec
@@ -48,17 +48,15 @@ object MonadTransformers {
   }
 
 
-
   def mapEitherList[Input, Output](list: List[Input], f: Input => Future[Expect[Output]]): Future[Expect[List[Output]]] = {
-    Future.sequence{
-      list
-        .map(e => f(e))
-    }.map{ l =>
-      l.find(_.isLeft) match {
-        case Some(error) => -\/(error.toEither.left.get)
-        case None => \/-(l.map(_.toEither.right.get))
-      }
-    }
+    import scalaz._
+    import scalaz.Scalaz._
+    import Scalaz._
+
+    list
+      .map(e => EitherT(f(e)))
+      .sequenceU
+      .run
   }
 
 
