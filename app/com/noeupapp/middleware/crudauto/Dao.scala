@@ -39,6 +39,14 @@ class Dao @Inject()(dbConfigProvider: DatabaseConfigProvider) {
       }
   }
 
+  def runDBIO[R, S <: NoStream, F <: Effect](query: DBIOAction[R, S, F]): Future[Expect[R]] = {
+    db.run(query)
+      .map(\/-(_))
+      .recover{
+        case e: Exception => -\/(FailError(e))
+      }
+  }
+
   def runMap[R, S <: NoStream, F <: Effect, T](query: BasicAction[R, S, F])(transformer: (R) => T): Future[Expect[T]] = {
     db.run(query)
       .map(transformer)
