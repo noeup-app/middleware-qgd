@@ -82,7 +82,7 @@ class ConfirmEmailService @Inject() (pool: Pool,
           s"""
              |<p>Bonjour ${{user.firstName.getOrElse("")}},<p>
              |<br>
-             |<p>Bienvenue sur ${{emailTemplateConf.getCompanyName}}!.</p>
+             |<p>Bienvenue sur ${{emailTemplateConf.getCompanyName}} !</p>
              |<br>
              |<p>Pour commencer, vous devez confirmer votre adresse e-mail.</p>
              |<br>
