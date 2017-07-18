@@ -19,6 +19,10 @@
     </encoder>
   </appender>
 
+  <appender name="ASYNC_DAILY_ROLLING" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="DAILY_ROLLING" />
+  </appender>
+
   <!--
     The logger name is typically the Java/Scala package name.
     This configures the log level to log at for a package and its children packages.
@@ -30,7 +34,7 @@
   <root level="ERROR">
 <!--<logger name="slick.jdbc.JdbcBackend.statement"  level="DEBUG" />-->
     <appender-ref ref="STDOUT" />
-    <appender-ref ref="DAILY_ROLLING" />
+    <appender-ref ref="ASYNC_DAILY_ROLLING" />
   </root>
 
 </configuration>
