@@ -32,6 +32,18 @@ case class User(
       avatarUrl,
       ownedByClient
     )
+
+  lazy val toUserOut: UserOut =
+    UserOut(
+      id,
+      firstName,
+      lastName,
+      email,
+      avatarUrl,
+      created,
+      active,
+      ownedByClient
+    )
 }
 
 case class UserIn(

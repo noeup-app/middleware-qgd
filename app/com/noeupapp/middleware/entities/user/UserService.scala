@@ -2,11 +2,12 @@ package com.noeupapp.middleware.entities.user
 
 import java.util.UUID
 import javax.inject.Inject
-import play.api.mvc.Results._
 
+import play.api.mvc.Results._
 import com.google.inject.Provider
 import com.mohiva.play.silhouette.api.LoginInfo
 import com.mohiva.play.silhouette.api.util.PasswordHasher
+import com.mohiva.play.silhouette.impl.providers.CredentialsProvider
 import com.noeupapp.middleware.authorizationClient.authInfo.PasswordInfoDAO
 import com.noeupapp.middleware.authorizationClient.confirmEmail.ConfirmEmailService
 import com.noeupapp.middleware.authorizationClient.customAuthenticator.{CookieBearerTokenAuthenticator, CookieBearerTokenAuthenticatorDAO}
@@ -41,7 +42,9 @@ class UserService @Inject()(userDAO: UserDAO,
                             tierAccessTokenConfig: TierAccessTokenConfig,
                             authLoginInfoService: AuthLoginInfoService,
                             cookieBearerTokenAuthenticatorDAOProvider: Provider[CookieBearerTokenAuthenticatorDAO],
-                            accountServiceProvider: Provider[AccountService]) {
+                            accountServiceProvider: Provider[AccountService],
+                            _accountService : AccountService
+                            ) {
 
   private lazy val accountService = accountServiceProvider.get()
   private lazy val cookieBearerTokenAuthenticatorDAO = cookieBearerTokenAuthenticatorDAOProvider.get()
@@ -160,11 +163,30 @@ class UserService @Inject()(userDAO: UserDAO,
             findByEmail(email).flatMap{
               case \/-(Some(user)) => Future.successful(\/-(user))
               case e @ -\/(_) => Future.successful(e)
-              case \/-(None)  => addDao(userInput)
+              case \/-(None)  => {
+
+                var loginInfo = LoginInfo(CredentialsProvider.ID, userInput.email.get)
+
+                // il faut récupérer l'Account retourné par save
+                // puis récupérer l'user dans l'Account
+                // puis le transformer en toUserOut
+                Future.successful(\/-(_accountService.save(loginInfo, userInput.toUser).flatMap()))
+
+              }
             }
         }
-      case None => addDao(userInput)
+      case None => {
+        var loginInfo = LoginInfo(CredentialsProvider.ID, userInput.email.get)
+
+          // il faut récupérer l'Account retourné par save
+          // puis récupérer l'user dans l'Account
+          // puis le transformer en toUserOut
+          _accountService.save(loginInfo, userInput.toUser).user.toUserOut
+      }
+
     }
+
+
   }
 
   private def addDao(userInput: UserIn): Future[Expect[UserOut]] = {
