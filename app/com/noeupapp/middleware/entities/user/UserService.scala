@@ -32,6 +32,7 @@ import com.noeupapp.middleware.utils.FutureFunctor._
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 import com.noeupapp.middleware.oauth2.TierAccessTokenConfig
 import com.noeupapp.middleware.utils.TypeConversion
+import play.api.libs.json.Json
 
 
 class UserService @Inject()(userDAO: UserDAO,
@@ -152,6 +153,7 @@ class UserService @Inject()(userDAO: UserDAO,
     * Add new user
     *
     * @param userInput
+    * @param orGet
     * @return Complete user with UUID created
     */
   def add(userInput: UserIn, orGet: Option[String] = None): Future[Expect[UserOut]] = {
@@ -164,29 +166,22 @@ class UserService @Inject()(userDAO: UserDAO,
               case \/-(Some(user)) => Future.successful(\/-(user))
               case e @ -\/(_) => Future.successful(e)
               case \/-(None)  => {
-
                 var loginInfo = LoginInfo(CredentialsProvider.ID, userInput.email.get)
-
-                // il faut récupérer l'Account retourné par save
-                // puis récupérer l'user dans l'Account
-                // puis le transformer en toUserOut
-                Future.successful(\/-(_accountService.save(loginInfo, userInput.toUser).flatMap()))
-
+                _accountService.save(loginInfo, userInput.toUser).map {
+                  case \/-(u) => \/-(u.user.toUserOut)
+                  case -\/(error) => -\/(error)
+                }
               }
             }
         }
       case None => {
         var loginInfo = LoginInfo(CredentialsProvider.ID, userInput.email.get)
-
-          // il faut récupérer l'Account retourné par save
-          // puis récupérer l'user dans l'Account
-          // puis le transformer en toUserOut
-          _accountService.save(loginInfo, userInput.toUser).user.toUserOut
+        _accountService.save(loginInfo, userInput.toUser).map {
+          case \/-(u) => \/-(u.user.toUserOut)
+          case -\/(error) => -\/(error)
+        }
       }
-
     }
-
-
   }
 
   private def addDao(userInput: UserIn): Future[Expect[UserOut]] = {
