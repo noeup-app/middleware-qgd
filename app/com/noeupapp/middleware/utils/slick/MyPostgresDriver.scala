@@ -1,9 +1,14 @@
 package com.noeupapp.middleware.utils.slick
 
+import java.sql.JDBCType
+import java.util.UUID
+
+import com.github.tminglei.slickpg.json.PgJsonExtensions
 import play.api.libs.json.{JsValue, Json}
 
 import com.github.tminglei.slickpg._
 import slick.driver.JdbcProfile
+import slick.jdbc.{PositionedParameters, SetParameter, PositionedResult}
 import slick.profile.Capability
 
 trait MyPostgresDriver extends ExPostgresDriver
@@ -34,6 +39,7 @@ trait MyPostgresDriver extends ExPostgresDriver
     with RangeImplicits
     with HStoreImplicits
     with SearchImplicits
+    with UUIDPlainImplicits
     with SearchAssistants {
     implicit val strListTypeMapper = new SimpleArrayJdbcType[String]("text").to(_.toList)
     implicit val playJsonArrayTypeMapper =
@@ -42,6 +48,22 @@ trait MyPostgresDriver extends ExPostgresDriver
         (v) => utils.SimpleArrayUtils.mkString[JsValue](_.toString())(v)
       ).to(_.toList)
   }
+}
+
+trait UUIDPlainImplicits {
+
+  implicit class PgPositionedResult(val r: PositionedResult) {
+    def nextUUID: UUID = UUID.fromString(r.nextString)
+
+    def nextUUIDOption: Option[UUID] = r.nextStringOption().map(UUID.fromString)
+  }
+
+  implicit object SetUUID extends SetParameter[UUID] {
+    def apply(v: UUID, pp: PositionedParameters) {
+      pp.setObject(v, JDBCType.BINARY.getVendorTypeNumber)
+    }
+  }
+
 }
 
 object MyPostgresDriver extends MyPostgresDriver

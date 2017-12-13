@@ -56,7 +56,7 @@ class Dao @Inject()(dbConfigProvider: DatabaseConfigProvider) {
       }
   }
 
-  def runSqlStreamingAction[R, S <: NoStream, F <: Effect](query: SqlStreamingAction[R, S, F]): Future[Expect[R]] = {
+  def runSqlStreamingAction[R, S, F <: Effect](query: SqlStreamingAction[R, S, F]): Future[Expect[R]] = {
     db.run(query)
       .map(\/-(_))
       .recover{
