@@ -25,4 +25,14 @@ class RelationUserRoleDAO {
       ).execute()
   }
 
+  def removeRoleToUser(role_id: UUID,user_id: UUID)(implicit connection: Connection): Boolean = {
+    SQL(
+      """DELETE FROM entity_relation_users_roles
+         WHERE role_id = {role_id}::UUID AND user_id = {user_id}::UUID;""")
+      .on(
+        'role_id -> role_id,
+        'user_id -> user_id
+      ).execute()
+  }
+
 }
