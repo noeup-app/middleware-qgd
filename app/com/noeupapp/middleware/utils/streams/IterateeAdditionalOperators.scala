@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.utils.streams
 
-
 import play.api.libs.iteratee.Iteratee
 
 import scala.language.implicitConversions

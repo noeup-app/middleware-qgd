@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.oauth2
 
-
 import com.google.inject.Inject
 import com.mohiva.play.silhouette.api.{Environment, Silhouette}
 import com.mohiva.play.silhouette.impl.authenticators.BearerTokenAuthenticator

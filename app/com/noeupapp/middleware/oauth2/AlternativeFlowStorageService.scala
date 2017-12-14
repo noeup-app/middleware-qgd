@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.oauth2
 
-
 import com.google.inject.Inject
 import com.noeupapp.middleware.authorizationServer.client.Client
 import com.noeupapp.middleware.entities.user.UserOut

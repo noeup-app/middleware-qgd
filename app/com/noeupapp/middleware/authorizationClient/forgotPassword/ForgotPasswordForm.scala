@@ -1,4 +1,4 @@
-package com.noeupapp.middleware.authorizationClient.forgotPassword;
+package com.noeupapp.middleware.authorizationClient.forgotPassword
 
 import play.api.data.Form
 import play.api.data.Forms._

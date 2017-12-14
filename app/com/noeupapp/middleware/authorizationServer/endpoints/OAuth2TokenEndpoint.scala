@@ -1,7 +1,5 @@
 package com.noeupapp.middleware.authorizationServer.endpoints
 
-
-
 import scalaoauth2.provider._
 
 class OAuth2TokenEndpoint extends TokenEndpoint {

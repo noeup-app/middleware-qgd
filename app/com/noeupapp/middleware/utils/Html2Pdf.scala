@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.utils
 
-
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 

@@ -19,10 +19,10 @@ case class User(
                  email: Option[String],
                  avatarUrl: Option[String],
                  created: DateTime,
-                 active: Boolean,
+                 active: Boolean = false,
                  deleted: Boolean,
-                 ownedByClient: Option[String]
-               ) {
+                 ownedByClient: Option[String],
+                 isAdmin: Option[Boolean] = None) {
 
   lazy val toUserIn: UserIn =
     UserIn(
@@ -42,7 +42,8 @@ case class User(
       avatarUrl,
       created,
       active,
-      ownedByClient
+      ownedByClient,
+      isAdmin
     )
 }
 
@@ -64,7 +65,8 @@ case class UserIn(
       DateTime.now(),
       active = true,
       deleted = false,
-      ownedByClient
+      ownedByClient,
+      None
     )
 
   lazy val toNotActivatedUser: User = toUser.copy(active = false)
@@ -79,7 +81,8 @@ case class UserOut(
                     avatarUrl: Option[String],
                     created: DateTime,
                     active: Boolean,
-                    ownedByClient: Option[String]
+                    ownedByClient: Option[String],
+                    isAdmin: Option[Boolean]
                   )
 
 
@@ -93,7 +96,8 @@ class UserTableDef(tag: Tag) extends Table[User](tag, "entity_users") with PKTab
   def active        = column[Boolean]("active")
   def ownedByClient = column[Option[String]]("owned_by_client")
   def deleted       = column[Boolean]("deleted")
-  override def *    = (id, firstName, lastName, email, avatarUrl, created, active, deleted, ownedByClient) <> ((User.apply _).tupled, User.unapply)
+  def isAdmin       = column[Option[Boolean]]("isAdmin")
+  override def *    = (id, firstName, lastName, email, avatarUrl, created, active, deleted, ownedByClient, isAdmin) <> ((User.apply _).tupled, User.unapply)
 
 
   def pk = primaryKey("entity_users_pkey", id)
@@ -117,22 +121,23 @@ object User extends GlobalReadsWrites {
       get[DateTime]("created") ~
       get[Boolean]("active") ~
       get[Boolean]("deleted") ~
-      get[Option[String]]("owned_by_client") map {
-      case id ~ firstName ~ lastName ~ email ~ avatarUrl ~ created ~ active ~ deleted ~ ownedByClient=> {
-        User(id, firstName, lastName, email, avatarUrl, created, active, deleted, ownedByClient)
+      get[Option[String]]("owned_by_client") ~
+      get[Option[Boolean]]("isAdmin") map {
+      case id ~ firstName ~ lastName ~ email ~ avatarUrl ~ created ~ active ~ deleted ~ ownedByClient ~ isAdmin => {
+        User(id, firstName, lastName, email, avatarUrl, created, active, deleted, ownedByClient, isAdmin)
       }
     }
     // TODO Need to parse roles and scopes
   }
 
-  implicit def toUserOut(e: User): UserOut = UserOut(e.id, e.firstName, e.lastName, e.email, e.avatarUrl, e.created, e.active, e.ownedByClient)
+  implicit def toUserOut(e: User): UserOut = UserOut(e.id, e.firstName, e.lastName, e.email, e.avatarUrl, e.created, e.active, e.ownedByClient, e.isAdmin)
 
-  implicit def toUser(u:UserOut):User = User(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created, u.active, deleted = false, u.ownedByClient)
+  implicit def toUser(u:UserOut):User = User(u.id, u.firstName, u.lastName, u.email, u.avatarUrl, u.created,  u.active, deleted = false, u.ownedByClient,u.isAdmin)
 
   // Bypass because of nulab/scala-oauth2-provider lib (
   // when using client credential flow, nulab lib need to link client with user which is not the RFC requirement
   // An issue is pending on github and Damien is requesting a MR
-  private val defaultUser: User = User(new UUID(0, 0), Some("FAKE"), Some("FAKE"), Some("FAKE"), Some("FAKE"), DateTime.now(),active = true, deleted = false, ownedByClient = Some("FAKE"))
+  private val defaultUser: User = User(new UUID(0, 0), Some("FAKE"), Some("FAKE"), Some("FAKE"), Some("FAKE"), DateTime.now(), active = true, deleted = false, ownedByClient = Some("FAKE"), None)
 
   def getDefault = defaultUser
   def isDefault(u: User) = defaultUser.equals(u)

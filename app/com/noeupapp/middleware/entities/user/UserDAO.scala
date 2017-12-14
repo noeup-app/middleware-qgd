@@ -28,8 +28,9 @@ class UserDAO extends GlobalReadsWrites {
       case None => ""
     }
     SQL(
-      s"""SELECT *
-         FROM entity_users
+      s"""SELECT u.*, rur.user_id IS NOT NULL AS isAdmin
+         FROM entity_users u
+         LEFT JOIN entity_relation_users_roles rur ON rur.user_id = u.id
          $condition
       """)
       .as(User.parse *)
@@ -44,7 +45,7 @@ class UserDAO extends GlobalReadsWrites {
     */
   def find(email: String)(implicit connection: Connection): Option[User] = {
     SQL(
-      """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted, owned_by_client
+      """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted, owned_by_client,null AS isAdmin
          FROM entity_users
          WHERE email = {email} AND deleted = 'false';""")
       .on(
@@ -109,7 +110,7 @@ class UserDAO extends GlobalReadsWrites {
   def find(userID: UUID)(implicit connection:
   Connection): Option[User] = {
       SQL(
-        """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted,owned_by_client
+        """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted,owned_by_client,null AS isAdmin
            FROM entity_users
            WHERE id = {id};""")
       .on(

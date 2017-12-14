@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.entities.account
 
-
 import com.mohiva.play.silhouette.api
 import com.noeupapp.middleware.entities.organisation.Organisation
 import com.noeupapp.middleware.entities.user.User

@@ -1,6 +1,4 @@
-package com.noeupapp.middleware
-package webSockets
-
+package com.noeupapp.middleware.webSockets
 
 import java.util.UUID
 

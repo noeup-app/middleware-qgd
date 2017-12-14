@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.crudauto
 
-
 import slick.lifted.PrimaryKey
 
 

@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.entities.relationEntityPackage
 
-
 import java.util.UUID
 
 import com.noeupapp.middleware.crudauto.{Entity, PKTable}

@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.evolution
 
-
 import play.api.mvc.{Action, Controller, Result}
 import com.noeupapp.middleware.errorHandle.ExceptionEither._
 

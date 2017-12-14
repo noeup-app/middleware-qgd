@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.oauth2
 
-
 import com.google.inject.Inject
 import com.noeupapp.middleware.authorizationServer.client.{Client, ClientService}
 import com.noeupapp.middleware.errorHandle.FailError

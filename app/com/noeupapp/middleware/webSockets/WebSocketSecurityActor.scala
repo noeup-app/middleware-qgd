@@ -1,5 +1,4 @@
-package com.noeupapp.middleware
-package webSockets
+package com.noeupapp.middleware.webSockets
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.noeupapp.middleware.authorizationServer.oauthAccessToken.OAuthAccessTokenService

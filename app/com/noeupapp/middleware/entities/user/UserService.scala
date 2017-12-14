@@ -45,7 +45,7 @@ class UserService @Inject()(userDAO: UserDAO,
                             cookieBearerTokenAuthenticatorDAOProvider: Provider[CookieBearerTokenAuthenticatorDAO],
                             accountServiceProvider: Provider[AccountService]//,
                             //_accountService : AccountService
-                           ) {
+                            ) {
 
   private lazy val accountService = accountServiceProvider.get()
   private lazy val cookieBearerTokenAuthenticatorDAO = cookieBearerTokenAuthenticatorDAOProvider.get()
@@ -71,9 +71,9 @@ class UserService @Inject()(userDAO: UserDAO,
         }
       case None =>
         TryBDCall{ implicit c => {
-          val res = userDAO.find(email)
-          \/- (res)
-        }
+            val res = userDAO.find(email)
+            \/- (res)
+          }
         }
     }
   }
@@ -202,14 +202,14 @@ class UserService @Inject()(userDAO: UserDAO,
     DB.withTransaction({ implicit c =>
       val userId = UUID.randomUUID()
       val user = User(  userId,
-        userInput.firstName,
-        userInput.lastName,
-        userInput.email,
-        userInput.avatarUrl,
-        DateTime.now,
-        true,
-        false,
-        Some(tierAccessTokenConfig.tierClientId)
+                        userInput.firstName,
+                        userInput.lastName,
+                        userInput.email,
+                        userInput.avatarUrl,
+                        DateTime.now,
+                        true,
+                        false,
+                        Some(tierAccessTokenConfig.tierClientId)
       )
       userDAO.add(user)
       user
@@ -232,14 +232,14 @@ class UserService @Inject()(userDAO: UserDAO,
     DB.withTransaction({ implicit c =>
       val userId = UUID.randomUUID()
       val user = User(userId,
-        userInput.firstName,
-        userInput.lastName,
-        userInput.email,
-        userInput.avatarUrl,
-        DateTime.now,
-        active = false,
-        deleted = false,
-        userInput.ownedByClient
+                      userInput.firstName,
+                      userInput.lastName,
+                      userInput.email,
+                      userInput.avatarUrl,
+                      DateTime.now,
+                      active = false,
+                      deleted = false,
+                      userInput.ownedByClient
       )
       userDAO.add(user)
       user
@@ -255,20 +255,20 @@ class UserService @Inject()(userDAO: UserDAO,
   def validateUser(email: String, password: String): Future[Expect[Option[User]]] = {
     Logger.debug(s"--- Into validateUser --- Email: $email")
     val result: ValidationFuture[Option[User]] =
-      for{
-        user         <- EitherT(findByEmail(email))
-        trace1 = Logger.trace(s"Login : Found existing user for $email")
-        passwordInfo <- EitherT(passwordInfoDAO.find(LoginInfo("credentials", email)).map(TypeConversion.option2Expect))
-      } yield {
-        passwordHasher.matches(passwordInfo, password) match {
-          case true =>
-            Logger.debug(s"Login : $email successfully logged in ")
-            user
-          case false =>
-            Logger.debug(s"Login : $email not logged in (password does not match")
-            None
-        }
+    for{
+      user         <- EitherT(findByEmail(email))
+                      trace1 = Logger.trace(s"Login : Found existing user for $email")
+      passwordInfo <- EitherT(passwordInfoDAO.find(LoginInfo("credentials", email)).map(TypeConversion.option2Expect))
+    } yield {
+      passwordHasher.matches(passwordInfo, password) match {
+        case true =>
+          Logger.debug(s"Login : $email successfully logged in ")
+          user
+        case false =>
+          Logger.debug(s"Login : $email not logged in (password does not match")
+          None
       }
+    }
     result.run
   }
 

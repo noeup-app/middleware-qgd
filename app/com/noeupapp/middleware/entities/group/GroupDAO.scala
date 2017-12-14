@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.entities.group
 
-
 import java.sql.Connection
 import java.util.UUID
 

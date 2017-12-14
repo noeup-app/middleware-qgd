@@ -1,6 +1,5 @@
 package com.noeupapp.middleware.authorizationServer.client
 
-
 import anorm.SqlParser._
 import anorm._
 import play.api.libs.json.Json
