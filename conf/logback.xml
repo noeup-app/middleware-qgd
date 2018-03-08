@@ -30,9 +30,9 @@
   <logger name="play" level="INFO" />
   <logger name="application" level="DEBUG" />
   <logger name="com.jolbox.bonecp" level="WARN" />
+  <logger name="slick.jdbc.JdbcBackend.statement"  level="DEBUG" />
 
-  <root level="ERROR">
-<!--<logger name="slick.jdbc.JdbcBackend.statement"  level="DEBUG" />-->
+    <root level="ERROR">
     <appender-ref ref="STDOUT" />
     <appender-ref ref="ASYNC_DAILY_ROLLING" />
   </root>
