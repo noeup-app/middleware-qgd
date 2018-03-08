@@ -14,13 +14,10 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "anorm" % "2.4.0",
   evolutions,
   "com.typesafe.play" %% "play-slick" % "1.1.1",
-<<<<<<< Updated upstream
   //"com.typesafe.play" %% "play-slick-evolutions" % "3.0.0",
   "com.github.tototoshi" %% "slick-joda-mapper" % "2.2.0",
   "joda-time" % "joda-time" % "2.9",
   "org.joda" % "joda-convert" % "1.7",
-=======
->>>>>>> Stashed changes
   "com.github.tminglei" %% "slick-pg" % "0.14.4",
   "com.github.tminglei" %% "slick-pg_play-json" % "0.14.4",
   "com.github.tminglei" %% "slick-pg_joda-time" % "0.14.4",
