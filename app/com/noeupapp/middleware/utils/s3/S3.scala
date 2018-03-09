@@ -157,6 +157,7 @@ class S3 @Inject() (s3: AmazonS3Client,
 
       val generatePreSignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, fileName, httpMethod)
       generatePreSignedUrlRequest.setExpiration(expiration)
+      generatePreSignedUrlRequest.setContentType("application/octet-stream")
 
       if(isPublicResource) {
         // setting http request header:
