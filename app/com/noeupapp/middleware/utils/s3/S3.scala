@@ -19,7 +19,7 @@ import scalaz.{-\/, \/-}
 
 case class AwsCellarS3(bucketName:String, folder: String, file: Array[Byte], fileName: String)
 
-case class S3Config(host: String, key: String, secret: String, expirationSignedUrlInMinutes: Long, bucket: String)
+case class S3Config(host: String, key: String, secret: String, expirationSignedUrlInMinutes: Long, bucket: String, shouldISignGetRequest: Boolean)
 
 case class S3CoweboConfig(host: String, key: String, secret: String, expirationSignedUrlInMinutes: Long, bucket: String)
 
@@ -132,8 +132,22 @@ class S3 @Inject() (s3: AmazonS3Client,
     }
   }
 
-  def getSignedUrlToGetAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
-    getSignedUrl(HttpMethod.GET, bucketName, fileName)
+
+  def deleteFile(bucketName: String, fileName: String) =
+    manageS3Error {
+      \/-(s3.deleteObject(bucketName, fileName))
+    }
+
+
+  def getSignedUrlToGetAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] = {
+    if (s3Config.shouldISignGetRequest)
+      getSignedUrl(HttpMethod.GET, bucketName, fileName)
+    else
+      manageS3Error {
+        val url = s3.getUrl(bucketName, fileName)
+        \/-(UrlS3(url.toString, -1, None))
+      }
+  }
 
 
 //  def getSignedUrlToPutAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
@@ -157,7 +171,7 @@ class S3 @Inject() (s3: AmazonS3Client,
 
       val generatePreSignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, fileName, httpMethod)
       generatePreSignedUrlRequest.setExpiration(expiration)
-      generatePreSignedUrlRequest.setContentType("application/octet-stream")
+      generatePreSignedUrlRequest.withContentType("application/octet-stream")
 
       if(isPublicResource) {
         // setting http request header:

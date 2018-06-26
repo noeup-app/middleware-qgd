@@ -52,8 +52,11 @@ trait Context extends Scope {
       avatarUrl = None,
       created = new DateTime(),
       active = false,
-      deleted = false
+      deleted = false,
+      ownedByClient = None,
+      isAdmin = None
     ),
+    List.empty,
     None
   )
 
