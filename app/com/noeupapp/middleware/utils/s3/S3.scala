@@ -33,6 +33,7 @@ class S3 @Inject() (s3: AmazonS3Client,
                     s3Cowebo: AmazonS3CoweboClient
                     ) {
 
+  val logger = Logger(classOf[S3])
 
   def putStreamObject(content: AwsCellarS3, contentType: String): Future[Expect[String]] = {
     manageS3Error {
@@ -133,17 +134,19 @@ class S3 @Inject() (s3: AmazonS3Client,
   }
 
 
-  def deleteFile(bucketName: String, fileName: String) =
+  def deleteFile(bucketName: String, fileName: String): Future[Expect[Unit]] =
     manageS3Error {
       \/-(s3.deleteObject(bucketName, fileName))
     }
 
 
   def getSignedUrlToGetAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] = {
-    if (s3Config.shouldISignGetRequest)
+    if (s3Config.shouldISignGetRequest) {
+      logger.debug("Getting signed url")
       getSignedUrl(HttpMethod.GET, bucketName, fileName)
-    else
+    } else
       manageS3Error {
+        logger.debug("Getting not signed url")
         val url = s3.getUrl(bucketName, fileName)
         \/-(UrlS3(url.toString, -1, None))
       }
