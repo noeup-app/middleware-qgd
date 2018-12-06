@@ -31,7 +31,7 @@ class S3 @Inject() (s3: AmazonS3Client,
                     s3Config: S3Config,
                     s3CoweboConfig: S3CoweboConfig,
                     s3Cowebo: AmazonS3CoweboClient
-                    ) {
+                   ) {
 
   val logger = Logger(classOf[S3])
 
@@ -48,7 +48,7 @@ class S3 @Inject() (s3: AmazonS3Client,
 
       val meta: ObjectMetadata = new ObjectMetadata ()
       meta.setContentLength (content.file.length.toLong)
-//      meta.setContentType (contentType)
+      //      meta.setContentType (contentType)
       content.bucketName match {
         case "thumb-cowebo-com" =>
           s3Cowebo.putObject(//new PutObjectRequest(
@@ -74,23 +74,23 @@ class S3 @Inject() (s3: AmazonS3Client,
       }
       //tempFile.delete()
     }
-//    String bucket = "bucketname.obliquid.com";
-//    String fileName = "2011/test/test.pdf";
-//    byte[] contents = new byte[] {
-//      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
-//    };
-//    try {
-//      AmazonS3 client = new AmazonS3Client (
-//        new BasicAWSCredentials ("awsAccessKey", "awsSecretKey") );
-//      InputStream stream = new ByteArrayInputStream (contents);
-//      ObjectMetadata meta = new ObjectMetadata ();
-//      meta.setContentLength (contents.length);
-//      meta.setContentType ("application/pdf");
-//      client.putObject (bucket, fileName, stream, meta);
-//      client.setObjectAcl (bucket, fileName, CannedAccessControlList.PublicRead);
-//    } catch (Exception ex) {
-//      System.out.println (ex);
-//    }
+    //    String bucket = "bucketname.obliquid.com";
+    //    String fileName = "2011/test/test.pdf";
+    //    byte[] contents = new byte[] {
+    //      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+    //    };
+    //    try {
+    //      AmazonS3 client = new AmazonS3Client (
+    //        new BasicAWSCredentials ("awsAccessKey", "awsSecretKey") );
+    //      InputStream stream = new ByteArrayInputStream (contents);
+    //      ObjectMetadata meta = new ObjectMetadata ();
+    //      meta.setContentLength (contents.length);
+    //      meta.setContentType ("application/pdf");
+    //      client.putObject (bucket, fileName, stream, meta);
+    //      client.setObjectAcl (bucket, fileName, CannedAccessControlList.PublicRead);
+    //    } catch (Exception ex) {
+    //      System.out.println (ex);
+    //    }
   }
 
 
@@ -153,11 +153,11 @@ class S3 @Inject() (s3: AmazonS3Client,
   }
 
 
-//  def getSignedUrlToPutAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
-//    getSignedUrlToPutAFile(bucketName, fileName, None)
-//
-//  def getSignedUrlToPutAFile(bucketName: String, fileName: String, documentInstanceId: Option[UUID]): Future[Expect[UrlS3]] =
-//    getSignedUrl(HttpMethod.PUT, bucketName, fileName, documentInstanceId) // TODO set uploadable only once
+  //  def getSignedUrlToPutAFile(bucketName: String, fileName: String): Future[Expect[UrlS3]] =
+  //    getSignedUrlToPutAFile(bucketName, fileName, None)
+  //
+  //  def getSignedUrlToPutAFile(bucketName: String, fileName: String, documentInstanceId: Option[UUID]): Future[Expect[UrlS3]] =
+  //    getSignedUrl(HttpMethod.PUT, bucketName, fileName, documentInstanceId) // TODO set uploadable only once
 
   def getSignedUrlToPutAFile(bucketName: String, fileName: String, isPublicResource: Boolean): Future[Expect[UrlS3]] =
     getSignedUrlToPutAFile(bucketName, fileName, None, isPublicResource)
@@ -165,6 +165,7 @@ class S3 @Inject() (s3: AmazonS3Client,
     getSignedUrl(HttpMethod.PUT, bucketName, fileName, documentInstanceId, isPublicResource) // TODO set uploadable only once
 
   def getSignedUrl(httpMethod: HttpMethod, bucketName: String, fileName: String, documentInstanceId: Option[UUID] = None, isPublicResource: Boolean = false): Future[Expect[UrlS3]] = {
+    logger.debug("getpresignUrl : " + httpMethod + bucketName + fileName + documentInstanceId)
     manageS3Error {
       val expiration = new Date()
       val msec = expiration.getTime
@@ -174,24 +175,26 @@ class S3 @Inject() (s3: AmazonS3Client,
 
       val generatePreSignedUrlRequest = new GeneratePresignedUrlRequest(bucketName, fileName, httpMethod)
       generatePreSignedUrlRequest.setExpiration(expiration)
-      generatePreSignedUrlRequest.withContentType("application/octet-stream")
+      //generatePreSignedUrlRequest.withContentType("application/octet-stream")
+
+      logger.debug("generatePreSignedUrlRequest : " + generatePreSignedUrlRequest)
 
       if(isPublicResource) {
         // setting http request header:
         // x-amx-canned-acl: 'public-read'
-        generatePreSignedUrlRequest.addRequestParameter(
-          Headers.S3_CANNED_ACL,
-          CannedAccessControlList.PublicRead.toString()
-        )
+        //    generatePreSignedUrlRequest.addRequestParameter(
+        //      Headers.S3_CANNED_ACL,
+        //      CannedAccessControlList.PublicRead.toString()
+        //    )
       }
 
       Logger.debug("key = " + generatePreSignedUrlRequest.getKey())
 
       val url =
         s3
-        .generatePresignedUrl(generatePreSignedUrlRequest)
-        .toString
-      \/-(UrlS3(url, s3Config.expirationSignedUrlInMinutes, documentInstanceId))
+          .generatePresignedUrl(generatePreSignedUrlRequest)
+          .toString
+      \/-(UrlS3(url, /*s3Config.expirationSignedUrlInMinutes*/10, documentInstanceId))
     }
   }
 
@@ -218,21 +221,21 @@ class S3 @Inject() (s3: AmazonS3Client,
     }
   }
 
-//  def configureBucket(bucketName: String) = manageS3Error {
-//    s3.setRegion(Region.getRegion(Regions.EU_WEST_1))
-//
-//    // 1. Enable versioning on the bucket.
-//    val configuration = new BucketVersioningConfiguration().withStatus("Enabled")
-//
-//    val setBucketVersioningConfigurationRequest =
-//      new SetBucketVersioningConfigurationRequest(bucketName ,configuration)
-//
-//
-//
-//    // 2. Get bucket versioning configuration information.
-//    val conf = s3.getBucketVersioningConfiguration(bucketName)
-//    Logger.info("S3 bucket versioning configuration statut " + conf.getStatus)
-//  }
+  //  def configureBucket(bucketName: String) = manageS3Error {
+  //    s3.setRegion(Region.getRegion(Regions.EU_WEST_1))
+  //
+  //    // 1. Enable versioning on the bucket.
+  //    val configuration = new BucketVersioningConfiguration().withStatus("Enabled")
+  //
+  //    val setBucketVersioningConfigurationRequest =
+  //      new SetBucketVersioningConfigurationRequest(bucketName ,configuration)
+  //
+  //
+  //
+  //    // 2. Get bucket versioning configuration information.
+  //    val conf = s3.getBucketVersioningConfiguration(bucketName)
+  //    Logger.info("S3 bucket versioning configuration statut " + conf.getStatus)
+  //  }
 
 
   private def manageS3Error[T](unsafeBlock: Expect[T]): Future[Expect[T]] = {
