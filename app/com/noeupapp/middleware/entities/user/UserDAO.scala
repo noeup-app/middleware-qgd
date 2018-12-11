@@ -28,7 +28,7 @@ class UserDAO extends GlobalReadsWrites {
       case None => ""
     }
     SQL(
-      s"""SELECT u.*, rur.user_id IS NOT NULL AS isAdmin
+      s"""SELECT u.*, rur.user_id AS isAdmin
          FROM entity_users u
          LEFT JOIN entity_relation_users_roles rur ON rur.user_id = u.id
          $condition
@@ -45,8 +45,9 @@ class UserDAO extends GlobalReadsWrites {
     */
   def find(email: String)(implicit connection: Connection): Option[User] = {
     SQL(
-      """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted, owned_by_client,null AS isAdmin
-         FROM entity_users
+      """SELECT u.*, rur.user_id AS isAdmin
+         FROM entity_users u
+         LEFT JOIN entity_relation_users_roles rur ON rur.user_id = u.id
          WHERE email = {email} AND deleted = 'false';""")
       .on(
       'email  -> email
@@ -55,8 +56,9 @@ class UserDAO extends GlobalReadsWrites {
 
   def findDeletedOrNot(email: String)(implicit connection: Connection): Option[User] = {
     SQL(
-      """SELECT *
-         FROM entity_users
+      """SELECT u.*, rur.user_id AS isAdmin
+         FROM entity_users u
+         LEFT JOIN entity_relation_users_roles rur ON rur.user_id = u.id
          WHERE email = {email};""")
       .on(
       'email  -> email
@@ -73,8 +75,9 @@ class UserDAO extends GlobalReadsWrites {
     */
   def find(email: String, clientId: String)(implicit connection: Connection): Option[User] = {
     SQL(
-      """SELECT *
-         FROM entity_users
+      """SELECT u.*, rur.user_id AS isAdmin
+         FROM entity_users u
+         LEFT JOIN entity_relation_users_roles rur ON rur.user_id = u.id
          WHERE email = {email} AND owned_by_client = {client_id} AND active = 'true';""")
       .on(
         'email  -> email,
@@ -91,8 +94,9 @@ class UserDAO extends GlobalReadsWrites {
     */
   def findInactive(email: String)(implicit connection: Connection): Option[User] = {
     SQL(
-      """SELECT *
-         FROM entity_users
+      """SELECT u.*, rur.user_id AS isAdmin
+         FROM entity_users u
+         LEFT JOIN entity_relation_users_roles rur ON rur.user_id = u.id
          WHERE email = {email} AND active = 'false';""")
       .on(
         'email  -> email
@@ -110,8 +114,9 @@ class UserDAO extends GlobalReadsWrites {
   def find(userID: UUID)(implicit connection:
   Connection): Option[User] = {
       SQL(
-        """SELECT id, first_name, last_name, email, avatar_url, created, active, deleted,owned_by_client,null AS isAdmin
-           FROM entity_users
+        """SELECT u.*, rur.user_id AS isAdmin
+           FROM entity_users u
+           LEFT JOIN entity_relation_users_roles rur ON rur.user_id = u.id
            WHERE id = {id};""")
       .on(
         'id -> userID
