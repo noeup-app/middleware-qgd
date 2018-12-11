@@ -78,7 +78,7 @@ class UserDAO extends GlobalReadsWrites {
       """SELECT u.*, rur.user_id AS isAdmin
          FROM entity_users u
          LEFT JOIN entity_relation_users_roles rur ON rur.user_id = u.id
-         WHERE email = {email} AND owned_by_client = {client_id} AND active = 'true';""")
+         WHERE email = {email} AND owned_by_client = {client_id} AND active = 'true' AND deleted = 'false';""")
       .on(
         'email  -> email,
         'client_id -> clientId
@@ -117,7 +117,7 @@ class UserDAO extends GlobalReadsWrites {
         """SELECT u.*, rur.user_id AS isAdmin
            FROM entity_users u
            LEFT JOIN entity_relation_users_roles rur ON rur.user_id = u.id
-           WHERE id = {id};""")
+           WHERE id = {id} AND deleted = 'false';""")
       .on(
         'id -> userID
       ).as(User.parse *).headOption
