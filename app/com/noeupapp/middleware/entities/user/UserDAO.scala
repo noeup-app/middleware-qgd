@@ -117,7 +117,8 @@ class UserDAO extends GlobalReadsWrites {
         """SELECT u.*, rur.user_id NOTNULL AS isAdmin
            FROM entity_users u
            LEFT JOIN entity_relation_users_roles rur ON rur.user_id = u.id
-           WHERE id = {id} AND deleted = 'false';""")
+           WHERE id = {id} AND deleted = 'false'
+           LIMIT 1;""")
       .on(
         'id -> userID
       ).as(User.parse *).headOption
