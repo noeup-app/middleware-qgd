@@ -66,6 +66,8 @@ libraryDependencies ++= Seq(
 
 resolvers := ("Atlassian Releases" at "https://maven.atlassian.com/public/") +: resolvers.value
 
+resolvers += Resolver.jcenterRepo
+
 resolvers += Resolver.sonatypeRepo("snapshots")
 
 resolvers ++= Seq(
