@@ -38,7 +38,7 @@ libraryDependencies ++= Seq(
   "com.amazonaws" % "aws-java-sdk" % "1.11.3",
   //
   // TESTS
-  specs2 % Test,
+  //specs2 % Test,
   "com.mohiva" %% "play-silhouette-testkit" % "3.0.0" % "test",
   //
   // AUTHENTICATION
@@ -71,12 +71,19 @@ resolvers += Resolver.jcenterRepo
 resolvers += Resolver.sonatypeRepo("snapshots")
 
 resolvers ++= Seq(
-  "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
-  "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
+  //"scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
+  //"Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/",
   "sonatype releases" at "http://oss.sonatype.org/content/repositories/releases",
-  Resolver.sonatypeRepo("snapshots"),
+  //Resolver.sonatypeRepo("snapshots"),
   "bintray Repository" at "https://dl.bintray.com/graingert/maven"
 )
+
+resolvers += Resolver.sonatypeRepo("snapshots")
+
+resolvers += Resolver.jcenterRepo
+resolvers += "Maven Central Server" at "https://repo1.maven.org/maven2"
+resolvers += "Typesafe Server" at "https://repo.typesafe.com/typesafe/releases"
+resolvers += "Scalaz Bintray Repo" at "http://dl.bintray.com/scalaz/releases"
 
 unmanagedResourceDirectories in Test <+=  baseDirectory ( _ /"target/web/public/test" )
 
