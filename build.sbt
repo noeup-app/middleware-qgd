@@ -31,7 +31,9 @@ libraryDependencies ++= Seq(
   //"com.typesafe.play" %% "play-slick-evolutions" % "1.1.1",
   "com.typesafe.play.modules" %% "play-modules-redis" % "2.4.0",
 //  "org.postgresql" % "postgresql" % "9.4-1206-jdbc42",
-  "org.postgresql" % "postgresql" % "9.4-1201-jdbc41",
+  //"org.postgresql" % "postgresql" % "9.4-1201-jdbc41",
+  "org.postgresql" % "postgresql" % "42.5.0",
+
   jdbc,
   //
   // S3
